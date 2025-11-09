@@ -131,6 +131,79 @@ class MCPClient {
         }
       }
     );
+
+    // 工具：fetch_url
+    this.server.registerTool(
+      "fetch_url",
+      {
+        description: "Fetch content from a URL and convert it to markdown. Useful for reading web pages, documentation, or API responses.",
+        inputSchema: {
+          url: z.string().url().describe("The URL to fetch"),
+        },
+      },
+      async ({ url }) => {
+        try {
+          const response = await fetch(url);
+
+          if (!response.ok) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Error: HTTP ${response.status} ${response.statusText}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          const contentType = response.headers.get("content-type");
+
+          // 处理 JSON 响应
+          if (contentType?.includes("application/json")) {
+            const json = await response.json();
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(json, null, 2),
+                },
+              ],
+            };
+          }
+
+          // 处理 HTML/文本响应
+          const text = await response.text();
+
+          // 简单的 HTML 转文本（移除标签）
+          const cleanText = text
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: cleanText.substring(0, 10000), // 限制长度
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error fetching URL: ${(error as Error).message}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
   }
 
   /**
