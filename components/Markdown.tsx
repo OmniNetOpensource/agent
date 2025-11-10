@@ -15,7 +15,7 @@ const cx = (...classes: Array<string | undefined | false>) =>
 
 export default function Markdown({ content }: Props) {
   return (
-    <div className="prose prose-neutral prose-sm max-w-none">
+    <div className="prose prose-md max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}
@@ -24,7 +24,7 @@ export default function Markdown({ content }: Props) {
             <a
               {...props}
               className={cx(
-                "text-blue-600 underline underline-offset-2 hover:text-blue-700",
+                "text-(--color-primary) underline underline-offset-2 hover:text-(--color-primary-hover)",
                 className
               )}
               target="_blank"
@@ -35,7 +35,7 @@ export default function Markdown({ content }: Props) {
             <pre
               {...props}
               className={cx(
-                "not-prose overflow-x-auto rounded-md border border-neutral-200 bg-[#f6f8fa] p-4 text-sm text-neutral-900",
+                "not-prose overflow-x-auto rounded-md border border-(--code-block-border) bg-(--code-block-bg) p-4 text-sm text-(--code-block-text)",
                 className
               )}
             />
@@ -46,7 +46,7 @@ export default function Markdown({ content }: Props) {
               return (
                 <code
                   {...props}
-                  className="rounded-md bg-neutral-100 px-1.5 py-0.5 font-mono text-[0.85em] text-neutral-900"
+                  className="rounded-md bg-(--code-inline-bg) px-1.5 py-0.5 font-mono text-[0.85em] text-(--text-code)"
                 />
               );
             }
@@ -67,7 +67,7 @@ export default function Markdown({ content }: Props) {
             <th
               {...props}
               className={cx(
-                "border border-neutral-200 bg-neutral-50 px-3 py-2 text-left text-[var(--text-secondary)]",
+                "border border-(--border-subtle) bg-(--surface-muted) px-3 py-2 text-left text-(--text-secondary)",
                 className
               )}
             />
@@ -76,7 +76,7 @@ export default function Markdown({ content }: Props) {
             <td
               {...props}
               className={cx(
-                "border border-neutral-200 px-3 py-2 align-top text-neutral-700",
+                "border border-(--border-subtle) px-3 py-2 align-top text-(--text-secondary)",
                 className
               )}
             />

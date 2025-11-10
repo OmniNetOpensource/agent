@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
-import "highlight.js/styles/github.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +29,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Script id="theme-init" strategy="beforeInteractive">{`
+(function () {
+  try {
+    var ls = window.localStorage.getItem('theme');
+    var m = window.matchMedia('(prefers-color-scheme: dark)');
+    var dark = ls ? ls === 'dark' : m.matches;
+    var c = document.documentElement.classList;
+    dark ? c.add('dark') : c.remove('dark');
+  } catch (e) {}
+})();`}</Script>
         {children}
       </body>
     </html>

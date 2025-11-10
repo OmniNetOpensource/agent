@@ -6,16 +6,71 @@
   --surface-muted: #f8f8fa;
   --surface-card: #ffffff;
   --surface-alt: #fdfdfd;
+  --surface-user: #f8f8fa;
+  --surface-overlay: rgba(255, 255, 255, 0.8);
   --border-subtle: #e4e4e7;
   --border-strong: #d1d5db;
+  --border-hover: #d1d5db;
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --text-tertiary: #6b7280;
+  --text-code: #111827;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-accent: #a1a1aa;
+  --button-primary-bg: #111827;
+  --button-primary-text: #ffffff;
+  --button-primary-hover: #1f2937;
+  --button-secondary-bg: #ffffff;
+  --button-secondary-border: #d4d4d8;
+  --button-secondary-text: #111827;
+  --button-secondary-hover: #f9fafb;
+  --code-inline-bg: #f4f4f5;
+  --code-block-bg: #f6f8fa;
+  --code-block-border: #e5e7eb;
+  --code-block-text: #111827;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1.25rem;
   --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.08);
   --spacing-unit: 0.25rem;
+  /* Ensure Tailwind tokens are available in light mode too */
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-primary);
+  color-scheme: light;
+}
+
+html.dark {
+  --surface-base: #0b0f19;
+  --surface-muted: #0f172a;
+  --surface-card: #111827;
+  --surface-alt: #0b1220;
+  --surface-user: #1f2937;
+  --surface-overlay: rgba(17, 24, 39, 0.8);
+  --border-subtle: #1f2937;
+  --border-strong: #374151;
+  --border-hover: #4b5563;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-code: #e5e7eb;
+  --color-primary: #60a5fa;
+  --color-primary-hover: #93c5fd;
+  --color-accent: #71717a;
+  --button-primary-bg: #f9fafb;
+  --button-primary-text: #111827;
+  --button-primary-hover: #e5e7eb;
+  --button-secondary-bg: transparent;
+  --button-secondary-border: #374151;
+  --button-secondary-text: #e5e7eb;
+  --button-secondary-hover: #1f2937;
+  --code-inline-bg: #1f2937;
+  --code-block-bg: #111827;
+  --code-block-border: #374151;
+  --code-block-text: #e5e7eb;
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-primary);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -23,6 +78,9 @@
   --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 html {
@@ -38,10 +96,24 @@ body {
   min-height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  animation: pageLoad 0.5s var(--transition-ease) both;
+}
+
+/* 全局元素过渡效果 */
+* {
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-duration: 0.2s;
+  transition-timing-function: var(--transition-smooth);
 }
 
 ::selection {
-  background: rgba(17, 24, 39, 0.08);
+  background: rgba(131, 164, 235, 0.15);
+  color: inherit;
+}
+
+html.dark ::selection {
+  background: rgba(196, 145, 75, 0.25);
+  color: inherit;
 }
 
 ::-webkit-scrollbar {
@@ -55,25 +127,49 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d8;
+  background: var(--color-accent);
   border-radius: 999px;
   border: 2px solid var(--surface-muted);
   transition: background 0.15s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1aa;
+  background: var(--text-tertiary);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d4d4d8 transparent;
+  scrollbar-color: var(--color-accent) transparent;
+}
+
+/* ============================================
+   动画定义 - 使用平滑的缓动曲线
+   ============================================ */
+
+@keyframes pageLoad {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeSlideUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -84,7 +180,7 @@ body {
 @keyframes fadeSlideDown {
   from {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
@@ -92,10 +188,132 @@ body {
   }
 }
 
+@keyframes fadeSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* 动画类 */
+.animate-fade-in {
+  animation: fadeIn 0.4s var(--transition-ease) both;
+}
+
 .animate-enter-up {
-  animation: fadeSlideUp 220ms ease-out both;
+  animation: fadeSlideUp 0.4s var(--transition-ease) both;
 }
 
 .animate-enter-down {
-  animation: fadeSlideDown 220ms ease-out both;
+  animation: fadeSlideDown 0.4s var(--transition-ease) both;
+}
+
+.animate-enter-left {
+  animation: fadeSlideLeft 0.4s var(--transition-ease) both;
+}
+
+.animate-enter-right {
+  animation: fadeSlideRight 0.4s var(--transition-ease) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s var(--transition-bounce) both;
+}
+
+/* 加载动画 */
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 0%,
+    var(--surface-card) 50%,
+    var(--surface-muted) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* 延迟动画 - 用于列表项 */
+.animate-delay-1 { animation-delay: 0.05s; }
+.animate-delay-2 { animation-delay: 0.1s; }
+.animate-delay-3 { animation-delay: 0.15s; }
+.animate-delay-4 { animation-delay: 0.2s; }
+.animate-delay-5 { animation-delay: 0.25s; }
+
+/* ============================================
+   Typography Prose 自定义样式
+   ============================================ */
+
+/* 覆盖 prose 的默认颜色，使用自定义 CSS 变量 */
+.prose {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-lead: var(--text-secondary);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--text-primary);
+  --tw-prose-counters: var(--text-secondary);
+  --tw-prose-bullets: var(--text-secondary);
+  --tw-prose-hr: var(--border-subtle);
+  --tw-prose-quotes: var(--text-primary);
+  --tw-prose-quote-borders: var(--border-subtle);
+  --tw-prose-captions: var(--text-secondary);
+  --tw-prose-code: var(--text-code);
+  --tw-prose-pre-code: var(--code-block-text);
+  --tw-prose-pre-bg: var(--code-block-bg);
+  --tw-prose-th-borders: var(--border-subtle);
+  --tw-prose-td-borders: var(--border-subtle);
+}
+
+/* 深色模式下的 prose 颜色 */
+html.dark .prose {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: var(--text-primary);
+  --tw-prose-lead: var(--text-secondary);
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--text-primary);
+  --tw-prose-counters: var(--text-secondary);
+  --tw-prose-bullets: var(--text-secondary);
+  --tw-prose-hr: var(--border-subtle);
+  --tw-prose-quotes: var(--text-primary);
+  --tw-prose-quote-borders: var(--border-subtle);
+  --tw-prose-captions: var(--text-secondary);
+  --tw-prose-code: var(--text-code);
+  --tw-prose-pre-code: var(--code-block-text);
+  --tw-prose-pre-bg: var(--code-block-bg);
+  --tw-prose-th-borders: var(--border-subtle);
+  --tw-prose-td-borders: var(--border-subtle);
 }

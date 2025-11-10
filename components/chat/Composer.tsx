@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, Dispatch, SetStateAction } from "react";
-import { Button } from "@/components/ui/Button";
 import { Loader2, Send } from "lucide-react";
 
 type ComposerProps = {
@@ -38,6 +37,8 @@ export function Composer({
       <div className={containerClassName}>
         <div className="flex flex-row gap-3 items-center justify-center w-full">
           <textarea
+            id="message-input"
+            name="message"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={onKeyDown}
@@ -45,18 +46,17 @@ export function Composer({
             placeholder="输入您的消息..."
             className="w-[90%] min-h-18 resize-none rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-4 text-sm text-foreground placeholder:text-(--text-tertiary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:border-neutral-400 transition-shadow"
           />
-          <Button
+          <button
             type="submit"
             disabled={sendDisabled}
-            size="sm"
-            className="w-10 h-2 p-0 "
+            className="w-fit h-fit p-3 inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-(--button-primary-bg) text-(--button-primary-text) hover:bg-(--button-primary-hover)"
           >
             {pending ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <Send className="h-5 w-5" />
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </form>
