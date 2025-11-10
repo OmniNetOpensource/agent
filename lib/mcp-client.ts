@@ -4,17 +4,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import OpenAI from "openai";
 
-/**
- * MCP 客户端单例
- * 管理与 MCP 服务器的连接和工具调用
- */
 class MCPClient {
   private client: Client | null = null;
   private server: McpServer | null = null;
   private initialized = false;
-  /**
-   * 初始化 MCP 客户端和服务器
-   */
   async initialize() {
     if (this.initialized) {
       console.error("[MCP-Client] Already initialized, skipping");
@@ -23,7 +16,6 @@ class MCPClient {
 
     console.error("[MCP-Client] Initializing MCP client and server...");
 
-    // 创建 MCP 服务器
     console.error("[MCP-Client] Creating MCP server");
     this.server = new McpServer({
       name: "agent-mcp",
@@ -33,16 +25,13 @@ class MCPClient {
       },
     });
 
-    // 注册工具
     console.error("[MCP-Client] Registering tools...");
     this.registerTools();
 
-    // 创建客户端和服务器传输
     console.error("[MCP-Client] Creating in-memory transport pair");
     const [clientTransport, serverTransport] =
       InMemoryTransport.createLinkedPair();
 
-    // 创建客户端
     console.error("[MCP-Client] Creating client");
     this.client = new Client(
       {
@@ -54,7 +43,6 @@ class MCPClient {
       }
     );
 
-    // 连接服务器和客户端
     console.error("[MCP-Client] Connecting server and client...");
     await this.server.connect(serverTransport);
     await this.client.connect(clientTransport);
@@ -63,17 +51,11 @@ class MCPClient {
     console.error("[MCP-Client] ✅ Initialization complete");
   }
 
-  /**
-   * 检查工具是否被禁用
-   */
   private isToolDisabled(toolName: string): boolean {
     const envKey = `MCP_DISABLE_${toolName.toUpperCase()}`;
     return process.env[envKey] === "true";
   }
 
-  /**
-   * 获取 LLM 客户端实例（根据环境变量配置）
-   */
   private getLLMClient(): OpenAI {
     const llmProvider =
       process.env.LLM_PROVIDER?.trim().toLowerCase() || "kimi";
@@ -96,9 +78,6 @@ class MCPClient {
     }
   }
 
-  /**
-   * 获取 LLM 模型名称
-   */
   private getLLMModel(): string {
     const llmProvider =
       process.env.LLM_PROVIDER?.trim().toLowerCase() || "kimi";
@@ -112,21 +91,16 @@ class MCPClient {
     }
   }
 
-  /**
-   * 注册所有 MCP 工具
-   */
   private registerTools() {
     if (!this.server) throw new Error("Server not initialized");
 
     const toolNames: string[] = [];
 
-    // 工具：fetch_url
     if (this.isToolDisabled("fetch_url")) {
       console.error(
         "[MCP-Client] Skipping tool: fetch_url (disabled via MCP_DISABLE_FETCH_URL)"
       );
     } else {
-      // 工具：fetch_url
       console.error("[MCP-Client] Registering tool: fetch_url");
       toolNames.push("fetch_url");
       this.server.registerTool(
@@ -163,7 +137,6 @@ class MCPClient {
             const contentType = response.headers.get("content-type");
             console.error("[MCP-Tool:fetch_url] Content-Type:", contentType);
 
-            // 处理 JSON 响应
             if (contentType?.includes("application/json")) {
               const json = await response.json();
               console.error("[MCP-Tool:fetch_url] ✅ Fetched JSON response");
@@ -177,7 +150,6 @@ class MCPClient {
               };
             }
 
-            // 处理 HTML/文本响应
             const text = await response.text();
             console.error(
               "[MCP-Tool:fetch_url] ✅ Fetched text/HTML, original size:",
@@ -185,7 +157,6 @@ class MCPClient {
               "bytes"
             );
 
-            // 简单的 HTML 转文本（移除标签）
             const cleanText = text
               .replace(
                 /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
@@ -228,7 +199,6 @@ class MCPClient {
       );
     }
 
-    // 工具：brave_search（可选，需要 BRAVE_API_KEY）
     if (this.isToolDisabled("brave_search")) {
       console.error(
         "[MCP-Client] Skipping tool: brave_search (disabled via MCP_DISABLE_BRAVE_SEARCH)"
@@ -245,10 +215,7 @@ class MCPClient {
             "Search the web using Brave Search API. Get real-time, up-to-date information from the internet. Supports web search, news, and image results.",
           inputSchema: {
             query: z.string().describe("The search query"),
-            count: z
-              .number()
-              .optional()
-              .describe("Number of results to return (default: 10, max: 20)"),
+            
             freshness: z
               .enum(["pd", "pw", "pm", "py"])
               .optional()
@@ -257,19 +224,17 @@ class MCPClient {
               ),
           },
         },
-        async ({ query, count = 10, freshness }) => {
+        async ({ query,  freshness }) => {
           console.error(
             "[MCP-Tool:brave_search] Searching for:",
             query,
-            "| count:",
-            count,
             "| freshness:",
             freshness || "none"
           );
           try {
             const params = new URLSearchParams({
               q: query,
-              count: Math.min(count, 20).toString(),
+              count: '10',
             });
 
             if (freshness) {
@@ -312,7 +277,6 @@ class MCPClient {
               data.news?.results?.length || 0
             );
 
-            // 格式化搜索结果
             let resultText = `Search results for: "${query}"\n\n`;
 
             if (data.web?.results && data.web.results.length > 0) {
@@ -331,7 +295,6 @@ class MCPClient {
               );
             }
 
-            // 添加新闻结果（如果有）
             if (data.news?.results && data.news.results.length > 0) {
               resultText += "\nNews Results:\n\n";
               data.news.results
@@ -393,10 +356,6 @@ class MCPClient {
     );
   }
 
-  /**
-   * 获取所有可用的工具列表
-   * 返回 OpenAI 兼容的工具格式
-   */
   async getTools() {
     if (!this.client) throw new Error("Client not initialized");
 
@@ -409,7 +368,7 @@ class MCPClient {
       tools.map((t) => t.name).join(", ")
     );
 
-    return tools.map((tool) => ({
+    const toolList = tools.map((tool) => ({
       type: "function" as const,
       function: {
         name: tool.name,
@@ -417,11 +376,11 @@ class MCPClient {
         parameters: tool.inputSchema,
       },
     }));
+
+    console.error("[MCP-Client] Total tools:", toolList.length);
+    return toolList;
   }
 
-  /**
-   * 调用 MCP 工具
-   */
   async callTool(name: string, args: Record<string, unknown>) {
     if (!this.client) throw new Error("Client not initialized");
 
@@ -442,7 +401,6 @@ class MCPClient {
       const duration = Date.now() - startTime;
       console.error("[MCP-Client] Tool call completed in", duration, "ms");
 
-      // 提取文本内容
       if (!result.content || !Array.isArray(result.content)) {
         console.error("[MCP-Client] ⚠️ Tool returned no content");
         return "";
@@ -470,9 +428,6 @@ class MCPClient {
     }
   }
 
-  /**
-   * 关闭连接
-   */
   async close() {
     if (this.client) {
       await this.client.close();
@@ -486,5 +441,4 @@ class MCPClient {
   }
 }
 
-// 导出单例实例
 export const mcpClient = new MCPClient();

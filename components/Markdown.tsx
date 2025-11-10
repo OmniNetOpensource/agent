@@ -5,62 +5,81 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
-import "katex/dist/katex.min.css";
 
 type Props = {
   content: string;
 };
 
+const cx = (...classes: Array<string | undefined | false>) =>
+  classes.filter(Boolean).join(" ");
+
 export default function Markdown({ content }: Props) {
   return (
-    <div className="prose prose-invert prose-sm max-w-none">
+    <div className="prose prose-neutral prose-sm max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}
         components={{
-          // 自定义链接样式
-          a: ({ ...props }) => (
+          a: ({ className, ...props }) => (
             <a
               {...props}
-              className="text-blue-400 hover:text-blue-300 underline"
+              className={cx(
+                "text-blue-600 underline underline-offset-2 hover:text-blue-700",
+                className
+              )}
               target="_blank"
               rel="noopener noreferrer"
             />
           ),
-          // 自定义代码块样式
-          pre: ({ ...props }) => (
+          pre: ({ className, ...props }) => (
             <pre
               {...props}
-              className="!bg-black/40 !border !border-white/10 rounded-lg overflow-x-auto"
+              className={cx(
+                "not-prose overflow-x-auto rounded-md border border-neutral-200 bg-[#f6f8fa] p-4 text-sm text-neutral-900",
+                className
+              )}
             />
           ),
-          // 自定义行内代码样式
           code: ({ className, ...props }) => {
             const isInline = !className || !className.includes("language-");
             if (isInline) {
               return (
                 <code
                   {...props}
-                  className="!bg-white/10 !text-blue-300 px-1.5 py-0.5 rounded"
+                  className="rounded-md bg-neutral-100 px-1.5 py-0.5 font-mono text-[0.85em] text-neutral-900"
                 />
               );
             }
             return <code {...props} className={className} />;
           },
-          // 自定义表格样式
-          table: ({ ...props }) => (
+          table: ({ className, ...props }) => (
             <div className="overflow-x-auto">
-              <table {...props} className="border-collapse border border-white/20" />
+              <table
+                {...props}
+                className={cx(
+                  "w-full border-collapse text-left text-sm",
+                  className
+                )}
+              />
             </div>
           ),
-          th: ({ ...props }) => (
+          th: ({ className, ...props }) => (
             <th
               {...props}
-              className="border border-white/20 bg-white/5 px-4 py-2"
+              className={cx(
+                "border border-neutral-200 bg-neutral-50 px-3 py-2 text-left text-[var(--text-secondary)]",
+                className
+              )}
             />
           ),
-          td: ({ ...props }) => (
-            <td {...props} className="border border-white/20 px-4 py-2" />
+          td: ({ className, ...props }) => (
+            <td
+              {...props}
+              className={cx(
+                "border border-neutral-200 px-3 py-2 align-top text-neutral-700",
+                className
+              )}
+            />
           ),
         }}
       >
