@@ -22,7 +22,91 @@ export default function Home() {
   const [expandedThinking, setExpandedThinking] = useState<Set<number>>(
     new Set()
   );
+  const [expandedTools, setExpandedTools] = useState<Set<number>>(
+    new Set()
+  );
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // 莫兰蒂配色主题定义
+  const theme = {
+    light: {
+      bg: "bg-linear-to-br from-[#f5f3f0] via-[#e8e5e1] to-[#ebe9e5]",
+      bgGlow1: "from-[#b8a99a]/15",
+      bgGlow2: "from-[#9d9a92]/15",
+      headerBg: "bg-white/60",
+      headerBorder: "border-[#d4cfc8]/30",
+      headerText: "text-[#5d5954]",
+      headerSubtext: "text-[#7a7672]",
+      clearBtn: "border-[#d4cfc8]/40 bg-[#c9bfb5]/20 text-[#5d5954] hover:border-[#b8a99a]/60 hover:bg-[#c9bfb5]/30 hover:shadow-[#b8a99a]/20 disabled:border-[#d4cfc8]/20 disabled:bg-[#c9bfb5]/10 disabled:text-[#a39e99]",
+      emptyText: "text-[#7a7672]",
+      emptySubtext: "text-[#9d9a92]",
+      userBubble: "bg-linear-to-br from-[#d4a5a5] via-[#c9a9a0] to-[#b8a99a] text-white shadow-[#d4a5a5]/25",
+      userLabel: "text-white/90",
+      assistantBubble: "bg-white/70 text-[#5d5954] border-[#d4cfc8]/40 shadow-[#9d9a92]/15",
+      assistantLabel: "text-[#7a7672]",
+      thinkingBtn: "bg-[#a8b5a8]/20 hover:bg-[#a8b5a8]/30 text-[#6b7a6b] hover:text-[#5d6b5d] border-[#a8b5a8]/30 hover:border-[#a8b5a8]/50",
+      thinkingDot: "bg-[#a8b5a8]",
+      thinkingExpanded: "bg-white/50 border-[#d4cfc8]/30 text-[#5d5954]",
+      toolCall: "bg-[#d9b596]/20 text-[#8a6f54] border-[#d9b596]/30",
+      toolResult: "bg-[#d9b596]/10 border-[#d9b596]/20",
+      toolResultLabel: "text-[#8a6f54]/80",
+      toolResultContent: "text-[#5d5954]",
+      cursor: "bg-[#d4a5a5]",
+      loadingBubble: "bg-white/70 border-[#d4cfc8]/40",
+      loadingLabel: "text-[#7a7672]",
+      loadingDot: "bg-[#d4a5a5]",
+      formBg: "bg-white/60",
+      formBorder: "border-[#d4cfc8]/30",
+      inputBg: "bg-white/50",
+      inputBorder: "border-[#d4cfc8]/40",
+      inputText: "text-[#5d5954]",
+      inputPlaceholder: "placeholder:text-[#9d9a92]",
+      inputFocus: "focus:border-[#c9a9a0]/60 focus:bg-white/70 focus:ring-[#d4a5a5]/25",
+      hint: "text-[#9d9a92]",
+      sendBtn: "bg-linear-to-r from-[#c9a9a0] via-[#d4a5a5] to-[#b8a99a] hover:shadow-[#d4a5a5]/30",
+      secondary: "text-[#9d9a92]",
+    },
+    dark: {
+      bg: "bg-linear-to-br from-[#2a2826] via-[#1f1e1c] to-[#252320]",
+      bgGlow1: "from-[#b8a99a]/20",
+      bgGlow2: "from-[#9d9a92]/20",
+      headerBg: "bg-black/40",
+      headerBorder: "border-[#3a3633]/50",
+      headerText: "text-[#e5ddd5]",
+      headerSubtext: "text-[#b8b3ad]",
+      clearBtn: "border-[#3a3633]/60 bg-[#3a3633]/30 text-[#e5ddd5] hover:border-[#4a453f]/80 hover:bg-[#3a3633]/50 hover:shadow-[#b8a99a]/15 disabled:border-[#3a3633]/30 disabled:bg-[#3a3633]/20 disabled:text-[#6a655f]",
+      emptyText: "text-[#b8b3ad]",
+      emptySubtext: "text-[#7a7672]",
+      userBubble: "bg-linear-to-br from-[#a87b7b] via-[#9d817a] to-[#8d7a6f] text-white shadow-[#a87b7b]/30",
+      userLabel: "text-white/90",
+      assistantBubble: "bg-[#3a3633]/60 text-[#e5ddd5] border-[#4a453f]/50 shadow-black/20",
+      assistantLabel: "text-[#b8b3ad]",
+      thinkingBtn: "bg-[#7a8a7a]/20 hover:bg-[#7a8a7a]/30 text-[#a8b5a8] hover:text-[#b8c5b8] border-[#7a8a7a]/30 hover:border-[#7a8a7a]/50",
+      thinkingDot: "bg-[#a8b5a8]",
+      thinkingExpanded: "bg-black/30 border-[#3a3633]/40 text-[#d5cdc5]",
+      toolCall: "bg-[#a88b6f]/20 text-[#d9b596] border-[#a88b6f]/30",
+      toolResult: "bg-[#a88b6f]/10 border-[#a88b6f]/20",
+      toolResultLabel: "text-[#d9b596]/90",
+      toolResultContent: "text-[#d5cdc5]",
+      cursor: "bg-[#a87b7b]",
+      loadingBubble: "bg-[#3a3633]/60 border-[#4a453f]/50",
+      loadingLabel: "text-[#b8b3ad]",
+      loadingDot: "bg-[#a87b7b]",
+      formBg: "bg-black/40",
+      formBorder: "border-[#3a3633]/50",
+      inputBg: "bg-[#2a2826]/80",
+      inputBorder: "border-[#3a3633]/60",
+      inputText: "text-[#e5ddd5]",
+      inputPlaceholder: "placeholder:text-[#7a7672]",
+      inputFocus: "focus:border-[#9d817a]/60 focus:bg-[#2a2826] focus:ring-[#a87b7b]/20",
+      hint: "text-[#7a7672]",
+      sendBtn: "bg-linear-to-r from-[#9d817a] via-[#a87b7b] to-[#8d7a6f] hover:shadow-[#a87b7b]/25",
+      secondary: "text-[#7a7672]",
+    }
+  };
+
+  const colors = isDarkMode ? theme.dark : theme.light;
 
   const sendMessage = async (value?: string) => {
     const trimmed = (value ?? input).trim();
@@ -251,33 +335,41 @@ export default function Home() {
     }
     setMessages([]);
     setExpandedThinking(new Set());
+    setExpandedTools(new Set());
   };
 
   const sendDisabled = pending || input.trim().length === 0;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-950 to-zinc-900 px-4 py-8">
-      <div className="flex h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur">
-        <header className="border-b border-white/10 px-6 py-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-lg font-semibold uppercase tracking-[0.3em] text-white/70">
-                AI Chat with Thinking
-              </p>
-              <p className="text-sm text-white/50">
-                Send a prompt and watch the AI stream its response with thinking
-                process.
-              </p>
+    <div className={`flex h-screen w-screen flex-col overflow-hidden ${colors.bg} transition-colors duration-500`}>
+      {/* 背景装饰光效 - 莫兰蒂色系 */}
+      <div className={`absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] ${colors.bgGlow1} via-transparent to-transparent pointer-events-none`}></div>
+      <div className={`absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,var(--tw-gradient-stops))] ${colors.bgGlow2} via-transparent to-transparent pointer-events-none`}></div>
+      
+      <div className="relative flex h-full w-full flex-col overflow-hidden backdrop-blur-3xl">
+        <header className={`shrink-0 border-b ${colors.headerBorder} ${colors.headerBg} px-8 py-4 backdrop-blur-xl transition-colors duration-500`}>
+          <div className="flex items-center justify-end">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`group flex items-center justify-center gap-2 rounded-xl border ${colors.clearBtn} backdrop-blur-xl transition-all duration-300 px-5 py-2.5 text-sm font-medium`}
+                title={isDarkMode ? "切换到浅色模式" : "切换到暗色模式"}
+              >
+                <span className="text-base transition-transform duration-500">
+                  {isDarkMode ? "☀️" : "🌙"}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClearConversation}
+                disabled={!canClearConversation}
+                className={`group flex items-center justify-center gap-2 rounded-xl border ${colors.clearBtn} backdrop-blur-xl transition-all duration-300 px-5 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:shadow-none`}
+              >
+                <span className="text-base group-hover:rotate-180 transition-transform duration-500" aria-hidden="true">⟲</span>
+                <span>清空对话</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleClearConversation}
-              disabled={!canClearConversation}
-              className="mt-2 flex items-center justify-center gap-1 rounded-2xl border border-white/20 bg-gradient-to-r from-white/10 to-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition-all duration-200 hover:border-white/40 hover:bg-white/20 hover:shadow-lg hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/60 disabled:shadow-none md:mt-0"
-            >
-              <span aria-hidden="true">⟲</span>
-              <span>Clear Chat</span>
-            </button>
           </div>
         </header>
 
@@ -285,12 +377,11 @@ export default function Home() {
           role="log"
           aria-live="polite"
           ref={listRef}
-          className="flex-1 space-y-4 overflow-y-auto px-6 py-6"
+          className="flex-1 space-y-6 overflow-y-auto px-8 py-8"
         >
           {messages.length === 0 ? (
-            <p className="text-sm text-white/50">
-              Start the conversation by typing a message below.
-            </p>
+            <div className="flex h-full items-center justify-center">
+            </div>
           ) : (
             messages.map((message, index) => {
               const isUser = message.role === "user";
@@ -302,17 +393,17 @@ export default function Home() {
                   key={`${message.role}-${index}`}
                   className={`flex ${
                     isUser ? "justify-end" : "justify-start"
-                  } animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  } animate-in fade-in slide-in-from-bottom-2 duration-500`}
                 >
                   <div
-                    className={`flex flex-col gap-2 rounded-2xl px-5 py-3.5 text-sm leading-relaxed shadow-lg shadow-black/40 transition-all max-w-[85%] ${
+                    className={`flex flex-col gap-2.5 rounded-2xl px-6 py-4 text-sm leading-relaxed shadow-xl transition-all duration-500 max-w-[85%] backdrop-blur-xl ${
                       isUser
-                        ? "items-end bg-gradient-to-br from-blue-500 to-blue-600 text-white"
-                        : "items-start bg-white/5 text-white/90 border border-white/5"
+                        ? `items-end ${colors.userBubble}`
+                        : `items-start ${colors.assistantBubble} border`
                     }`}
                   >
-                    <span className="text-[0.65rem] uppercase tracking-[0.2em] font-medium text-white/60">
-                      {isUser ? "You" : "Assistant"}
+                    <span className={`text-[0.7rem] uppercase tracking-[0.25em] font-semibold transition-colors duration-500 ${isUser ? colors.userLabel : colors.assistantLabel}`}>
+                      {isUser ? "你" : "AI助手"}
                     </span>
 
                     {/* 用户消息直接展示 */}
@@ -322,7 +413,7 @@ export default function Home() {
                       </div>
                     ) : (
                       /* AI 消息按块展示（思考和回答交替） */
-                      <div className="w-full flex flex-col gap-3">
+                      <div className="w-full flex flex-col gap-4">
                         {message.blocks.map((block, blockIndex) => {
                           const isThinkingBlock = block.type === "thinking";
                           const isToolCallBlock = block.type === "tool_call";
@@ -349,10 +440,10 @@ export default function Home() {
                                       return newSet;
                                     });
                                   }}
-                                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-xs text-blue-300 hover:text-blue-200 transition-all border border-blue-400/20 hover:border-blue-400/40"
+                                  className={`group flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-xs transition-all duration-300 border backdrop-blur-sm ${colors.thinkingBtn}`}
                                 >
                                   <span
-                                    className="transition-transform duration-200"
+                                    className="transition-transform duration-300 text-sm"
                                     style={{
                                       transform: isBlockExpanded
                                         ? "rotate(90deg)"
@@ -361,26 +452,26 @@ export default function Home() {
                                   >
                                     ▶
                                   </span>
-                                  <span className="font-medium">
+                                  <span className="font-semibold shrink-0">
                                     思考过程 #{blockIndex + 1}
                                   </span>
-                                  <span className="text-white/40 text-[0.65rem]">
-                                    ({block.content.length} 字符)
+                                  <span className={`text-[0.65rem] transition-colors duration-500 ${colors.secondary}`}>
+                                    {block.content.length} 字符
                                   </span>
                                   {isStreaming &&
                                     blockIndex ===
                                       message.blocks.length - 1 && (
-                                      <span className="flex gap-1 ml-1">
+                                      <span className="flex gap-1.5 ml-auto">
                                         <span
-                                          className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+                                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${colors.thinkingDot}`}
                                           style={{ animationDelay: "0ms" }}
                                         ></span>
                                         <span
-                                          className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+                                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${colors.thinkingDot}`}
                                           style={{ animationDelay: "150ms" }}
                                         ></span>
                                         <span
-                                          className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"
+                                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${colors.thinkingDot}`}
                                           style={{ animationDelay: "300ms" }}
                                         ></span>
                                       </span>
@@ -388,7 +479,7 @@ export default function Home() {
                                 </button>
 
                                 {isBlockExpanded && (
-                                  <div className="mt-2 p-4 bg-black/30 rounded-xl border border-white/10 text-xs text-white/70 overflow-x-auto animate-in slide-in-from-top-2 duration-200 backdrop-blur-sm">
+                                  <div className={`mt-3 p-5 rounded-xl border text-xs overflow-x-auto animate-in slide-in-from-top-2 backdrop-blur-xl transition-colors duration-500 ${colors.thinkingExpanded}`}>
                                     <Markdown content={block.content} />
                                   </div>
                                 )}
@@ -398,33 +489,103 @@ export default function Home() {
 
                           // 工具调用块
                           if (isToolCallBlock) {
+                            const toolKey = Number(`${index}${blockIndex}`);
+                            const isToolExpanded = expandedTools.has(toolKey);
+                            
                             return (
                               <div key={blockKey} className="w-full">
-                                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 text-xs text-green-300 border border-green-400/20">
-                                  <span className="font-mono">🔧</span>
-                                  <span className="font-medium">{block.content}</span>
-                                  {block.args && (
-                                    <span className="text-white/40 text-[0.65rem]">
-                                      {JSON.stringify(block.args).substring(0, 50)}...
-                                    </span>
-                                  )}
-                                </div>
+                                <button
+                                  onClick={() => {
+                                    setExpandedTools((prev) => {
+                                      const newSet = new Set(prev);
+                                      if (isToolExpanded) {
+                                        newSet.delete(toolKey);
+                                      } else {
+                                        newSet.add(toolKey);
+                                      }
+                                      return newSet;
+                                    });
+                                  }}
+                                  className={`group flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-xs border backdrop-blur-sm transition-all duration-300 ${colors.toolCall}`}
+                                >
+                                  <span
+                                    className="transition-transform duration-300 text-sm"
+                                    style={{
+                                      transform: isToolExpanded
+                                        ? "rotate(90deg)"
+                                        : "rotate(0deg)",
+                                    }}
+                                  >
+                                    ▶
+                                  </span>
+                                  <span className="text-base">🔧</span>
+                                  <span className="font-semibold shrink-0">{block.content}</span>
+                                </button>
+                                
+                                {isToolExpanded && block.args && (
+                                  <div className={`mt-2 p-4 rounded-xl border backdrop-blur-sm transition-colors duration-500 ${colors.toolResult}`}>
+                                    <div className={`text-[0.65rem] uppercase tracking-[0.15em] font-semibold mb-2 transition-colors duration-500 ${colors.toolResultLabel}`}>
+                                      调用参数
+                                    </div>
+                                    <pre className={`text-xs font-mono overflow-x-auto transition-colors duration-500 ${colors.toolResultContent}`}>
+                                      {JSON.stringify(block.args, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
                               </div>
                             );
                           }
 
                           // 工具结果块
                           if (isToolResultBlock) {
+                            const toolResultKey = Number(`1${index}${blockIndex}`);
+                            const isResultExpanded = expandedTools.has(toolResultKey);
+                            const contentPreview = block.content.length > 80 
+                              ? block.content.substring(0, 80) + "..." 
+                              : block.content;
+                            
                             return (
                               <div key={blockKey} className="w-full">
-                                <div className="p-3 bg-green-500/5 rounded-lg border border-green-400/10">
-                                  <div className="text-[0.65rem] uppercase tracking-[0.15em] text-green-300/60 mb-1">
-                                    {block.tool} 结果:
+                                <button
+                                  onClick={() => {
+                                    setExpandedTools((prev) => {
+                                      const newSet = new Set(prev);
+                                      if (isResultExpanded) {
+                                        newSet.delete(toolResultKey);
+                                      } else {
+                                        newSet.add(toolResultKey);
+                                      }
+                                      return newSet;
+                                    });
+                                  }}
+                                  className={`group flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-xs border backdrop-blur-sm transition-all duration-300 ${colors.toolCall}`}
+                                >
+                                  <span
+                                    className="transition-transform duration-300 text-sm"
+                                    style={{
+                                      transform: isResultExpanded
+                                        ? "rotate(90deg)"
+                                        : "rotate(0deg)",
+                                    }}
+                                  >
+                                    ▶
+                                  </span>
+                                  <span className="text-base">✅</span>
+                                  <span className="font-semibold shrink-0">{block.tool} 结果</span>
+                                  {!isResultExpanded && (
+                                    <span className={`text-[0.65rem] truncate flex-1 transition-colors duration-500 ${colors.secondary}`}>
+                                      {contentPreview}
+                                    </span>
+                                  )}
+                                </button>
+                                
+                                {isResultExpanded && (
+                                  <div className={`mt-2 p-4 rounded-xl border backdrop-blur-sm transition-colors duration-500 ${colors.toolResult}`}>
+                                    <pre className={`text-xs font-mono overflow-x-auto whitespace-pre-wrap transition-colors duration-500 ${colors.toolResultContent}`}>
+                                      {block.content}
+                                    </pre>
                                   </div>
-                                  <div className="text-xs text-white/70 font-mono overflow-x-auto">
-                                    {block.content}
-                                  </div>
-                                </div>
+                                )}
                               </div>
                             );
                           }
@@ -433,13 +594,13 @@ export default function Home() {
                           return (
                             <div
                               key={blockKey}
-                              className="text-base w-full overflow-x-auto"
+                              className="text-base w-full overflow-x-auto leading-relaxed"
                             >
                               <Markdown content={block.content} />
                               {isStreaming &&
                                 blockIndex ===
                                   message.blocks.length - 1 && (
-                                  <span className="inline-flex ml-1 w-0.5 h-4 bg-blue-400 animate-pulse"></span>
+                                  <span className={`inline-flex ml-1 w-0.5 h-5 animate-pulse ${colors.cursor}`}></span>
                                 )}
                             </div>
                           );
@@ -454,22 +615,22 @@ export default function Home() {
           {pending &&
             messages.length > 0 &&
             messages[messages.length - 1].role === "user" && (
-              <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-2 rounded-2xl px-5 py-3.5 bg-white/5 border border-white/5">
-                  <span className="text-[0.65rem] uppercase tracking-[0.2em] font-medium text-white/60">
-                    Assistant
+              <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-500">
+                <div className={`flex items-center gap-3 rounded-2xl px-6 py-4 border backdrop-blur-xl transition-colors duration-500 ${colors.loadingBubble}`}>
+                  <span className={`text-[0.7rem] uppercase tracking-[0.25em] font-semibold transition-colors duration-500 ${colors.loadingLabel}`}>
+                    AI助手
                   </span>
-                  <span className="flex gap-1">
+                  <span className="flex gap-1.5">
                     <span
-                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                      className={`w-2 h-2 rounded-full animate-bounce ${colors.loadingDot}`}
                       style={{ animationDelay: "0ms" }}
                     ></span>
                     <span
-                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                      className={`w-2 h-2 rounded-full animate-bounce ${colors.loadingDot}`}
                       style={{ animationDelay: "150ms" }}
                     ></span>
                     <span
-                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                      className={`w-2 h-2 rounded-full animate-bounce ${colors.loadingDot}`}
                       style={{ animationDelay: "300ms" }}
                     ></span>
                   </span>
@@ -480,31 +641,31 @@ export default function Home() {
 
         <form
           onSubmit={handleSubmit}
-          className="border-t border-white/10 bg-white/5 px-6 py-4 backdrop-blur-sm"
+          className={`shrink-0 border-t ${colors.formBorder} ${colors.formBg} px-8 py-6 backdrop-blur-xl transition-colors duration-500`}
         >
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <textarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              placeholder="Type your message…"
-              className="min-h-[56px] flex-1 resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-blue-400 focus:outline-none transition-colors"
-              disabled={pending}
-            />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <textarea
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                placeholder="输入您的消息..."
+                className={`w-full min-h-[60px] resize-none rounded-xl border px-5 py-4 text-sm focus:outline-none focus:ring-2 transition-all duration-500 backdrop-blur-xl ${colors.inputBorder} ${colors.inputBg} ${colors.inputText} ${colors.inputPlaceholder} ${colors.inputFocus}`}
+              />
+            </div>
 
             <button
               type="submit"
               disabled={sendDisabled}
-              className="rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:from-blue-400 hover:to-blue-500 disabled:cursor-not-allowed disabled:from-blue-500/40 disabled:to-blue-600/40 shadow-lg shadow-blue-500/20"
+              className={`group relative rounded-xl px-8 py-4 text-sm font-semibold text-white transition-all duration-500 hover:shadow-2xl hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:scale-100 disabled:shadow-none overflow-hidden ${colors.sendBtn}`}
             >
-              {pending ? "Thinking…" : "Send"}
+              <span className="absolute inset-0 bg-linear-to-r from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+              <span className="relative">
+                {pending ? "思考中..." : "发送"}
+              </span>
             </button>
           </div>
-
-          <p className="mt-2 text-xs text-white/50">
-            Enter sends, Shift+Enter adds a newline.
-          </p>
         </form>
       </div>
     </div>
