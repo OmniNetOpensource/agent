@@ -243,19 +243,42 @@ export default function Home() {
     }
   };
 
+  const canClearConversation = !pending && messages.length > 0;
+
+  const handleClearConversation = () => {
+    if (!canClearConversation) {
+      return;
+    }
+    setMessages([]);
+    setExpandedThinking(new Set());
+  };
+
   const sendDisabled = pending || input.trim().length === 0;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-950 to-zinc-900 px-4 py-8">
       <div className="flex h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl backdrop-blur">
         <header className="border-b border-white/10 px-6 py-4">
-          <p className="text-lg font-semibold uppercase tracking-[0.3em] text-white/70">
-            AI Chat with Thinking
-          </p>
-          <p className="text-sm text-white/50">
-            Send a prompt and watch the AI stream its response with thinking
-            process.
-          </p>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-lg font-semibold uppercase tracking-[0.3em] text-white/70">
+                AI Chat with Thinking
+              </p>
+              <p className="text-sm text-white/50">
+                Send a prompt and watch the AI stream its response with thinking
+                process.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearConversation}
+              disabled={!canClearConversation}
+              className="mt-2 flex items-center justify-center gap-1 rounded-2xl border border-white/20 bg-gradient-to-r from-white/10 to-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition-all duration-200 hover:border-white/40 hover:bg-white/20 hover:shadow-lg hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-white/60 disabled:shadow-none md:mt-0"
+            >
+              <span aria-hidden="true">⟲</span>
+              <span>Clear Chat</span>
+            </button>
+          </div>
         </header>
 
         <div

@@ -1,4 +1,14 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* GitHub Markdown 样式 */
+@import "github-markdown-css/github-markdown-dark.css";
+
+/* KaTeX 数学公式样式 */
+@import "katex/dist/katex.min.css";
+
+/* Highlight.js 代码高亮样式 (可选择不同主题) */
+@import "highlight.js/styles/github-dark.css";
 
 :root {
   --background: #ffffff;

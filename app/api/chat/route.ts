@@ -30,6 +30,9 @@ const GEMINI_MODEL = "gemini-2.5-flash";
 const KIMI_BASE_URL = "https://api.moonshot.cn/v1";
 const KIMI_MODEL = "kimi-k2-thinking-turbo";
 
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+const OPENROUTER_MODEL = "openrouter/polaris-alpha";
+
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
@@ -41,57 +44,102 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { reply: "Missing GEMINI_API_KEY" },
-        { status: 500 }
+    const requestedProvider =
+      process.env.LLM_PROVIDER?.trim().toLowerCase() || "kimi";
+    const supportedProviders = ["kimi", "gemini", "openrouter"];
+    const llmProvider = supportedProviders.includes(requestedProvider)
+      ? requestedProvider
+      : "kimi";
+
+    if (
+      requestedProvider !== llmProvider &&
+      process.env.LLM_PROVIDER &&
+      process.env.LLM_PROVIDER.trim().length > 0
+    ) {
+      console.warn(
+        `[Chat-API] Unsupported LLM_PROVIDER "${process.env.LLM_PROVIDER}", falling back to Kimi`
       );
     }
 
-    const geminiClient = new OpenAI({
-      apiKey,
-      baseURL: GEMINI_BASE_URL,
-    });
+    let selectedClient: OpenAI;
+    let selectedModel = KIMI_MODEL;
+    const providerSpecificParams: Partial<GeminiChatCompletionCreateParams> =
+      {};
 
-    // Kimi K2 Thinking client
-    const kimiApiKey = process.env.KIMI_API_KEY;
-    if (!kimiApiKey) {
-      return NextResponse.json(
-        { reply: "Missing KIMI_API_KEY" },
-        { status: 500 }
-      );
+    if (llmProvider === "gemini") {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        return NextResponse.json(
+          { reply: "Missing GEMINI_API_KEY" },
+          { status: 500 }
+        );
+      }
+      selectedClient = new OpenAI({
+        apiKey: geminiApiKey,
+        baseURL: GEMINI_BASE_URL,
+      });
+      selectedModel = GEMINI_MODEL;
+      providerSpecificParams.extra_body = {
+        google: {
+          thinking_config: {
+            include_thoughts: true,
+          },
+        },
+      };
+    } else if (llmProvider === "openrouter") {
+      const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+      if (!openrouterApiKey) {
+        return NextResponse.json(
+          { reply: "Missing OPENROUTER_API_KEY" },
+          { status: 500 }
+        );
+      }
+      selectedClient = new OpenAI({
+        apiKey: openrouterApiKey,
+        baseURL: OPENROUTER_BASE_URL,
+      });
+      selectedModel = OPENROUTER_MODEL;
+    } else {
+      const kimiApiKey = process.env.KIMI_API_KEY;
+      if (!kimiApiKey) {
+        return NextResponse.json(
+          { reply: "Missing KIMI_API_KEY" },
+          { status: 500 }
+        );
+      }
+      selectedClient = new OpenAI({
+        apiKey: kimiApiKey,
+        baseURL: KIMI_BASE_URL,
+      });
+      selectedModel = KIMI_MODEL;
     }
 
-    const kimiClient = new OpenAI({
-      apiKey: kimiApiKey,
-      baseURL: KIMI_BASE_URL,
-    });
+    console.log(`[Chat-API] Using LLM provider: ${llmProvider}`);
 
     // 初始化 MCP 客户端并获取工具
     console.log("[Chat-API] Initializing MCP client...");
     await mcpClient.initialize();
     const tools = await mcpClient.getTools();
     console.log("[Chat-API] MCP tools loaded:", tools.length);
+    const toolPrompt =
+      tools.length > 0
+        ? tools
+            .map(
+              (tool) =>
+                `- ${tool.function.name}: ${
+                  tool.function.description || "暂无描述"
+                }`
+            )
+            .join("\n")
+        : "- 暂无可用工具";
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: `
-你是一个智能助手，拥有多种工具能力。
 
-可用工具：
-- echo: 回显文本
-- read_file: 读取项目文件
-- fetch_url: 获取网页内容并转为 markdown
-- brave_search: 使用 Brave 搜索网络（如果配置了 API 密钥）
-- browser_screenshot: 使用真实浏览器截图
-- browser_extract: 使用真实浏览器提取网页内容
-- browser_interact: 与网页进行交互（点击、填表等）
+如果需要搜索，非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚。不要只是了解皮毛，要深入搜索资料去了解
 
-当用户需要获取实时信息、读取文件、访问网页时，请主动使用相应的工具。
-
-回答风格：
 请用朴实、平静、耐心的语言回答我的问题，就像一个有经验的朋友在认真地帮我理解一个话题。语气要温和、鼓励，让人感到你愿意花时间把事情讲清楚。不要使用夸张的形容词和营销式的表达，比如"非常棒"、"超级强大"这类词，而是具体说明实际情况就好。
 
 回答时请关注底层原理和运作机制，不只是停留在表面现象。重点说明"为什么"和"怎么做到的"，而不只是"是什么"。涉及具体机制时，说明内部是如何运作的、各个环节如何衔接、过程中发生了什么变化。
@@ -99,8 +147,7 @@ export async function POST(req: Request) {
 在解释复杂概念时，请从最基础的部分讲起，一步步引导到深层内容。如果某个概念需要先理解一些背景知识或相关话题，可以稍微展开解释一下，帮助建立完整认知框架，确保理解的连贯性。把整个话题拆分成容易消化的小步骤，让人能跟上思路。
 
 请主动预见可能产生歧义或困惑的地方，在讲到这些点时停下来做个说明。比如某个术语有多种含义，或者某个步骤容易被误解，就提前澄清。用具体例子和场景来说明抽象概念，指出新手常见的误区和容易忽略的细节。可以适当使用类比，但要确保类比准确，不要为了简化而丢失关键信息。
-
-默认使用完整句子与成段表述；搜索用英文，回答用中文`,
+`,
       },
       ...conversationHistory.map((msg) => ({
         role: msg.role,
@@ -116,7 +163,7 @@ export async function POST(req: Request) {
       async start(controller) {
         try {
           const currentMessages = [...messages];
-          const maxIterations = 10; // 防止无限循环
+          const maxIterations = 20; // 防止无限循环
           let iteration = 0;
 
           while (iteration < maxIterations) {
@@ -126,13 +173,13 @@ export async function POST(req: Request) {
               currentMessages.length
             );
 
-            const completion = (await kimiClient.chat.completions.create({
-              model: KIMI_MODEL,
+            const completion = (await selectedClient.chat.completions.create({
+              model: selectedModel,
               messages: currentMessages,
               tools: tools.length > 0 ? tools : undefined,
               stream: true,
+              ...providerSpecificParams,
             })) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
-            1;
             let assistantMessage = "";
             const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] =
               [];
