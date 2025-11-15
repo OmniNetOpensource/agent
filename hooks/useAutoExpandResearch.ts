@@ -1,13 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Message } from "@/types/chat";
 
-type AutoExpandResult = {
-  expandedResearch: Set<number>;
-  expandedItems: Set<string>;
-  containerRef: React.RefObject<HTMLDivElement>;
-  setExpandedResearch: React.Dispatch<React.SetStateAction<Set<number>>>;
-  setExpandedItems: React.Dispatch<React.SetStateAction<Set<string>>>;
-};
 
 export function useAutoExpandResearch(
   messages: Message[],
