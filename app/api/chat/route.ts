@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { mcpClient } from "@/lib/mcp-client";
+import { callToolByName, toolSpecs } from "@/lib/tools";
 
 type RequestBody = {
   message: string;
@@ -116,27 +116,18 @@ export async function POST(req: Request) {
 
     console.log(`[Chat-API] Using LLM provider: ${llmProvider}`);
 
-    // 初始化 MCP 客户端并获取工具
-    console.log("[Chat-API] Initializing MCP client...");
-    await mcpClient.initialize();
-    const tools = await mcpClient.getTools();
-    console.log("[Chat-API] MCP tools loaded:", tools.length);
-    const toolPrompt =
-      tools.length > 0
-        ? tools
-            .map(
-              (tool) =>
-                `- ${tool.function.name}: ${
-                  tool.function.description || "暂无描述"
-                }`
-            )
-            .join("\n")
-        : "- 暂无可用工具";
+    const tools = toolSpecs;
+    console.log(
+      "[Chat-API] Tools loaded:",
+      tools.length,
+      tools.map((tool) => tool.function.name).join(", ")
+    );
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: `
+今天的日期是：${new Date().toISOString().slice(0, 10)}。
 
 # 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解完全方位的资料搜寻才能开始回答。
 # 什么时候不需要搜索：已知的知识
@@ -311,8 +302,8 @@ export async function POST(req: Request) {
                 encoder.encode(`data: ${JSON.stringify(toolCallData)}\n\n`)
               );
 
-              // 调用 MCP 工具
-              const result = await mcpClient.callTool(toolName, toolArgs);
+              // 调用工具
+              const result = await callToolByName(toolName, toolArgs);
 
               // 向客户端发送工具结果
               const toolResultData = {

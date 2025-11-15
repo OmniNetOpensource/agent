@@ -9,10 +9,16 @@ Create a `.env.local` file in the root directory with the following variables:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 KIMI_API_KEY=your_kimi_api_key_here
+BRAVE_API_KEY=your_brave_api_key_here   # optional, enables web search
+# Set to "true" to disable a tool without changing code
+MCP_DISABLE_FETCH_URL=false
+MCP_DISABLE_BRAVE_SEARCH=false
 ```
 
 - **GEMINI_API_KEY**: Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 - **KIMI_API_KEY**: Get your API key from [Moonshot AI](https://platform.moonshot.cn/)
+- **BRAVE_API_KEY**: Get your API key from [Brave Search](https://api.search.brave.com/app/dashboard) to enable real-time web search.
+  Tools can be disabled individually via the `MCP_DISABLE_*` flags (set them to `true`).
 
 ### Running the Development Server
 
@@ -34,27 +40,11 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## MCP Server
+## Built-in tools
 
-Start the standalone MCP server with `pnpm mcp`. It launches `mcp/server.mjs`, exposing the `echo` and `read_file` tools over a Stdio transport while keeping file access scoped to the repository root.
-
-### Connecting clients
-
-- **Claude Desktop:** add the following entry to `%APPDATA%/Claude/claude_desktop_config.json` on Windows (adjust the working directory if your copy lives elsewhere):
-
-```json
-{
-  "mcpServers": {
-    "agent-local": {
-      "command": "pnpm",
-      "args": ["mcp"],
-      "workingDirectory": "D:/develop/projects/agent"
-    }
-  }
-}
-```
-
-- **Cursor:** go to Settings → MCP (or Experimental MCP) and register a server that runs `pnpm` with the argument `mcp` while pointing the working directory to `D:/develop/projects/agent`.
+- `fetch_url`: Fetches a URL and strips HTML/JS/CSS to plain text (runs in-process).
+- `brave_search`: Queries Brave Search for up-to-date results when `BRAVE_API_KEY` is configured.
+- Tools are wired directly into the OpenAI tools API; disable any tool by setting `MCP_DISABLE_FETCH_URL=true` or `MCP_DISABLE_BRAVE_SEARCH=true`.
 
 ## API Usage
 
