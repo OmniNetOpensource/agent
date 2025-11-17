@@ -7,23 +7,21 @@ import { ResearchBlock } from "./ResearchBlock";
 type MessageItemProps = {
   message: Message;
   index: number;
-  isLastMessage: boolean;
   isStreaming: boolean;
-  expandedResearch: Set<number>;
-  expandedItems: Set<string>;
-  onToggleResearch: (key: number) => void;
-  onToggleItem: (key: string) => void;
+  onToggleResearchBlock: (messageIndex: number, blockIndex: number) => void;
+  onToggleResearchItem: (
+    messageIndex: number,
+    blockIndex: number,
+    itemIndex: number
+  ) => void;
 };
 
 export function MessageItem({
   message,
   index,
-  isLastMessage,
   isStreaming,
-  expandedResearch,
-  expandedItems,
-  onToggleResearch,
-  onToggleItem,
+  onToggleResearchBlock,
+  onToggleResearchItem,
 }: MessageItemProps) {
   const isUser = message.role === "user";
 
@@ -54,18 +52,17 @@ export function MessageItem({
           {message.blocks.map((block, blockIndex) => {
             const blockKey = `${index}-${blockIndex}`;
             if (block.type === "research") {
-              const researchKey = Number(`${index}${blockIndex}`);
-              const isResearchExpanded = expandedResearch.has(researchKey);
               return (
                 <ResearchBlock
                   key={blockKey}
                   items={block.items}
                   blockIndex={blockIndex}
                   messageIndex={index}
-                  isExpanded={isResearchExpanded}
-                  expandedItems={expandedItems}
-                  onToggleBlock={() => onToggleResearch(researchKey)}
-                  onToggleItem={onToggleItem}
+                  isExpanded={block.isExpanded}
+                  onToggleBlock={() => onToggleResearchBlock(index, blockIndex)}
+                  onToggleItem={(itemIndex) =>
+                    onToggleResearchItem(index, blockIndex, itemIndex)
+                  }
                 />
               );
             }

@@ -1,20 +1,15 @@
 import { Card } from "@/components/ui/Card";
 import { cx } from "@/utils/cx";
+import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { ResearchItem } from "./ResearchItem";
-
-type ResearchItemData =
-  | { kind: "thinking"; text: string }
-  | { kind: "tool_call"; tool: string; args: Record<string, unknown> }
-  | { kind: "tool_result"; tool: string; result: string };
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
   blockIndex: number;
   messageIndex: number;
   isExpanded: boolean;
-  expandedItems: Set<string>;
   onToggleBlock: () => void;
-  onToggleItem: (key: string) => void;
+  onToggleItem: (itemIndex: number) => void;
 };
 
 export function ResearchBlock({
@@ -22,7 +17,6 @@ export function ResearchBlock({
   blockIndex,
   messageIndex,
   isExpanded,
-  expandedItems,
   onToggleBlock,
   onToggleItem,
 }: ResearchBlockProps) {
@@ -56,15 +50,14 @@ export function ResearchBlock({
         >
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
-            const isItemExpanded = expandedItems.has(itemKey);
 
             return (
               <ResearchItem
                 key={itemKey}
                 item={item}
                 itemKey={itemKey}
-                isExpanded={isItemExpanded}
-                onToggle={() => onToggleItem(itemKey)}
+                isExpanded={item.isExpanded}
+                onToggle={() => onToggleItem(itemIndex)}
               />
             );
           })}

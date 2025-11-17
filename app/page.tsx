@@ -14,6 +14,8 @@ export default function Home() {
     handleSubmit,
     handleKeyDown,
     clearConversation,
+    toggleResearchBlock,
+    toggleResearchItem,
   } = useChat();
 
   const isInitial = messages.length === 0;
@@ -36,7 +38,12 @@ export default function Home() {
         <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 py-6 md:px-8">
           <main className="flex flex-1 flex-col min-h-0">
             {!isInitial && (
-              <MessageList messages={messages} pending={pending} />
+              <MessageList
+                messages={messages}
+                pending={pending}
+                onToggleResearchBlock={toggleResearchBlock}
+                onToggleResearchItem={toggleResearchItem}
+              />
             )}
             <Composer
               input={input}

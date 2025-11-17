@@ -20,6 +20,16 @@ export function useChat() {
           return next.length - 1;
         };
 
+        const collapseLatestResearchBlock = (blocks: ContentBlock[]) => {
+          for (let i = blocks.length - 1; i >= 0; i--) {
+            const block = blocks[i];
+            if (block.type === "research" && block.isExpanded) {
+              blocks[i] = { ...block, isExpanded: false };
+              break;
+            }
+          }
+        };
+
         if ("kind" in addition) {
           const assistantIndex = ensureAssistantIndex();
           const assistantMessage = next[assistantIndex];
@@ -27,7 +37,13 @@ export function useChat() {
           const lastBlock = blocks[blocks.length - 1];
 
           if (!lastBlock || lastBlock.type !== "research") {
-            blocks.push({ type: "research", items: [addition] });
+            collapseLatestResearchBlock(blocks);
+            const newItem = { ...addition, isExpanded: true };
+            blocks.push({
+              type: "research",
+              items: [newItem],
+              isExpanded: true,
+            });
           } else {
             const items = [...lastBlock.items];
             const lastItem = items[items.length - 1];
@@ -38,14 +54,24 @@ export function useChat() {
               addition.kind === "thinking"
             ) {
               items[items.length - 1] = {
-                kind: "thinking",
+                ...lastItem,
                 text: lastItem.text + addition.text,
               };
             } else {
-              items.push(addition);
+              if (lastItem) {
+                items[items.length - 1] = {
+                  ...lastItem,
+                  isExpanded: false,
+                };
+              }
+              items.push({ ...addition, isExpanded: true });
             }
 
-            blocks[blocks.length - 1] = { ...lastBlock, items };
+            blocks[blocks.length - 1] = {
+              ...lastBlock,
+              items,
+              isExpanded: true,
+            };
           }
 
           next[assistantIndex] = { ...assistantMessage, blocks };
@@ -55,7 +81,22 @@ export function useChat() {
         if (addition.type === "research") {
           const assistantIndex = ensureAssistantIndex();
           const assistantMessage = next[assistantIndex];
-          const blocks = [...assistantMessage.blocks, addition];
+          const blocks = [...assistantMessage.blocks];
+
+          collapseLatestResearchBlock(blocks);
+
+          const normalizedItems = addition.items.map((item, index) => ({
+            ...item,
+            isExpanded:
+              addition.items.length > 0 &&
+              index === addition.items.length - 1,
+          }));
+
+          blocks.push({
+            type: "research",
+            items: normalizedItems,
+            isExpanded: true,
+          });
 
           next[assistantIndex] = { ...assistantMessage, blocks };
           return next;
@@ -81,6 +122,60 @@ export function useChat() {
         }
 
         next[assistantIndex] = { ...assistantMessage, blocks };
+        return next;
+      });
+    },
+    []
+  );
+
+  const toggleResearchBlock = useCallback(
+    (messageIndex: number, blockIndex: number) => {
+      setMessages((prev) => {
+        if (messageIndex < 0 || messageIndex >= prev.length) {
+          return prev;
+        }
+        const next = [...prev];
+        const message = next[messageIndex];
+        if (!message) {
+          return prev;
+        }
+        const blocks = [...message.blocks];
+        const block = blocks[blockIndex];
+        if (!block || block.type !== "research") {
+          return prev;
+        }
+        blocks[blockIndex] = { ...block, isExpanded: !block.isExpanded };
+        next[messageIndex] = { ...message, blocks };
+        return next;
+      });
+    },
+    []
+  );
+
+  const toggleResearchItem = useCallback(
+    (messageIndex: number, blockIndex: number, itemIndex: number) => {
+      setMessages((prev) => {
+        if (messageIndex < 0 || messageIndex >= prev.length) {
+          return prev;
+        }
+        const next = [...prev];
+        const message = next[messageIndex];
+        if (!message) {
+          return prev;
+        }
+        const block = message.blocks[blockIndex];
+        if (!block || block.type !== "research") {
+          return prev;
+        }
+        const items = [...block.items];
+        const item = items[itemIndex];
+        if (!item) {
+          return prev;
+        }
+        items[itemIndex] = { ...item, isExpanded: !item.isExpanded };
+        const blocks = [...message.blocks];
+        blocks[blockIndex] = { ...block, items };
+        next[messageIndex] = { ...message, blocks };
         return next;
       });
     },
@@ -161,6 +256,7 @@ export function useChat() {
                         typeof data.content === "string"
                           ? data.content
                           : String(data.content ?? ""),
+                      isExpanded: false,
                     });
                   } else if (data.type === "tool_call") {
                     appendToAssistant({
@@ -171,6 +267,7 @@ export function useChat() {
                         (data.args && typeof data.args === "object"
                           ? data.args
                           : {}) as Record<string, unknown>,
+                      isExpanded: false,
                     });
                   } else if (data.type === "tool_result") {
                     let resultText: string;
@@ -188,6 +285,7 @@ export function useChat() {
                       tool:
                         typeof data.tool === "string" ? data.tool : "未知工具",
                       result: resultText,
+                      isExpanded: false,
                     });
                   } else if (data.type === "content") {
                     const addition =
@@ -255,5 +353,7 @@ export function useChat() {
     handleSubmit,
     handleKeyDown,
     clearConversation,
+    toggleResearchBlock,
+    toggleResearchItem,
   };
 }

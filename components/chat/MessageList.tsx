@@ -1,59 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Message } from "@/types/chat";
-import { useAutoExpandResearch } from "@/hooks/useAutoExpandResearch";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
 
 type MessageListProps = {
   messages: Message[];
   pending: boolean;
+  onToggleResearchBlock: (messageIndex: number, blockIndex: number) => void;
+  onToggleResearchItem: (
+    messageIndex: number,
+    blockIndex: number,
+    itemIndex: number
+  ) => void;
 };
 
-export function MessageList({ messages, pending }: MessageListProps) {
-  const [expandedResearch, setExpandedResearch] = useState<Set<number>>(
-    () => new Set()
-  );
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(
-    () => new Set()
-  );
+export function MessageList({
+  messages,
+  pending,
+  onToggleResearchBlock,
+  onToggleResearchItem,
+}: MessageListProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const containerRef = useAutoExpandResearch(
-    messages,
-    expandedResearch,
-    expandedItems,
-    setExpandedResearch,
-    setExpandedItems
-  );
+  const lastResearchSignature = useMemo<string | null>(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i];
+      if (message.role !== "assistant") {
+        continue;
+      }
+      for (let blockIndex = message.blocks.length - 1; blockIndex >= 0; blockIndex--) {
+        const block = message.blocks[blockIndex];
+        if (block.type === "research") {
+          return `${i}-${blockIndex}-${block.items.length}`;
+        }
+      }
+    }
+    return null;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!lastResearchSignature) {
+      return;
+    }
+    const el = containerRef.current;
+    if (el) {
+      el.scrollTo({
+        top: el.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [lastResearchSignature]);
 
   if (messages.length === 0) {
     return null;
   }
-
-  const toggleResearch = (key: number) => {
-    setExpandedResearch((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
-  const toggleItem = (key: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
 
   return (
     <div
@@ -71,12 +73,9 @@ export function MessageList({ messages, pending }: MessageListProps) {
             key={`${message.role}-${index}`}
             message={message}
             index={index}
-            isLastMessage={isLastMessage}
             isStreaming={isStreaming}
-            expandedResearch={expandedResearch}
-            expandedItems={expandedItems}
-            onToggleResearch={toggleResearch}
-            onToggleItem={toggleItem}
+            onToggleResearchBlock={onToggleResearchBlock}
+            onToggleResearchItem={onToggleResearchItem}
           />
         );
       })}

@@ -1,12 +1,8 @@
 import { type ReactNode } from "react";
 import Markdown from "@/components/Markdown";
 import { cx } from "@/utils/cx";
-import { prettyPrintArgs, truncateToolResult } from "@/utils/chatFormat";
-
-type ResearchItemData =
-  | { kind: "thinking"; text: string }
-  | { kind: "tool_call"; tool: string; args: Record<string, unknown> }
-  | { kind: "tool_result"; tool: string; result: string };
+import { prettyPrintArgs } from "@/utils/chatFormat";
+import type { ResearchItem as ResearchItemData } from "@/types/chat";
 
 type ResearchItemProps = {
   item: ResearchItemData;
@@ -46,20 +42,11 @@ export function ResearchItem({
     title = `Tool Result · ${item.tool}`;
     containerClasses =
       "rounded-xl border border-(--border-subtle) bg-(--surface-card) px-4 py-3 text-xs text-foreground";
-    const truncated = truncateToolResult(item.result);
-    const isTruncated = truncated !== item.result;
 
     contentBody = (
-      <>
-        <pre className="mt-2 whitespace-pre-wrap font-mono text-[0.75rem] text-foreground">
-          {truncated}
-        </pre>
-        {isTruncated && (
-          <div className="mt-2 text-[0.6rem] uppercase tracking-[0.2em] text-(--text-tertiary)">
-            已截断
-          </div>
-        )}
-      </>
+      <pre className="mt-2 whitespace-pre-wrap font-mono text-[0.75rem] text-foreground">
+        {item.result}
+      </pre>
     );
   }
 
