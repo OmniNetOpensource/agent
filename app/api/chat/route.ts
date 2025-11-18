@@ -229,7 +229,7 @@ export async function POST(req: Request) {
               const toolResultData = {
                 type: "tool_result",
                 tool: toolName,
-                result: result.substring(0, 500), // 限制发送到客户端的长度
+                result: result,
               };
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify(toolResultData)}\n\n`)
