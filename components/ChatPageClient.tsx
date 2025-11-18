@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import { Composer } from "@/components/chat/Composer";
 import { MessageList } from "@/components/chat/MessageList";
-import { useChatStore } from "@/hooks/useChatStore";
+import { useChatStore } from "@/store/useChatStore";
 
 export default function ChatPageClient() {
   const messageCount = useChatStore((state) => state.messages.length);

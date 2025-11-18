@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef } from "react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
 import { useChatMessages } from "@/hooks/useChat";
@@ -10,40 +9,6 @@ export function MessageList() {
     toggleResearchBlock,
     toggleResearchItem,
   } = useChatMessages();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const lastResearchSignature = useMemo<string | null>(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const message = messages[i];
-      if (message.role !== "assistant") {
-        continue;
-      }
-      for (
-        let blockIndex = message.blocks.length - 1;
-        blockIndex >= 0;
-        blockIndex--
-      ) {
-        const block = message.blocks[blockIndex];
-        if (block.type === "research") {
-          return `${i}-${blockIndex}-${block.items.length}`;
-        }
-      }
-    }
-    return null;
-  }, [messages]);
-
-  useEffect(() => {
-    if (!lastResearchSignature) {
-      return;
-    }
-    const el = containerRef.current;
-    if (el) {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [lastResearchSignature]);
 
   if (messages.length === 0) {
     return null;
@@ -53,7 +18,6 @@ export function MessageList() {
     <div
       role="log"
       aria-live="polite"
-      ref={containerRef}
       className="h-full w-full overflow-y-auto py-6 pr-2 pb-32"
     >
       <div className="mx-auto flex w-full max-w-3xl flex-col space-y-4">
