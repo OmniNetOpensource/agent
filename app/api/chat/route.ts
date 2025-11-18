@@ -10,28 +10,9 @@ type RequestBody = {
   }>;
 };
 
-// 扩展 OpenAI 类型以支持 Gemini 特定参数
-type GeminiChatCompletionCreateParams = OpenAI.ChatCompletionCreateParams & {
-  extra_body?: {
-    google?: {
-      thinking_config?: {
-        thinking_budget?: number;
-        include_thoughts?: boolean;
-      };
-    };
-  };
-};
-
-const GEMINI_BASE_URL =
-  "https://generativelanguage.googleapis.com/v1beta/openai/";
-const GEMINI_MODEL = "gemini-2.5-flash";
-
 // Kimi K2 Thinking 配置
 const KIMI_BASE_URL = "https://api.moonshot.cn/v1";
 const KIMI_MODEL = "kimi-k2-thinking-turbo";
-
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-const OPENROUTER_MODEL = "openrouter/polaris-alpha";
 
 const encoder = new TextEncoder();
 
@@ -44,83 +25,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
-    const requestedProvider =
-      process.env.LLM_PROVIDER?.trim().toLowerCase() || "kimi";
-    const supportedProviders = ["kimi", "gemini", "openrouter"];
-    const llmProvider = supportedProviders.includes(requestedProvider)
-      ? requestedProvider
-      : "kimi";
-
-    if (
-      requestedProvider !== llmProvider &&
-      process.env.LLM_PROVIDER &&
-      process.env.LLM_PROVIDER.trim().length > 0
-    ) {
-      console.warn(
-        `[Chat-API] Unsupported LLM_PROVIDER "${process.env.LLM_PROVIDER}", falling back to Kimi`
+    const kimiApiKey = process.env.KIMI_API_KEY;
+    if (!kimiApiKey) {
+      return NextResponse.json(
+        { reply: "Missing KIMI_API_KEY" },
+        { status: 500 }
       );
     }
 
-    let selectedClient: OpenAI;
-    let selectedModel = KIMI_MODEL;
-    const providerSpecificParams: Partial<GeminiChatCompletionCreateParams> =
-      {};
+    const kimiClient = new OpenAI({
+      apiKey: kimiApiKey,
+      baseURL: KIMI_BASE_URL,
+    });
 
-    if (llmProvider === "gemini") {
-      const geminiApiKey = process.env.GEMINI_API_KEY;
-      if (!geminiApiKey) {
-        return NextResponse.json(
-          { reply: "Missing GEMINI_API_KEY" },
-          { status: 500 }
-        );
-      }
-      selectedClient = new OpenAI({
-        apiKey: geminiApiKey,
-        baseURL: GEMINI_BASE_URL,
-      });
-      selectedModel = GEMINI_MODEL;
-      providerSpecificParams.extra_body = {
-        google: {
-          thinking_config: {
-            include_thoughts: true,
-          },
-        },
-      };
-    } else if (llmProvider === "openrouter") {
-      const openrouterApiKey = process.env.OPENROUTER_API_KEY;
-      if (!openrouterApiKey) {
-        return NextResponse.json(
-          { reply: "Missing OPENROUTER_API_KEY" },
-          { status: 500 }
-        );
-      }
-      selectedClient = new OpenAI({
-        apiKey: openrouterApiKey,
-        baseURL: OPENROUTER_BASE_URL,
-      });
-      selectedModel = OPENROUTER_MODEL;
-    } else {
-      const kimiApiKey = process.env.KIMI_API_KEY;
-      if (!kimiApiKey) {
-        return NextResponse.json(
-          { reply: "Missing KIMI_API_KEY" },
-          { status: 500 }
-        );
-      }
-      selectedClient = new OpenAI({
-        apiKey: kimiApiKey,
-        baseURL: KIMI_BASE_URL,
-      });
-      selectedModel = KIMI_MODEL;
-    }
-
-    console.log(`[Chat-API] Using LLM provider: ${llmProvider}`);
+    console.log(`[Chat-API] Using Kimi model: ${KIMI_MODEL}`);
 
     const tools = toolSpecs;
     console.log(
       "[Chat-API] Tools loaded:",
       tools.length,
-      tools.map((tool) => (tool as { type: "function"; function: { name: string } }).function.name).join(", ")
+      tools
+        .map(
+          (tool) =>
+            (tool as { type: "function"; function: { name: string } }).function
+              .name
+        )
+        .join(", ")
     );
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -164,12 +94,11 @@ export async function POST(req: Request) {
               currentMessages.length
             );
 
-            const completion = (await selectedClient.chat.completions.create({
-              model: selectedModel,
+            const completion = (await kimiClient.chat.completions.create({
+              model: KIMI_MODEL,
               messages: currentMessages,
               tools: tools.length > 0 ? tools : undefined,
               stream: true,
-              ...providerSpecificParams,
             })) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
             let assistantMessage = "";
             const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] =

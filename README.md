@@ -7,7 +7,6 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 Create a `.env.local` file in the root directory with the following variables:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
 KIMI_API_KEY=your_kimi_api_key_here
 BRAVE_API_KEY=your_brave_api_key_here   # optional, enables web search
 # Set to "true" to disable a tool without changing code
@@ -15,7 +14,6 @@ MCP_DISABLE_FETCH_URL=false
 MCP_DISABLE_BRAVE_SEARCH=false
 ```
 
-- **GEMINI_API_KEY**: Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 - **KIMI_API_KEY**: Get your API key from [Moonshot AI](https://platform.moonshot.cn/)
 - **BRAVE_API_KEY**: Get your API key from [Brave Search](https://api.search.brave.com/app/dashboard) to enable real-time web search.
   Tools can be disabled individually via the `MCP_DISABLE_*` flags (set them to `true`).
@@ -72,9 +70,8 @@ const response = await fetch('/api/chat', {
 
 **Response**: Streaming text response
 
-**Available Models**:
-- **Gemini**: `gemini-2.5-flash` (当前使用)
-- **Kimi K2**: `moonshot-v1-8k` (已配置，可在代码中切换)
+**Available Model**:
+- **Kimi K2 Thinking**: `kimi-k2-thinking-turbo` (hard-coded in the chat API)
 
 ## Learn More
 
