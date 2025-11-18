@@ -22,11 +22,11 @@ export function Composer({
 }: ComposerProps) {
   const sendDisabled = pending || input.trim().length === 0;
   const formClassName = isInitial
-    ? "flex flex-1 items-center justify-center py-12"
-    : "mt-6 border-t border-(--border-subtle) pt-6";
+    ? "flex h-full items-center justify-center py-12"
+    : "absolute inset-x-0 bottom-0 z-20 ";
   const containerClassName = isInitial
     ? "w-full max-w-3xl animate-enter-down"
-    : "animate-enter-up";
+    : "w-full max-w-3xl mx-auto px-4 py-3 md:px-8 animate-enter-up";
 
   return (
     <form

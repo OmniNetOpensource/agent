@@ -62,27 +62,29 @@ export function MessageList({
       role="log"
       aria-live="polite"
       ref={containerRef}
-      className="flex-1 space-y-4 overflow-y-auto py-6 pr-2"
+      className="h-full w-full overflow-y-auto py-6 pr-2 pb-32"
     >
-      {messages.map((message, index) => {
-        const isLastMessage = index === messages.length - 1;
-        const isStreaming = isLastMessage && pending;
+      <div className="mx-auto flex w-full max-w-3xl flex-col space-y-4">
+        {messages.map((message, index) => {
+          const isLastMessage = index === messages.length - 1;
+          const isStreaming = isLastMessage && pending;
 
-        return (
-          <MessageItem
-            key={`${message.role}-${index}`}
-            message={message}
-            index={index}
-            isStreaming={isStreaming}
-            onToggleResearchBlock={onToggleResearchBlock}
-            onToggleResearchItem={onToggleResearchItem}
-          />
-        );
-      })}
+          return (
+            <MessageItem
+              key={`${message.role}-${index}`}
+              message={message}
+              index={index}
+              isStreaming={isStreaming}
+              onToggleResearchBlock={onToggleResearchBlock}
+              onToggleResearchItem={onToggleResearchItem}
+            />
+          );
+        })}
 
-      {pending && messages[messages.length - 1]?.role === "user" && (
-        <PendingIndicator />
-      )}
+        {pending && messages[messages.length - 1]?.role === "user" && (
+          <PendingIndicator />
+        )}
+      </div>
     </div>
   );
 }
