@@ -9,6 +9,8 @@ export type ChatState = {
 
 export type ChatActions = {
   setInput: (value: string) => void;
+  setMessages: (messages: Message[]) => void;
+  resetConversation: () => void;
   clearConversation: () => void;
   appendToAssistant: (addition: ContentBlock | ResearchItem) => void;
   toggleResearchBlock: (messageIndex: number, blockIndex: number) => void;
@@ -25,7 +27,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   input: "",
   pending: false,
   setInput: (value) => set({ input: value }),
-  clearConversation: () => set({ messages: [], input: "" }),
+  setMessages: (messages) => set({ messages }),
+  resetConversation: () => set({ messages: [], input: "", pending: false }),
+  clearConversation: () => {
+    const { resetConversation } = get();
+    resetConversation();
+  },
   appendToAssistant: (addition) =>
     set((state) => {
       const next = [...state.messages];
