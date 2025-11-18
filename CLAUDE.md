@@ -66,6 +66,7 @@ Modular tool system in [lib/tools.ts](lib/tools.ts):
   - `brave_search`: Web search with freshness filters (pd/pw/pm/py)
 
 To add a new tool:
+
 1. Add tool spec to `toolMap` in [lib/tools.ts](lib/tools.ts)
 2. Implement handler function with `ToolHandler` type
 3. Add availability logic (check for required env vars)
@@ -79,6 +80,7 @@ Messages use a nested block structure ([types/chat.ts](types/chat.ts)):
 - **ResearchItem**: Can be `thinking`, `tool_call`, or `tool_result`, each with an `isExpanded` state
 
 This structure allows the UI to:
+
 - Separate assistant's response text from research process
 - Collapse/expand thinking and tool execution details
 - Auto-collapse previous research blocks when new ones arrive
@@ -113,6 +115,7 @@ The UI is organized into:
 ### Conversation History
 
 The chat API maintains conversation context by:
+
 1. Frontend sends `conversationHistory` array with each request
 2. Backend prepends a system prompt with today's date and search guidelines (in Chinese)
 3. Messages are accumulated in [useChat.ts](hooks/useChat.ts) `messages` state
@@ -121,6 +124,7 @@ The chat API maintains conversation context by:
 ### Tool Execution Loop
 
 In [app/api/chat/route.ts](app/api/chat/route.ts):
+
 1. Send messages to LLM with tool specs
 2. Stream response chunks
 3. If `finish_reason === "tool_calls"`:
@@ -133,7 +137,12 @@ In [app/api/chat/route.ts](app/api/chat/route.ts):
 ### Research Block UI
 
 Research blocks auto-manage expansion state:
+
 - Latest research block is always expanded
 - Previous research blocks auto-collapse when new ones arrive
 - Within a block, only the latest item is expanded
 - Users can manually toggle any block or item
+
+# reminder
+
+- 运行 `pnpm check` 检查报错

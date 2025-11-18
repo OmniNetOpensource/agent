@@ -35,7 +35,7 @@ export default function Home() {
         onClear={handleClearConversation}
       />
       <div className="flex-1 overflow-hidden">
-        <div className="flex h-full w-full flex-col px-4 py-6 md:px-8">
+        <div className="flex h-full w-full flex-col ">
           <main className="relative flex-1 min-h-0">
             {!isInitial && (
               <MessageList
