@@ -21,18 +21,18 @@ export function ResearchItem({
 
   let title = "Thinking";
   let containerClasses =
-    "rounded-xl bg-(--surface-overlay) px-4 py-3 text-sm text-(--text-secondary)";
+    "bg-(--surface-overlay) px-4 py-3 text-sm text-(--text-secondary)";
   let contentBody: ReactNode = null;
 
   if (item.kind === "thinking") {
     title = "Thinking";
     containerClasses =
-      "rounded-xl bg-(--surface-overlay) px-4 py-3 text-sm text-(--text-secondary)";
+      "bg-(--surface-overlay) px-4 py-3 text-sm text-(--text-secondary)";
     contentBody = <Markdown content={item.text} />;
   } else if (item.kind === "tool_call") {
     title = `Tool Call · ${item.tool}`;
     containerClasses =
-      "rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-overlay) px-4 py-3 text-xs text-(--text-secondary)";
+      "border border-dashed border-(--border-subtle) bg-(--surface-overlay) px-4 py-3 text-xs text-(--text-secondary)";
     contentBody = (
       <pre className="mt-2 overflow-x-auto font-mono text-[0.75rem] text-(--text-secondary)">
         {prettyPrintArgs(item.args)}
@@ -41,7 +41,7 @@ export function ResearchItem({
   } else if (item.kind === "tool_result") {
     title = `Tool Result · ${item.tool}`;
     containerClasses =
-      "rounded-xl border border-(--border-subtle) bg-(--surface-card) px-4 py-3 text-xs text-foreground";
+      "border border-(--border-subtle) bg-(--surface-card) px-4 py-3 text-xs text-foreground";
 
     contentBody = (
       <pre className="mt-2 whitespace-pre-wrap font-mono text-[0.75rem] text-foreground">
@@ -55,7 +55,7 @@ export function ResearchItem({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center gap-3 rounded-lg border border-transparent bg-(--surface-muted) px-3 py-2 text-xs font-semibold text-(--text-secondary) transition-colors hover:border-(--border-hover)"
+        className="flex w-full items-center gap-3 border border-transparent bg-(--surface-muted) px-3 py-2 text-xs font-semibold text-(--text-secondary) transition-colors hover:border-(--border-hover)"
         aria-expanded={isExpanded}
         aria-controls={contentId}
       >

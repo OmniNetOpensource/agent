@@ -1,5 +1,4 @@
 import Markdown from "@/components/Markdown";
-import { Card } from "@/components/ui/Card";
 import { Message } from "@/types/chat";
 import { cx } from "@/utils/cx";
 import { ResearchBlock } from "./ResearchBlock";
@@ -26,13 +25,12 @@ export function MessageItem({
   const isUser = message.role === "user";
 
   return (
-    <Card
+    <div
       key={`${message.role}-${index}`}
       className={cx(
+        "rounded-2xl border border-(--border-subtle) bg-(--surface-card) shadow-sm p-6",
         "max-w-[720px] space-y-3",
-        isUser
-          ? "ml-auto bg-(--surface-user) shadow-none"
-          : "mr-auto shadow-lg"
+        isUser ? "ml-auto bg-(--surface-user) shadow-none" : "mr-auto shadow-lg"
       )}
     >
       <div className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-(--text-tertiary)">
@@ -48,7 +46,7 @@ export function MessageItem({
           />
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col space-y-4">
           {message.blocks.map((block, blockIndex) => {
             const blockKey = `${index}-${blockIndex}`;
             if (block.type === "research") {
@@ -81,6 +79,6 @@ export function MessageItem({
           })}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

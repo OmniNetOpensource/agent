@@ -1,9 +1,7 @@
-import { Card } from "@/components/ui/Card";
-
 export function PendingIndicator() {
   return (
     <div className="flex justify-start">
-      <Card padding="sm" className="flex items-center gap-3 shadow-none">
+      <div className="rounded-2xl border border-(--border-subtle) bg-(--surface-card) shadow-sm p-4 flex items-center gap-3 shadow-none">
         <span className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-(--text-tertiary)">
           AI 助手
         </span>
@@ -16,7 +14,7 @@ export function PendingIndicator() {
             />
           ))}
         </span>
-      </Card>
+      </div>
     </div>
   );
 }
