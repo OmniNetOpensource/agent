@@ -1,23 +1,14 @@
-import { FormEvent, KeyboardEvent, Dispatch, SetStateAction } from "react";
 import { Loader2, Send } from "lucide-react";
+import { useChatComposer } from "@/hooks/useChat";
 
 type ComposerProps = {
-  input: string;
-  setInput: Dispatch<SetStateAction<string>>;
-  pending: boolean;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
-  onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   isInitial: boolean;
 };
 
-export function Composer({
-  input,
-  setInput,
-  pending,
-  onSubmit,
-  onKeyDown,
-  isInitial,
-}: ComposerProps) {
+export function Composer({ isInitial }: ComposerProps) {
+  const { input, pending, setInput, handleSubmit, handleKeyDown } =
+    useChatComposer();
+
   const sendDisabled = pending || input.trim().length === 0;
   const formClassName = isInitial
     ? "flex h-full items-center justify-center py-12"
@@ -29,7 +20,7 @@ export function Composer({
   return (
     <form
       key={isInitial ? "form-initial" : "form-bottom"}
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       className={formClassName}
     >
       <div className={containerClassName}>
@@ -39,7 +30,7 @@ export function Composer({
             name="message"
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            onKeyDown={onKeyDown}
+            onKeyDown={handleKeyDown}
             rows={2}
             placeholder="输入您的消息..."
             className="w-[90%] min-h-18 resize-none rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-4 text-sm text-foreground placeholder:text-(--text-tertiary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:border-neutral-400 transition-shadow"

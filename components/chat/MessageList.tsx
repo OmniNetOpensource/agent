@@ -1,25 +1,15 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Message } from "@/types/chat";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
+import { useChatMessages } from "@/hooks/useChat";
 
-type MessageListProps = {
-  messages: Message[];
-  pending: boolean;
-  onToggleResearchBlock: (messageIndex: number, blockIndex: number) => void;
-  onToggleResearchItem: (
-    messageIndex: number,
-    blockIndex: number,
-    itemIndex: number
-  ) => void;
-};
-
-export function MessageList({
-  messages,
-  pending,
-  onToggleResearchBlock,
-  onToggleResearchItem,
-}: MessageListProps) {
+export function MessageList() {
+  const {
+    messages,
+    pending,
+    toggleResearchBlock,
+    toggleResearchItem,
+  } = useChatMessages();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const lastResearchSignature = useMemo<string | null>(() => {
@@ -77,8 +67,8 @@ export function MessageList({
               message={message}
               index={index}
               isStreaming={isStreaming}
-              onToggleResearchBlock={onToggleResearchBlock}
-              onToggleResearchItem={onToggleResearchItem}
+              onToggleResearchBlock={toggleResearchBlock}
+              onToggleResearchItem={toggleResearchItem}
             />
           );
         })}

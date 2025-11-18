@@ -147,7 +147,7 @@ const braveSearch: ToolHandler = async (args) => {
   try {
     const params = new URLSearchParams({
       q: query,
-      count: "10",
+      count: "20",
     });
 
     if (freshness) {
@@ -194,16 +194,18 @@ const braveSearch: ToolHandler = async (args) => {
 
     if (data.news?.results && data.news.results.length > 0) {
       resultText += "\nNews Results:\n\n";
-      data.news.results.slice(0, 3).forEach(
-        (
-          result: { title: string; source?: string; description?: string },
-          index: number
-        ) => {
-          resultText += `${index + 1}. ${result.title}\n`;
-          resultText += `   Source: ${result.source || "Unknown"}\n`;
-          resultText += `   ${result.description || ""}\n\n`;
-        }
-      );
+      data.news.results
+        .slice(0, 3)
+        .forEach(
+          (
+            result: { title: string; source?: string; description?: string },
+            index: number
+          ) => {
+            resultText += `${index + 1}. ${result.title}\n`;
+            resultText += `   Source: ${result.source || "Unknown"}\n`;
+            resultText += `   ${result.description || ""}\n\n`;
+          }
+        );
     }
 
     if (!data.web?.results || data.web.results.length === 0) {
@@ -295,8 +297,8 @@ const toolMap: Record<
     unavailableReason: isDisabled("brave_search")
       ? "disabled via MCP_DISABLE_BRAVE_SEARCH"
       : process.env.BRAVE_API_KEY
-        ? undefined
-        : "missing BRAVE_API_KEY",
+      ? undefined
+      : "missing BRAVE_API_KEY",
   },
 };
 

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Markdown from "@/components/Markdown";
 import { Message } from "@/types/chat";
 import { cx } from "@/utils/cx";
@@ -15,7 +16,7 @@ type MessageItemProps = {
   ) => void;
 };
 
-export function MessageItem({
+export const MessageItem = memo(function MessageItem({
   message,
   index,
   isStreaming,
@@ -29,8 +30,10 @@ export function MessageItem({
       key={`${message.role}-${index}`}
       className={cx(
         "rounded-2xl border border-(--border-subtle) bg-(--surface-card) shadow-sm p-6",
-        "max-w-[720px] space-y-3",
-        isUser ? "ml-auto bg-(--surface-user) shadow-none" : "mr-auto shadow-lg"
+        "space-y-3",
+        isUser
+          ? "ml-auto bg-(--surface-user) shadow-none max-w-[720px]"
+          : "mr-auto shadow-lg w-full"
       )}
     >
       <div className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-(--text-tertiary)">
@@ -81,4 +84,4 @@ export function MessageItem({
       )}
     </div>
   );
-}
+});

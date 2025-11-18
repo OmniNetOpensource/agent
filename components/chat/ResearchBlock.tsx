@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { ResearchItem } from "./ResearchItem";
 import { cx } from "@/utils/cx";
@@ -11,7 +12,7 @@ type ResearchBlockProps = {
   onToggleItem: (itemIndex: number) => void;
 };
 
-export function ResearchBlock({
+export const ResearchBlock = memo(function ResearchBlock({
   items,
   blockIndex,
   messageIndex,
@@ -59,4 +60,4 @@ export function ResearchBlock({
       )}
     </div>
   );
-}
+});

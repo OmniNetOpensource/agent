@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Markdown from "@/components/Markdown";
 import { cx } from "@/utils/cx";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
@@ -9,7 +10,7 @@ type ResearchItemProps = {
   onToggle: () => void;
 };
 
-export function ResearchItem({
+export const ResearchItem = memo(function ResearchItem({
   item,
   itemKey,
   isExpanded,
@@ -73,4 +74,4 @@ export function ResearchItem({
       </div>
     </div>
   );
-}
+});
