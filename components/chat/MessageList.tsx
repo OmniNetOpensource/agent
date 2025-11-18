@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useMemo, useRef } from "react";
 import { Message } from "@/types/chat";
 import { MessageItem } from "./MessageItem";
@@ -30,7 +28,11 @@ export function MessageList({
       if (message.role !== "assistant") {
         continue;
       }
-      for (let blockIndex = message.blocks.length - 1; blockIndex >= 0; blockIndex--) {
+      for (
+        let blockIndex = message.blocks.length - 1;
+        blockIndex >= 0;
+        blockIndex--
+      ) {
         const block = message.blocks[blockIndex];
         if (block.type === "research") {
           return `${i}-${blockIndex}-${block.items.length}`;

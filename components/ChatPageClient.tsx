@@ -1,0 +1,61 @@
+"use client";
+
+import Sidebar from "@/components/Sidebar";
+import { Composer } from "@/components/chat/Composer";
+import { MessageList } from "@/components/chat/MessageList";
+import { useChat } from "@/hooks/useChat";
+
+export default function ChatPageClient() {
+  const {
+    messages,
+    input,
+    pending,
+    setInput,
+    handleSubmit,
+    handleKeyDown,
+    clearConversation,
+    toggleResearchBlock,
+    toggleResearchItem,
+  } = useChat();
+
+  const isInitial = messages.length === 0;
+  const canClearConversation = !pending && !isInitial;
+
+  const handleClearConversation = () => {
+    if (!canClearConversation) {
+      return;
+    }
+    clearConversation();
+  };
+
+  return (
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar
+        canClearConversation={canClearConversation}
+        onClear={handleClearConversation}
+      />
+      <div className="flex-1 overflow-hidden">
+        <div className="flex h-full w-full flex-col ">
+          <main className="relative flex-1 min-h-0">
+            {!isInitial && (
+              <MessageList
+                messages={messages}
+                pending={pending}
+                onToggleResearchBlock={toggleResearchBlock}
+                onToggleResearchItem={toggleResearchItem}
+              />
+            )}
+            <Composer
+              input={input}
+              setInput={setInput}
+              pending={pending}
+              onSubmit={handleSubmit}
+              onKeyDown={handleKeyDown}
+              isInitial={isInitial}
+            />
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,5 +1,3 @@
-"use client";
-
 import { FormEvent, KeyboardEvent, Dispatch, SetStateAction } from "react";
 import { Loader2, Send } from "lucide-react";
 
