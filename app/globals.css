@@ -101,9 +101,15 @@ body {
   animation: pageLoad 0.5s var(--transition-ease) both;
 }
 
-/* 全局元素过渡效果 */
-* {
-  transition-property: color, background-color, border-color, opacity, transform;
+/* Interactive elements transition */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+.clickable {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
   transition-duration: 0.2s;
   transition-timing-function: var(--transition-smooth);
 }
