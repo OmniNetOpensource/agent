@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PanelLeft } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { Composer } from "@/components/chat/Composer";
 import { MessageList } from "@/components/chat/MessageList";
@@ -47,6 +48,7 @@ export default function ChatPageClient({
   const canClearConversation = !pending && messageCount > 0;
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const hasRedirected = useRef(false);
   const activeConversationRef = useRef<string | undefined>(undefined);
 
@@ -161,7 +163,7 @@ export default function ChatPageClient({
         return;
       }
       setConversations(list);
-      router.replace(`/chat/${newId}`);
+      router.replace(`/c/${newId}`);
     };
 
     void createConversation();
@@ -175,7 +177,7 @@ export default function ChatPageClient({
       if (!id || id === conversationId) {
         return;
       }
-      router.push(`/chat/${id}`);
+      router.push(`/c/${id}`);
     },
     [conversationId, router]
   );
@@ -194,17 +196,42 @@ export default function ChatPageClient({
     handleNewConversation();
   }, [canClearConversation, handleNewConversation]);
 
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
+
   return (
     <div className="flex h-screen bg-background text-foreground">
-      <Sidebar
-        canClearConversation={canClearConversation}
-        onClear={handleClearConversation}
-        conversations={conversations}
-        activeConversationId={conversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
-      />
-      <div className="flex-1 overflow-hidden">
+      <div
+        className={`${
+          isSidebarOpen ? "w-72" : "w-0"
+        } flex-shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden`}
+      >
+        <div className="w-72 h-full">
+          <Sidebar
+            canClearConversation={canClearConversation}
+            onClear={handleClearConversation}
+            conversations={conversations}
+            activeConversationId={conversationId}
+            onSelectConversation={handleSelectConversation}
+            onNewConversation={handleNewConversation}
+            onToggle={toggleSidebar}
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-hidden relative">
+        <div
+          className={`absolute top-4 left-4 z-10 transition-opacity duration-300 ${
+            !isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <button
+            onClick={toggleSidebar}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </button>
+        </div>
         <div className="flex h-full w-full flex-col ">
           <main className="relative flex-1 min-h-0">
             <MessageList />

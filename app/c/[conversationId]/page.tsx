@@ -1,4 +1,4 @@
-// app/chat/[conversationId]/page.tsx
+// app/c/[conversationId]/page.tsx
 import ChatPageClient from "@/components/ChatPageClient";
 
 type ConversationPageProps = {
