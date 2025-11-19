@@ -5,6 +5,7 @@ export type ChatState = {
   messages: Message[];
   input: string;
   pending: boolean;
+  abortController: AbortController | null;
 };
 
 export type ChatActions = {
@@ -20,12 +21,14 @@ export type ChatActions = {
     itemIndex: number
   ) => void;
   sendMessage: (value?: string) => Promise<void>;
+  stop: () => void;
 };
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
   input: "",
   pending: false,
+  abortController: null,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   resetConversation: () => set({ messages: [], input: "", pending: false }),
@@ -114,8 +117,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         const normalizedItems = addition.items.map((item, index) => ({
           ...item,
           isExpanded:
-            addition.items.length > 0 &&
-            index === addition.items.length - 1,
+            addition.items.length > 0 && index === addition.items.length - 1,
         }));
 
         blocks.push({
@@ -194,6 +196,14 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     next[messageIndex] = { ...message, blocks };
     set({ messages: next });
   },
+  stop: () => {
+    const { abortController } = get();
+    if (!abortController) {
+      return;
+    }
+    abortController.abort();
+    set({ pending: false, abortController: null });
+  },
   sendMessage: async (value) => {
     const { input, pending, messages, appendToAssistant } = get();
     const trimmed = (value ?? input).trim();
@@ -206,10 +216,13 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       blocks: [{ type: "content", content: trimmed }],
     };
 
+    const controller = new AbortController();
+
     set((state) => ({
       messages: [...state.messages, userMessage],
       input: "",
       pending: true,
+      abortController: controller,
     }));
 
     try {
@@ -226,6 +239,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           message: trimmed,
           conversationHistory,
@@ -277,10 +291,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     kind: "tool_call",
                     tool:
                       typeof data.tool === "string" ? data.tool : "未知工具",
-                    args:
-                      (data.args && typeof data.args === "object"
-                        ? data.args
-                        : {}) as Record<string, unknown>,
+                    args: (data.args && typeof data.args === "object"
+                      ? data.args
+                      : {}) as Record<string, unknown>,
                     isExpanded: false,
                   });
                 } else if (data.type === "tool_result") {
@@ -320,6 +333,13 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
       reader.releaseLock();
     } catch (error) {
+      const isAbortError =
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && error.name === "AbortError");
+      if (isAbortError) {
+        // Abort is user initiated; nothing to append.
+        return;
+      }
       const message =
         error instanceof Error
           ? error.message
@@ -329,7 +349,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         content: `Error: ${message}`,
       });
     } finally {
-      set({ pending: false });
+      set({ pending: false, abortController: null });
     }
   },
 }));

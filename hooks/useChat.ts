@@ -7,9 +7,7 @@ export function useChatMessages() {
   const toggleResearchBlock = useChatStore(
     (state) => state.toggleResearchBlock
   );
-  const toggleResearchItem = useChatStore(
-    (state) => state.toggleResearchItem
-  );
+  const toggleResearchItem = useChatStore((state) => state.toggleResearchItem);
 
   return {
     messages,
@@ -24,6 +22,7 @@ export function useChatComposer() {
   const pending = useChatStore((state) => state.pending);
   const setInput = useChatStore((state) => state.setInput);
   const sendMessage = useChatStore((state) => state.sendMessage);
+  const stop = useChatStore((state) => state.stop);
 
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
@@ -48,6 +47,7 @@ export function useChatComposer() {
     pending,
     setInput,
     sendMessage,
+    stop,
     handleSubmit,
     handleKeyDown,
   };
