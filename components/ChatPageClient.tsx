@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useState, type ChangeEvent } from "react";
+import { useCallback, useState } from "react";
 import { PanelLeft, Plus } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { Composer } from "@/components/chat/Composer";
 import { MessageList } from "@/components/chat/MessageList";
 import { useChatStore } from "@/store/useChatStore";
-import { chatModels, isSupportedChatModel } from "@/lib/models";
+import { ModelSelector } from "@/components/ui/ModelSelector";
 
 export default function ChatPageClient() {
   const messages = useChatStore((state) => state.messages);
@@ -32,16 +32,6 @@ export default function ChatPageClient() {
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
   }, []);
-
-  const handleModelChange = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      const value = event.target.value;
-      if (isSupportedChatModel(value)) {
-        setCurrentModel(value);
-      }
-    },
-    [setCurrentModel]
-  );
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -73,22 +63,10 @@ export default function ChatPageClient() {
                 <span className="text-sm font-medium text-(--text-secondary)">
                   当前模型
                 </span>
-                <div className="relative flex-1 min-w-[180px] max-w-xs">
-                  <select
-                    value={currentModel}
-                    onChange={handleModelChange}
-                    className="w-full appearance-none rounded-2xl border border-(--border-subtle) bg-(--surface-muted) px-4 py-2 text-sm text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-                  >
-                    {chatModels.map((model) => (
-                      <option key={model.id} value={model.id}>
-                        {model.label}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-(--text-tertiary)">
-                    ▼
-                  </span>
-                </div>
+                <ModelSelector 
+                  currentModel={currentModel} 
+                  onModelChange={setCurrentModel} 
+                />
               </label>
               <div className="ml-auto">
                 <button

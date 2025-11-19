@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Send, Square } from "lucide-react";
+import { ArrowUp, Square } from "lucide-react";
 import { useChatComposer } from "@/hooks/useChat";
 
 type ComposerProps = {
@@ -88,7 +88,7 @@ export function Composer({ isInitial }: ComposerProps) {
             }}
             className="w-fit h-fit p-3 inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-(--button-primary-bg) text-(--button-primary-text) hover:bg-(--button-primary-hover)"
           >
-            {pending ? <Square className="h-5 w-5" /> : <Send className="h-5 w-5" />}
+            {pending ? <Square className="h-6 w-6" /> : <ArrowUp className="h-6 w-6" />}
           </button>
         </div>
       </div>

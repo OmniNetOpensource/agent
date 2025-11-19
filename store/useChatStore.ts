@@ -237,15 +237,22 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }));
 
     try {
-      const conversationHistory = get().messages.map((msg) => {
-        const contentBlocks = msg.blocks.filter(
-          (block) => block.type === "content"
-        );
-        const content = contentBlocks
-          .map((block) => block.content)
-          .join("\n\n");
-        return { role: msg.role, content };
-      });
+      const conversationHistory = get()
+        .messages.map((msg) => {
+          const contentBlocks = msg.blocks.filter(
+            (block) => block.type === "content"
+          );
+          const content = contentBlocks
+            .map((block) => block.content)
+            .join("\n\n");
+          return { role: msg.role, content };
+        })
+        .filter((entry) => {
+          if (entry.role !== "assistant") {
+            return true;
+          }
+          return entry.content.trim().length > 0;
+        });
 
       const response = await fetch("/api/chat", {
         method: "POST",
