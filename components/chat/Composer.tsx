@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from "react";
 import { Send, Square } from "lucide-react";
 import { useChatComposer } from "@/hooks/useChat";
 
@@ -8,6 +9,43 @@ type ComposerProps = {
 export function Composer({ isInitial }: ComposerProps) {
   const { input, pending, setInput, handleSubmit, handleKeyDown, stop } =
     useChatComposer();
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const adjustTextareaHeight = useCallback(
+    (element?: HTMLTextAreaElement | null) => {
+      const textarea = element ?? textareaRef.current;
+      if (!textarea) {
+        return;
+      }
+
+      textarea.style.height = "auto";
+      const computedStyle = window.getComputedStyle(textarea);
+      const lineHeightValue = parseFloat(computedStyle.lineHeight);
+      const paddingTopValue = parseFloat(computedStyle.paddingTop);
+      const paddingBottomValue = parseFloat(computedStyle.paddingBottom);
+
+      const fallbackLineHeight = 20;
+      const lineHeight = Number.isFinite(lineHeightValue)
+        ? lineHeightValue
+        : fallbackLineHeight;
+      const paddingTop = Number.isFinite(paddingTopValue)
+        ? paddingTopValue
+        : 0;
+      const paddingBottom = Number.isFinite(paddingBottomValue)
+        ? paddingBottomValue
+        : 0;
+      const maxLines = 5;
+      const maxHeight = lineHeight * maxLines + paddingTop + paddingBottom;
+      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+
+      textarea.style.height = `${newHeight}px`;
+    },
+    []
+  );
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [adjustTextareaHeight, input]);
 
   const sendDisabled = !pending && input.trim().length === 0;
   const formClassName = isInitial
@@ -26,14 +64,18 @@ export function Composer({ isInitial }: ComposerProps) {
       <div className={containerClassName}>
         <div className="flex flex-row gap-3 items-center justify-center w-full">
           <textarea
+            ref={textareaRef}
             id="message-input"
             name="message"
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              adjustTextareaHeight(event.currentTarget);
+            }}
             onKeyDown={handleKeyDown}
             rows={2}
             placeholder="输入您的消息..."
-            className="w-[90%] min-h-18 resize-none rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-4 text-sm text-foreground placeholder:text-(--text-tertiary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:border-neutral-400 transition-shadow"
+            className="w-[90%] min-h-18 resize-none rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-4 text-sm text-foreground placeholder:text-(--text-tertiary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:border-neutral-400 transition-shadow overflow-y-auto"
           />
           <button
             type={pending ? "button" : "submit"}
