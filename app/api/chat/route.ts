@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { callToolByName, toolSpecs } from "@/lib/tools";
+import {
+  DEFAULT_CHAT_MODEL_ID,
+  isSupportedChatModel,
+  type ChatModelId,
+} from "@/lib/models";
 
 type RequestBody = {
   message: string;
@@ -8,22 +13,27 @@ type RequestBody = {
     role: "user" | "assistant" | "system";
     content: string;
   }>;
+  model?: ChatModelId;
 };
 
 // Kimi K2 Thinking 配置
 const KIMI_BASE_URL = "https://api.moonshot.cn/v1";
-const KIMI_MODEL = "kimi-k2-thinking-turbo";
+const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
 
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
   try {
-    const { message, conversationHistory = [] } =
+    const { message, conversationHistory = [], model } =
       (await req.json()) as RequestBody;
 
     if (typeof message !== "string") {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
+
+    const requestedModel = isSupportedChatModel(model)
+      ? model
+      : DEFAULT_MODEL;
 
     const kimiApiKey = process.env.KIMI_API_KEY;
     if (!kimiApiKey) {
@@ -38,7 +48,7 @@ export async function POST(req: Request) {
       baseURL: KIMI_BASE_URL,
     });
 
-    console.log(`[Chat-API] Using Kimi model: ${KIMI_MODEL}`);
+    console.log(`[Chat-API] Using model: ${requestedModel}`);
 
     const tools = toolSpecs;
     console.log(
@@ -95,7 +105,7 @@ export async function POST(req: Request) {
             );
 
             const completion = (await kimiClient.chat.completions.create({
-              model: KIMI_MODEL,
+              model: requestedModel,
               messages: currentMessages,
               tools: tools.length > 0 ? tools : undefined,
               stream: true,

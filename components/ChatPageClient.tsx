@@ -1,17 +1,21 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { PanelLeft } from "lucide-react";
+import { useCallback, useState, type ChangeEvent } from "react";
+import { PanelLeft, Plus } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { Composer } from "@/components/chat/Composer";
 import { MessageList } from "@/components/chat/MessageList";
 import { useChatStore } from "@/store/useChatStore";
+import { chatModels, isSupportedChatModel } from "@/lib/models";
 
 export default function ChatPageClient() {
   const messages = useChatStore((state) => state.messages);
   const messageCount = messages.length;
   const pending = useChatStore((state) => state.pending);
   const resetConversation = useChatStore((state) => state.resetConversation);
+
+  const currentModel = useChatStore((state) => state.currentModel);
+  const setCurrentModel = useChatStore((state) => state.setCurrentModel);
 
   const isInitial = messageCount === 0;
   const canClearConversation = !pending && messageCount > 0;
@@ -29,6 +33,16 @@ export default function ChatPageClient() {
     setIsSidebarOpen((prev) => !prev);
   }, []);
 
+  const handleModelChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const value = event.target.value;
+      if (isSupportedChatModel(value)) {
+        setCurrentModel(value);
+      }
+    },
+    [setCurrentModel]
+  );
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <div
@@ -45,21 +59,50 @@ export default function ChatPageClient() {
         </div>
       </div>
       <div className="flex-1 overflow-hidden relative">
-        <div
-          className={`absolute top-4 left-4 z-10 transition-opacity duration-300 ${
-            !isSidebarOpen
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <button
-            onClick={toggleSidebar}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-          >
-            <PanelLeft className="h-5 w-5" />
-          </button>
-        </div>
         <div className="flex h-full w-full flex-col ">
+          <header className="flex flex-col gap-3 border-b border-(--border-subtle) bg-(--surface-card) px-4 sm:px-6 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={toggleSidebar}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                aria-label={isSidebarOpen ? "收起侧边栏" : "展开侧边栏"}
+              >
+                <PanelLeft className="h-5 w-5" />
+              </button>
+              <label className="flex flex-1 min-w-[220px] items-center gap-3">
+                <span className="text-sm font-medium text-(--text-secondary)">
+                  当前模型
+                </span>
+                <div className="relative flex-1 min-w-[180px] max-w-xs">
+                  <select
+                    value={currentModel}
+                    onChange={handleModelChange}
+                    className="w-full appearance-none rounded-2xl border border-(--border-subtle) bg-(--surface-muted) px-4 py-2 text-sm text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                  >
+                    {chatModels.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-(--text-tertiary)">
+                    ▼
+                  </span>
+                </div>
+              </label>
+              <div className="ml-auto">
+                <button
+                  type="button"
+                  onClick={handleClearConversation}
+                  disabled={!canClearConversation}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-(--button-secondary-border) bg-(--button-secondary-bg) px-4 py-2 text-sm font-medium text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus className="h-4 w-4" />
+                  新建聊天
+                </button>
+              </div>
+            </div>
+          </header>
           <main className="relative flex-1 min-h-0">
             <MessageList />
             <Composer isInitial={isInitial} />

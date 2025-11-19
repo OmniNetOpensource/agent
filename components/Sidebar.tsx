@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useCallback } from "react";
 import { flushSync } from "react-dom";
-import { Moon, Sun, Plus, PanelLeft } from "lucide-react";
+import { Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 type SidebarProps = {
@@ -16,6 +16,7 @@ export default function Sidebar({
   onClear,
   onToggle,
 }: SidebarProps) {
+  void onToggle;
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -70,13 +71,6 @@ export default function Sidebar({
   return (
     <aside className="flex h-full w-72 flex-col border-r border-(--border-subtle) bg-(--surface-muted)">
       <div className="flex items-center justify-between gap-2 border-b border-(--border-subtle) px-4 py-4">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-        >
-          <PanelLeft className="h-5 w-5" />
-        </button>
         <button
           type="button"
           onClick={onClear}

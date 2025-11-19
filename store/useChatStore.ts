@@ -1,4 +1,5 @@
 import { ContentBlock, Message, ResearchItem } from "@/types/chat";
+import { ChatModelId, DEFAULT_CHAT_MODEL_ID } from "@/lib/models";
 import { create } from "zustand";
 
 export type ChatState = {
@@ -6,6 +7,7 @@ export type ChatState = {
   input: string;
   pending: boolean;
   abortController: AbortController | null;
+  currentModel: ChatModelId;
 };
 
 export type ChatActions = {
@@ -22,6 +24,7 @@ export type ChatActions = {
   ) => void;
   sendMessage: (value?: string) => Promise<void>;
   stop: () => void;
+  setCurrentModel: (model: ChatModelId) => void;
 };
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
@@ -29,6 +32,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   input: "",
   pending: false,
   abortController: null,
+  currentModel: DEFAULT_CHAT_MODEL_ID,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   resetConversation: () => set({ messages: [], input: "", pending: false }),
@@ -208,11 +212,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     abortController.abort();
     set({ pending: false, abortController: null });
   },
+  setCurrentModel: (model) => {
+    set({ currentModel: model });
+  },
   sendMessage: async (value) => {
     const trimmed = (value ?? get().input).trim();
     if (!trimmed || get().pending) {
       return;
     }
+    const selectedModel = get().currentModel;
 
     const userMessage: Message = {
       role: "user",
@@ -246,6 +254,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         body: JSON.stringify({
           message: trimmed,
           conversationHistory,
+          model: selectedModel,
         }),
       });
 
