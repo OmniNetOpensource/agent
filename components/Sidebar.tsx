@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import type { ConversationSummary } from "@/utils/storage";
@@ -30,6 +31,52 @@ export default function Sidebar({
   );
   const { theme, toggleTheme } = useTheme();
 
+  const handleThemeToggle = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (
+        !(document as any).startViewTransition ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        toggleTheme();
+        return;
+      }
+
+      const x = e.clientX;
+      const y = e.clientY;
+      const endRadius = Math.hypot(
+        Math.max(x, innerWidth - x),
+        Math.max(y, innerHeight - y)
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transition = (document as any).startViewTransition(() => {
+        flushSync(() => {
+          toggleTheme();
+        });
+      });
+
+      transition.ready.then(() => {
+        const clipPath = [
+          `circle(0px at ${x}px ${y}px)`,
+          `circle(${endRadius}px at ${x}px ${y}px)`,
+        ];
+
+        document.documentElement.animate(
+          {
+            clipPath: clipPath,
+          },
+          {
+            duration: 300,
+            easing: "ease-in",
+            pseudoElement: "::view-transition-new(root)",
+          }
+        );
+      });
+    },
+    [toggleTheme]
+  );
+
   const handleNewConversation = useCallback(() => {
     if (!canClearConversation) {
       return;
@@ -55,7 +102,7 @@ export default function Sidebar({
         {mounted && (
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={handleThemeToggle}
             title="切换深色模式"
             aria-label="切换深色模式"
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"

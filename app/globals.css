@@ -350,3 +350,10 @@ html.dark .prose {
 .prose code::after {
   content: "";
 }
+
+/* View Transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
