@@ -209,9 +209,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     set({ pending: false, abortController: null });
   },
   sendMessage: async (value) => {
-    const { input, pending, messages, appendToAssistant } = get();
-    const trimmed = (value ?? input).trim();
-    if (!trimmed || pending) {
+    const trimmed = (value ?? get().input).trim();
+    if (!trimmed || get().pending) {
       return;
     }
 
@@ -230,7 +229,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }));
 
     try {
-      const conversationHistory = messages.map((msg) => {
+      const conversationHistory = get().messages.map((msg) => {
         const contentBlocks = msg.blocks.filter(
           (block) => block.type === "content"
         );
@@ -282,7 +281,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                 console.log("Parsed data:", data);
 
                 if (data.type === "thinking") {
-                  appendToAssistant({
+                  get().appendToAssistant({
                     kind: "thinking",
                     text:
                       typeof data.content === "string"
@@ -291,7 +290,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     isExpanded: false,
                   });
                 } else if (data.type === "tool_call") {
-                  appendToAssistant({
+                  get().appendToAssistant({
                     kind: "tool_call",
                     tool:
                       typeof data.tool === "string" ? data.tool : "未知工具",
@@ -311,7 +310,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                       resultText = String(data.result ?? "");
                     }
                   }
-                  appendToAssistant({
+                  get().appendToAssistant({
                     kind: "tool_result",
                     tool:
                       typeof data.tool === "string" ? data.tool : "未知工具",
@@ -323,7 +322,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     typeof data.content === "string"
                       ? data.content
                       : String(data.content ?? "");
-                  appendToAssistant({ type: "content", content: addition });
+                  get().appendToAssistant({
+                    type: "content",
+                    content: addition,
+                  });
                 }
               } catch (e) {
                 console.error("Failed to parse SSE data:", e, "line:", line);
@@ -348,7 +350,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         error instanceof Error
           ? error.message
           : "Unable to reach the chat API.";
-      appendToAssistant({
+      get().appendToAssistant({
         type: "content",
         content: `Error: ${message}`,
       });

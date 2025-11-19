@@ -63,7 +63,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
     }
 
     onScrollParent?.();
-  }, [content, isExpanded, onScrollParent]);
+  }, [content]);
 
   return (
     <div>
@@ -110,7 +110,7 @@ export const ResearchBlock = memo(function ResearchBlock({
 }: ResearchBlockProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const scrollParentToBottom = useCallback(() => {
+  const scrollParentToBottom = () => {
     if (!isExpanded) {
       return;
     }
@@ -124,7 +124,7 @@ export const ResearchBlock = memo(function ResearchBlock({
       top: el.scrollHeight,
       behavior: "smooth",
     });
-  }, [isExpanded]);
+  };
 
   return (
     <div>
