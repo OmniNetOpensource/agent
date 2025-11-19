@@ -2,38 +2,38 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --surface-base: #f5f5f7;
-  --surface-muted: #f8f8fa;
-  --surface-hover: #ebebed;
+  --surface-base: #ffffff;
+  --surface-muted: #f4f4f5; /* Zinc 100 */
+  --surface-hover: #f4f4f5;
   --surface-card: #ffffff;
-  --surface-alt: #fdfdfd;
-  --surface-user: #f8f8fa;
-  --surface-overlay: rgba(255, 255, 255, 0.8);
-  --border-subtle: #e4e4e7;
-  --border-strong: #d1d5db;
-  --border-hover: #d1d5db;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
-  --text-code: #111827;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-accent: #a1a1aa;
-  --button-primary-bg: #111827;
+  --surface-alt: #fafafa; /* Zinc 50 */
+  --surface-user: #f4f4f5;
+  --surface-overlay: rgba(255, 255, 255, 0.9);
+  --border-subtle: #e4e4e7; /* Zinc 200 */
+  --border-strong: #d4d4d8; /* Zinc 300 */
+  --border-hover: #a1a1aa; /* Zinc 400 */
+  --text-primary: #18181b; /* Zinc 900 */
+  --text-secondary: #52525b; /* Zinc 600 */
+  --text-tertiary: #a1a1aa; /* Zinc 400 */
+  --text-code: #18181b;
+  --color-primary: #18181b; /* Zinc 900 */
+  --color-primary-hover: #27272a; /* Zinc 800 */
+  --color-accent: #71717a; /* Zinc 500 */
+  --button-primary-bg: #18181b;
   --button-primary-text: #ffffff;
-  --button-primary-hover: #1f2937;
+  --button-primary-hover: #27272a;
   --button-secondary-bg: #ffffff;
-  --button-secondary-border: #d4d4d8;
-  --button-secondary-text: #111827;
-  --button-secondary-hover: #f9fafb;
+  --button-secondary-border: #e4e4e7;
+  --button-secondary-text: #18181b;
+  --button-secondary-hover: #fafafa;
   --code-inline-bg: #f4f4f5;
-  --code-block-bg: #f6f8fa;
-  --code-block-border: #e5e7eb;
-  --code-block-text: #111827;
+  --code-block-bg: #fafafa;
+  --code-block-border: #e4e4e7;
+  --code-block-text: #18181b;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
-  --radius-lg: 1.25rem;
-  --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.08);
+  --radius-lg: 1rem;
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   --spacing-unit: 0.25rem;
   /* Ensure Tailwind tokens are available in light mode too */
   --color-background: var(--surface-base);
@@ -42,34 +42,34 @@
 }
 
 html.dark {
-  --surface-base: #0b0f19;
-  --surface-muted: #0f172a;
-  --surface-hover: #1a2332;
-  --surface-card: #111827;
-  --surface-alt: #0b1220;
-  --surface-user: #1f2937;
-  --surface-overlay: rgba(17, 24, 39, 0.8);
-  --border-subtle: #1f2937;
-  --border-strong: #374151;
-  --border-hover: #4b5563;
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
-  --text-code: #e5e7eb;
-  --color-primary: #60a5fa;
-  --color-primary-hover: #93c5fd;
-  --color-accent: #71717a;
-  --button-primary-bg: #f9fafb;
-  --button-primary-text: #111827;
-  --button-primary-hover: #e5e7eb;
+  --surface-base: #09090b; /* Zinc 950 */
+  --surface-muted: #18181b; /* Zinc 900 */
+  --surface-hover: #27272a; /* Zinc 800 */
+  --surface-card: #09090b;
+  --surface-alt: #121215;
+  --surface-user: #18181b;
+  --surface-overlay: rgba(9, 9, 11, 0.9);
+  --border-subtle: #27272a;
+  --border-strong: #3f3f46;
+  --border-hover: #52525b;
+  --text-primary: #f4f4f5; /* Zinc 100 */
+  --text-secondary: #a1a1aa; /* Zinc 400 */
+  --text-tertiary: #71717a; /* Zinc 500 */
+  --text-code: #e4e4e7;
+  --color-primary: #ffffff;
+  --color-primary-hover: #e4e4e7;
+  --color-accent: #a1a1aa;
+  --button-primary-bg: #ffffff;
+  --button-primary-text: #09090b;
+  --button-primary-hover: #e4e4e7;
   --button-secondary-bg: transparent;
-  --button-secondary-border: #374151;
-  --button-secondary-text: #e5e7eb;
-  --button-secondary-hover: #1f2937;
-  --code-inline-bg: #1f2937;
-  --code-block-bg: #111827;
-  --code-block-border: #374151;
-  --code-block-text: #e5e7eb;
+  --button-secondary-border: #27272a;
+  --button-secondary-text: #f4f4f5;
+  --button-secondary-hover: #18181b;
+  --code-inline-bg: #27272a;
+  --code-block-bg: #18181b;
+  --code-block-border: #27272a;
+  --code-block-text: #f4f4f5;
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
   color-scheme: dark;
@@ -78,7 +78,7 @@ html.dark {
 @theme inline {
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
   --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -93,7 +93,7 @@ html {
 body {
   background: var(--surface-base);
   color: var(--text-primary);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-nunito), system-ui, -apple-system, sans-serif;
   margin: 0;
   min-height: 100vh;
   overflow: hidden;
@@ -103,7 +103,6 @@ body {
 
 /* Interactive elements transition */
 button,
-a,
 input,
 select,
 textarea,
@@ -112,6 +111,34 @@ textarea,
   transition-property: color, background-color, border-color, opacity, transform, box-shadow;
   transition-duration: 0.2s;
   transition-timing-function: var(--transition-smooth);
+}
+
+/* Minimalist Link Style */
+a {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--text-tertiary);
+  transition: all 0.2s var(--transition-smooth);
+  font-weight: 500;
+}
+
+a:hover {
+  color: var(--text-primary);
+  text-decoration-color: var(--text-primary);
+  text-decoration-thickness: 1px;
+}
+
+/* Exception for buttons or non-text links */
+a:not([class*="btn"]):not([class*="button"]):not([class*="icon"]) {
+  /* Applied to text links */
+}
+
+/* Reset for standard UI controls if they are anchors */
+a.button, a[role="button"], .no-underline {
+  text-decoration: none;
 }
 
 /* Ensure interactive elements show the expected pointer cursor */
@@ -346,6 +373,20 @@ html.dark .prose {
   --tw-prose-th-borders: var(--border-subtle);
   --tw-prose-td-borders: var(--border-subtle);
 }
+
+.prose a {
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.prose a:hover {
+  color: var(--text-primary);
+  text-decoration-color: var(--text-primary);
+}
+
 .prose code::before,
 .prose code::after {
   content: "";

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import Markdown from "@/components/Markdown";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
@@ -17,6 +17,7 @@ type ResearchBlockItemProps = {
   itemKey: string;
   isExpanded: boolean;
   onToggle: () => void;
+  onScrollParent?: () => void;
 };
 
 const ResearchBlockItem = memo(function ResearchBlockItem({
@@ -24,6 +25,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   itemKey,
   isExpanded,
   onToggle,
+  onScrollParent,
 }: ResearchBlockItemProps) {
   const contentId = `research-item-${itemKey}`;
 
@@ -38,19 +40,20 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       ? `📊 ${item.tool} Result`
       : "";
 
-  const getContent =
+  const content =
     item.kind === "thinking"
       ? item.text
       : item.kind === "tool_call"
       ? `\`\`\`json\n${JSON.stringify(item.args, null, 2)}\n\`\`\``
       : item.kind === "tool_result"
       ? item.result
-      : undefined;
+      : "";
 
   useEffect(() => {
     if (!isExpanded) {
       return;
     }
+
     const el = containerRef.current;
     if (el) {
       el.scrollTo({
@@ -58,7 +61,9 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         behavior: "smooth",
       });
     }
-  }, [getContent]);
+
+    onScrollParent?.();
+  }, [content, isExpanded, onScrollParent]);
 
   return (
     <div>
@@ -89,7 +94,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           !isExpanded && "hidden"
         )}
       >
-        {isExpanded && <Markdown content={getContent ?? ""} />}
+        {isExpanded && <Markdown content={content} />}
       </div>
     </div>
   );
@@ -105,25 +110,21 @@ export const ResearchBlock = memo(function ResearchBlock({
 }: ResearchBlockProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const lastItemSignature = useMemo<string | null>(() => {
-    if (!items.length) {
-      return null;
-    }
-    return `${messageIndex}-${blockIndex}-${items.length}`;
-  }, [items.length, messageIndex, blockIndex]);
-
-  useEffect(() => {
-    if (!isExpanded || !lastItemSignature) {
+  const scrollParentToBottom = useCallback(() => {
+    if (!isExpanded) {
       return;
     }
+
     const el = containerRef.current;
-    if (el) {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior: "smooth",
-      });
+    if (!el) {
+      return;
     }
-  }, [isExpanded, lastItemSignature]);
+
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [isExpanded]);
 
   return (
     <div>
@@ -160,6 +161,7 @@ export const ResearchBlock = memo(function ResearchBlock({
                 itemKey={itemKey}
                 isExpanded={item.isExpanded}
                 onToggle={() => onToggleItem(itemIndex)}
+                onScrollParent={scrollParentToBottom}
               />
             );
           })}

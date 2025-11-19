@@ -138,6 +138,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       const assistantIndex = ensureAssistantIndex();
       const assistantMessage = next[assistantIndex];
       const blocks = [...assistantMessage.blocks];
+
+      // Collapse any open research block before appending the final response content.
+      collapseLatestResearchBlock(blocks);
+
       const lastBlock = blocks[blocks.length - 1];
 
       if (lastBlock?.type === "content") {

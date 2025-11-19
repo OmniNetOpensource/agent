@@ -25,9 +25,8 @@ export default function Sidebar({
 
   const handleThemeToggle = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (
-        !(document as any).startViewTransition ||
+        !(document as Document).startViewTransition ||
         window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ) {
         toggleTheme();
@@ -41,8 +40,7 @@ export default function Sidebar({
         Math.max(y, innerHeight - y)
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transition = (document as any).startViewTransition(() => {
+      const transition = (document as Document).startViewTransition(() => {
         flushSync(() => {
           toggleTheme();
         });
