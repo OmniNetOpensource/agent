@@ -7,14 +7,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 Create a `.env.local` file in the root directory with the following variables:
 
 ```env
-KIMI_API_KEY=your_kimi_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_DEFAULT_MODEL=openrouter/auto           # optional, server-side default
+OPENROUTER_HTTP_REFERER=https://your-site.example  # optional, recommended by OpenRouter
+OPENROUTER_X_TITLE=Your App Name                   # optional, recommended by OpenRouter
 BRAVE_API_KEY=your_brave_api_key_here   # optional, enables web search
 # Set to "true" to disable a tool without changing code
 MCP_DISABLE_FETCH_URL=false
 MCP_DISABLE_BRAVE_SEARCH=false
 ```
 
-- **KIMI_API_KEY**: Get your API key from [Moonshot AI](https://platform.moonshot.cn/)
+- **OPENROUTER_API_KEY**: Get your API key from [OpenRouter](https://openrouter.ai/)
+- **OPENROUTER_DEFAULT_MODEL**: Optional default model id used when客户端未指定模型（例如 `openrouter/auto`）。
+- **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: 推荐配置，帮助 OpenRouter 了解调用来源。
 - **BRAVE_API_KEY**: Get your API key from [Brave Search](https://api.search.brave.com/app/dashboard) to enable real-time web search.
   Tools can be disabled individually via the `MCP_DISABLE_*` flags (set them to `true`).
 
@@ -70,8 +75,8 @@ const response = await fetch('/api/chat', {
 
 **Response**: Streaming text response
 
-**Available Model**:
-- **Kimi K2 Thinking**: `kimi-k2-thinking-turbo` (hard-coded in the chat API)
+**Models**:
+- 模型列表通过 `GET /api/models` 动态从 OpenRouter 获取，前端每次渲染 ModelSelector 时都会重新请求最新列表。
 
 ## Learn More
 

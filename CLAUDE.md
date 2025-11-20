@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-An AI chat interface built with Next.js 16 that uses the Kimi K2 Thinking model through Moonshot AI's OpenAI-compatible API. The UI is research-focused, streaming the AI's thinking process, tool calls, and search results in real-time.
+An AI chat interface built with Next.js 16 that talks to OpenRouter via its OpenAI-compatible API. The UI is research-focused, streaming the AI's thinking process, tool calls, and search results in real-time.
 
 ## Development Commands
 
@@ -29,25 +29,27 @@ pnpm check
 
 Required environment variables in `.env.local`:
 
-- **KIMI_API_KEY**: Moonshot AI API key for Kimi K2
+- **OPENROUTER_API_KEY**: OpenRouter API key
+- **OPENROUTER_DEFAULT_MODEL**: Optional default model id (e.g. `openrouter/auto`)
+- **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: Optional but recommended headers for OpenRouter
 - **BRAVE_API_KEY**: Optional. Enables web search tool
 - **MCP_DISABLE_FETCH_URL**: Set "true" to disable URL fetching tool
 - **MCP_DISABLE_BRAVE_SEARCH**: Set "true" to disable search tool
 
 ## Architecture
 
-### Kimi Integration
+### OpenRouter Integration
 
-The chat API ([app/api/chat/route.ts](app/api/chat/route.ts)) talks to Kimi through the Moonshot OpenAI-compatible endpoint:
+The chat API ([app/api/chat/route.ts](app/api/chat/route.ts)) talks to OpenRouter through its OpenAI-compatible endpoint:
 
-- **Client initialization**: Uses `KIMI_API_KEY` plus the Kimi base URL/model constants defined in the route
-- **Reasoning stream**: Reads the `reasoning_content` field unique to Kimi and forwards it to the UI as "thinking" events
+- **Client initialization**: Uses `OPENROUTER_API_KEY` plus `lib/openrouter.ts` helper (base URL and headers)
+- **Reasoning stream**: Reads the provider-specific `reasoning_content` field (exposed by some OpenRouter models) and forwards it to the UI as "thinking" events
 
 ### Streaming Architecture
 
 The system uses Server-Sent Events (SSE) to stream multiple types of data:
 
-1. **thinking**: Reasoning content from the LLM (Kimi's `reasoning_content` field)
+1. **thinking**: Reasoning content from the LLM (some OpenRouter models expose `reasoning_content`)
 2. **content**: Regular assistant message content
 3. **tool_call**: When the LLM decides to use a tool
 4. **tool_result**: Results returned from tool execution

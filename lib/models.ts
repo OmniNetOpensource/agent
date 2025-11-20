@@ -1,19 +1,10 @@
-export const chatModels = [
-  {
-    id: "kimi-k2-thinking-turbo",
-    label: "Kimi K2 Thinking",
-  },
-] as const;
+export type ChatModelId = string;
 
-export type ChatModelId = (typeof chatModels)[number]["id"];
-
-export const DEFAULT_CHAT_MODEL_ID: ChatModelId = chatModels[0].id;
+export const DEFAULT_CHAT_MODEL_ID: ChatModelId =
+  process.env.OPENROUTER_DEFAULT_MODEL || "openrouter/auto";
 
 export function isSupportedChatModel(
   value: string | undefined | null
 ): value is ChatModelId {
-  if (!value) {
-    return false;
-  }
-  return chatModels.some((model) => model.id === value);
+  return typeof value === "string" && value.trim().length > 0;
 }

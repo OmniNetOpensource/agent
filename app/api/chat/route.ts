@@ -6,6 +6,7 @@ import {
   isSupportedChatModel,
   type ChatModelId,
 } from "@/lib/models";
+import { getOpenRouterClient } from "@/lib/openrouter";
 
 type RequestBody = {
   message: string;
@@ -16,10 +17,8 @@ type RequestBody = {
   model?: ChatModelId;
 };
 
-// Kimi K2 Thinking 配置
-const KIMI_BASE_URL = "https://api.moonshot.cn/v1";
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
-
+ 
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
@@ -31,22 +30,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
-    const requestedModel = isSupportedChatModel(model)
-      ? model
-      : DEFAULT_MODEL;
-
-    const kimiApiKey = process.env.KIMI_API_KEY;
-    if (!kimiApiKey) {
-      return NextResponse.json(
-        { reply: "Missing KIMI_API_KEY" },
-        { status: 500 }
-      );
+    const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
+ 
+    let openRouterClient: OpenAI;
+    try {
+      openRouterClient = getOpenRouterClient();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Missing OPENROUTER_API_KEY";
+      return NextResponse.json({ reply: message }, { status: 500 });
     }
-
-    const kimiClient = new OpenAI({
-      apiKey: kimiApiKey,
-      baseURL: KIMI_BASE_URL,
-    });
 
     console.log(`[Chat-API] Using model: ${requestedModel}`);
 
@@ -104,12 +97,13 @@ export async function POST(req: Request) {
               currentMessages.length
             );
 
-            const completion = (await kimiClient.chat.completions.create({
-              model: requestedModel,
-              messages: currentMessages,
-              tools: tools.length > 0 ? tools : undefined,
-              stream: true,
-            })) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
+            const completion =
+              (await openRouterClient.chat.completions.create({
+                model: requestedModel,
+                messages: currentMessages,
+                tools: tools.length > 0 ? tools : undefined,
+                stream: true,
+              })) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
             let assistantMessage = "";
             const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] =
               [];
@@ -119,12 +113,12 @@ export async function POST(req: Request) {
               const delta = chunk.choices[0]?.delta;
               const finishReason = chunk.choices[0]?.finish_reason;
 
-              // 处理思考过程
-              // @ts-expect-error - reasoning_content 是 Kimi 特有的字段
+              // 处理思考过程（部分模型会返回 reasoning_content 字段）
+              // @ts-expect-error - reasoning_content 是提供方的扩展字段
               if (delta?.reasoning_content) {
                 const data = {
                   type: "thinking",
-                  // @ts-expect-error - reasoning_content 是 Kimi 特有的字段
+                  // @ts-expect-error - reasoning_content 是提供方的扩展字段
                   content: delta.reasoning_content,
                 };
                 controller.enqueue(
