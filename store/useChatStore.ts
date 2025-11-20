@@ -1,5 +1,16 @@
-import { ContentBlock, Message, ResearchItem } from "@/types/chat";
+import {
+  Attachment,
+  ChatContentPart,
+  ContentBlock,
+  Message,
+  ResearchItem,
+} from "@/types/chat";
 import { ChatModelId, DEFAULT_CHAT_MODEL_ID } from "@/lib/models";
+import {
+  MAX_ATTACHMENT_SIZE,
+  detectAttachmentKind,
+  readFileAsDataUrl,
+} from "@/utils/file";
 import { create } from "zustand";
 
 export type ChatState = {
@@ -8,6 +19,7 @@ export type ChatState = {
   pending: boolean;
   abortController: AbortController | null;
   currentModel: ChatModelId;
+  pendingAttachments: Attachment[];
 };
 
 export type ChatActions = {
@@ -15,6 +27,8 @@ export type ChatActions = {
   setMessages: (messages: Message[]) => void;
   resetConversation: () => void;
   clearConversation: () => void;
+  addAttachments: (files: File[]) => Promise<void>;
+  removeAttachment: (id: string) => void;
   appendToAssistant: (addition: ContentBlock | ResearchItem) => void;
   toggleResearchBlock: (messageIndex: number, blockIndex: number) => void;
   toggleResearchItem: (
@@ -33,13 +47,70 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   pending: false,
   abortController: null,
   currentModel: DEFAULT_CHAT_MODEL_ID,
+  pendingAttachments: [],
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
-  resetConversation: () => set({ messages: [], input: "", pending: false }),
+  resetConversation: () =>
+    set({
+      messages: [],
+      input: "",
+      pending: false,
+      pendingAttachments: [],
+    }),
   clearConversation: () => {
     const { resetConversation } = get();
     resetConversation();
   },
+  addAttachments: async (files) => {
+    const items = Array.from(files || []);
+    if (items.length === 0) {
+      return;
+    }
+
+    const attachments: Attachment[] = [];
+
+    for (const file of items) {
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        alert(
+          `文件「${file.name}」超过限制（最大 ${(MAX_ATTACHMENT_SIZE / (1024 * 1024)).toFixed(0)}MB），已跳过。`
+        );
+        continue;
+      }
+
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const mimeType = file.type || "application/octet-stream";
+        attachments.push({
+          id:
+            typeof crypto !== "undefined" && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          kind: detectAttachmentKind(mimeType),
+          name: file.name,
+          size: file.size,
+          mimeType,
+          dataUrl,
+        });
+      } catch (error) {
+        console.error(`无法读取文件「${file.name}」`, error);
+        alert(`无法读取文件「${file.name}」，请重试。`);
+      }
+    }
+
+    if (attachments.length === 0) {
+      return;
+    }
+
+    set((state) => ({
+      pendingAttachments: [...state.pendingAttachments, ...attachments],
+    }));
+  },
+  removeAttachment: (id) =>
+    set((state) => ({
+      pendingAttachments: state.pendingAttachments.filter(
+        (item) => item.id !== id
+      ),
+    })),
   appendToAssistant: (addition) =>
     set((state) => {
       const next = [...state.messages];
@@ -134,6 +205,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         return { messages: next };
       }
 
+      if (addition.type !== "content") {
+        return { messages: next };
+      }
+
       const additionText = addition.content;
       if (!additionText) {
         return { messages: next };
@@ -217,14 +292,27 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   },
   sendMessage: async (value) => {
     const trimmed = (value ?? get().input).trim();
-    if (!trimmed || get().pending) {
+    const attachments = get().pendingAttachments;
+    if (get().pending) {
       return;
     }
+    if (!trimmed && attachments.length === 0) {
+      return;
+    }
+
     const selectedModel = get().currentModel;
+
+    const userBlocks: ContentBlock[] = [];
+    if (trimmed) {
+      userBlocks.push({ type: "content", content: trimmed });
+    }
+    if (attachments.length > 0) {
+      userBlocks.push({ type: "attachments", attachments });
+    }
 
     const userMessage: Message = {
       role: "user",
-      blocks: [{ type: "content", content: trimmed }],
+      blocks: userBlocks,
     };
 
     const controller = new AbortController();
@@ -234,6 +322,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       input: "",
       pending: true,
       abortController: controller,
+      pendingAttachments: [],
     }));
 
     try {
@@ -254,12 +343,47 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
           return entry.content.trim().length > 0;
         });
 
+      const contentParts: ChatContentPart[] = [];
+
+      if (trimmed) {
+        contentParts.push({ type: "text", text: trimmed });
+      }
+
+      for (const attachment of attachments) {
+        const base64Data = attachment.dataUrl.split(",")[1] || attachment.dataUrl;
+
+        if (attachment.kind === "image") {
+          contentParts.push({
+            type: "image_url",
+            imageUrl: { url: attachment.dataUrl },
+          });
+        } else if (attachment.kind === "video") {
+          contentParts.push({
+            type: "video_url",
+            videoUrl: { url: attachment.dataUrl },
+          });
+        } else if (attachment.kind === "audio") {
+          const format =
+            attachment.mimeType.split("/")[1]?.split(";")[0] || "wav";
+          contentParts.push({
+            type: "input_audio",
+            inputAudio: { data: base64Data, format },
+          });
+        } else {
+          contentParts.push({
+            type: "file",
+            file: { filename: attachment.name, file_data: base64Data },
+          });
+        }
+      }
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          message: trimmed,
+          message: trimmed || undefined,
+          contentParts,
           conversationHistory,
           model: selectedModel,
         }),

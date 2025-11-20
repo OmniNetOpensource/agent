@@ -18,9 +18,7 @@ MCP_DISABLE_BRAVE_SEARCH=false
 ```
 
 - **OPENROUTER_API_KEY**: Get your API key from [OpenRouter](https://openrouter.ai/)
-- **OPENROUTER_DEFAULT_MODEL**: Optional default model id used when客户端未指定模型（例如 `openrouter/auto`）。
-- **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: 推荐配置，帮助 OpenRouter 了解调用来源。
-- **BRAVE_API_KEY**: Get your API key from [Brave Search](https://api.search.brave.com/app/dashboard) to enable real-time web search.
+- **OPENROUTER_DEFAULT_MODEL**: Optional default model id used when客户端未指定模型（例�?`openrouter/auto`）�?- **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: 推荐配置，帮�?OpenRouter 了解调用来源�?- **BRAVE_API_KEY**: Get your API key from [Brave Search](https://api.search.brave.com/app/dashboard) to enable real-time web search.
   Tools can be disabled individually via the `MCP_DISABLE_*` flags (set them to `true`).
 
 ### Running the Development Server
@@ -47,7 +45,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 - `fetch_url`: Fetches a URL and strips HTML/JS/CSS to plain text (runs in-process).
 - `brave_search`: Queries Brave Search for up-to-date results when `BRAVE_API_KEY` is configured.
-- Tools are wired directly into the OpenAI tools API; disable any tool by setting `MCP_DISABLE_FETCH_URL=true` or `MCP_DISABLE_BRAVE_SEARCH=true`.
+- Tools are wired through the OpenRouter SDK (`@openrouter/sdk`) using the OpenAI-style tools schema; disable any tool by setting `MCP_DISABLE_FETCH_URL=true` or `MCP_DISABLE_BRAVE_SEARCH=true`.
 
 ## API Usage
 
@@ -76,8 +74,7 @@ const response = await fetch('/api/chat', {
 **Response**: Streaming text response
 
 **Models**:
-- 模型列表通过 `GET /api/models` 动态从 OpenRouter 获取，前端每次渲染 ModelSelector 时都会重新请求最新列表。
-
+- Models are loaded dynamically via `GET /api/models` from OpenRouter; the client fetches the latest list each time the model selector opens.
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

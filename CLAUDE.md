@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-An AI chat interface built with Next.js 16 that talks to OpenRouter via its OpenAI-compatible API. The UI is research-focused, streaming the AI's thinking process, tool calls, and search results in real-time.
+An AI chat interface built with Next.js 16 that talks to OpenRouter via the official @openrouter/sdk (OpenAI-compatible schema). The UI is research-focused, streaming the AI's thinking process, tool calls, and search results in real-time.
 
 ## Development Commands
 
@@ -40,16 +40,16 @@ Required environment variables in `.env.local`:
 
 ### OpenRouter Integration
 
-The chat API ([app/api/chat/route.ts](app/api/chat/route.ts)) talks to OpenRouter through its OpenAI-compatible endpoint:
+The chat API ([app/api/chat/route.ts](app/api/chat/route.ts)) talks to OpenRouter through @openrouter/sdk chat.send (OpenAI-compatible payload):
 
 - **Client initialization**: Uses `OPENROUTER_API_KEY` plus `lib/openrouter.ts` helper (base URL and headers)
-- **Reasoning stream**: Reads the provider-specific `reasoning_content` field (exposed by some OpenRouter models) and forwards it to the UI as "thinking" events
+- **Reasoning stream**: Reads the provider-specific `reasoning` field (exposed by some OpenRouter models) and forwards it to the UI as "thinking" events
 
 ### Streaming Architecture
 
 The system uses Server-Sent Events (SSE) to stream multiple types of data:
 
-1. **thinking**: Reasoning content from the LLM (some OpenRouter models expose `reasoning_content`)
+1. **thinking**: Reasoning content from the LLM (some OpenRouter models expose `reasoning`)
 2. **content**: Regular assistant message content
 3. **tool_call**: When the LLM decides to use a tool
 4. **tool_result**: Results returned from tool execution
@@ -60,7 +60,7 @@ All streaming happens in [app/api/chat/route.ts](app/api/chat/route.ts) with up 
 
 Modular tool system in [lib/tools.ts](lib/tools.ts):
 
-- **Tool registration**: Each tool has a `spec` (OpenAI tool schema), `handler`, and availability check
+- **Tool registration**: Each tool has a `spec` (OpenAI-style tool schema via OpenRouter SDK), `handler`, and availability check
 - **Dynamic enabling**: Tools auto-disable if missing API keys or if `MCP_DISABLE_*` flag is set
 - **Result truncation**: All tool results are truncated to 10,000 characters
 - **Built-in tools**:
@@ -147,4 +147,4 @@ Research blocks auto-manage expansion state:
 
 # reminder
 
-- 运行 `pnpm check` 检查报错
+- 运行 `pnpm check` 检查报�?

@@ -1,38 +1,78 @@
-import { NextResponse } from "next/server";
-import OpenAI from "openai";
+﻿import { NextResponse } from "next/server";
 import { callToolByName, toolSpecs } from "@/lib/tools";
+import type { OpenRouter } from "@openrouter/sdk";
 import {
   DEFAULT_CHAT_MODEL_ID,
   isSupportedChatModel,
   type ChatModelId,
 } from "@/lib/models";
-import { getOpenRouterClient } from "@/lib/openrouter";
-
+import {
+  getOpenRouterClient,
+  getOpenRouterHeaders,
+} from "@/lib/openrouter";
 type RequestBody = {
-  message: string;
+  message?: string;
+  contentParts?: unknown[];
   conversationHistory?: Array<{
     role: "user" | "assistant" | "system";
-    content: string;
+    content: string | unknown;
   }>;
   model?: ChatModelId;
 };
 
+type StreamToolCall = {
+  index?: number;
+  id?: string;
+  type?: "function";
+  function?: { name?: string; arguments?: string };
+};
+
+type StreamChunk = {
+  choices?: Array<{
+    delta?: {
+      content?: string;
+      reasoning?: string;
+      toolCalls?: StreamToolCall[];
+    };
+    finishReason?: string | null;
+  }>;
+};
+
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content?: unknown;
+  toolCalls?: StreamToolCall[];
+  toolCallId?: string;
+  name?: string;
+};
+
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
- 
+
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
   try {
-    const { message, conversationHistory = [], model } =
-      (await req.json()) as RequestBody;
+    const {
+      message: rawMessage,
+      contentParts,
+      conversationHistory = [],
+      model,
+    } = (await req.json()) as RequestBody;
 
-    if (typeof message !== "string") {
+    const hasContentParts =
+      Array.isArray(contentParts) && contentParts.length > 0;
+    const textMessage = typeof rawMessage === "string" ? rawMessage : undefined;
+
+    if (
+      !hasContentParts &&
+      (typeof textMessage !== "string" || textMessage.length === 0)
+    ) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
     const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
- 
-    let openRouterClient: OpenAI;
+
+    let openRouterClient: OpenRouter;
     try {
       openRouterClient = getOpenRouterClient();
     } catch (error) {
@@ -56,37 +96,41 @@ export async function POST(req: Request) {
         .join(", ")
     );
 
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+    const userContent = (hasContentParts ? contentParts : textMessage ?? "") as
+      | string
+      | unknown;
+
+    const messages: ChatMessage[] = [
       {
         role: "system",
         content: `
-今天的日期是：${new Date().toISOString().slice(0, 10)}。
+今天的日期是：${new Date().toISOString().slice(0, 10)}
 
-# 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解完全方位的资料搜寻才能开始回答。
+# 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
+
 # 什么时候不需要搜索：已知的知识
 
 - 搜索工具使用技法：多次组合不同关键词进行多次搜索
-
-- 获取更详细的信息：fetch特定网页
-
-# 只有涉及到和真实网页交互时才能用到浏览器工具
-
+- 获取更详细的信息：fetch 特定网页
 `,
       },
       ...conversationHistory.map((msg) => ({
         role: msg.role,
-        content: msg.content,
+        content:
+          typeof msg.content === "string"
+            ? msg.content
+            : String(msg.content ?? ""),
       })),
       {
         role: "user",
-        content: message,
+        content: userContent,
       },
     ];
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const currentMessages = [...messages];
+          const currentMessages: ChatMessage[] = [...messages];
           const maxIterations = 20; // 防止无限循环
           let iteration = 0;
 
@@ -97,29 +141,37 @@ export async function POST(req: Request) {
               currentMessages.length
             );
 
-            const completion =
-              (await openRouterClient.chat.completions.create({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const completion = await (openRouterClient.chat as any).send(
+              {
                 model: requestedModel,
                 messages: currentMessages,
                 tools: tools.length > 0 ? tools : undefined,
                 stream: true,
-              })) as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
+              },
+              {
+                headers: getOpenRouterHeaders(),
+              }
+            );
             let assistantMessage = "";
-            const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] =
-              [];
+            const toolCalls: Array<{
+              id: string;
+              type: "function";
+              function: { name: string; arguments: string };
+            }> = [];
             let currentToolCallIndex = -1;
 
-            for await (const chunk of completion) {
-              const delta = chunk.choices[0]?.delta;
-              const finishReason = chunk.choices[0]?.finish_reason;
+            for await (const chunk of completion as AsyncIterable<StreamChunk>) {
+              const delta = chunk?.choices?.[0]?.delta;
+              const finishReason = chunk?.choices?.[0]?.finishReason as
+                | string
+                | undefined;
 
-              // 处理思考过程（部分模型会返回 reasoning_content 字段）
-              // @ts-expect-error - reasoning_content 是提供方的扩展字段
-              if (delta?.reasoning_content) {
+              // 处理思考过程（OpenRouter SDK 使用 reasoning 字段）
+              if (delta?.reasoning) {
                 const data = {
                   type: "thinking",
-                  // @ts-expect-error - reasoning_content 是提供方的扩展字段
-                  content: delta.reasoning_content,
+                  content: delta.reasoning,
                 };
                 controller.enqueue(
                   encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
@@ -139,8 +191,8 @@ export async function POST(req: Request) {
               }
 
               // 处理工具调用
-              if (delta?.tool_calls) {
-                for (const toolCall of delta.tool_calls) {
+              if (delta?.toolCalls) {
+                for (const toolCall of delta.toolCalls as StreamToolCall[]) {
                   if (
                     toolCall.index !== undefined &&
                     toolCall.index !== currentToolCallIndex
@@ -160,10 +212,7 @@ export async function POST(req: Request) {
                   ) {
                     // 追加参数
                     const currentToolCall = toolCalls[currentToolCallIndex];
-                    if (
-                      currentToolCall &&
-                      currentToolCall.type === "function"
-                    ) {
+                    if (currentToolCall && currentToolCall.type === "function") {
                       currentToolCall.function.arguments +=
                         toolCall.function.arguments;
                     }
@@ -171,7 +220,7 @@ export async function POST(req: Request) {
                 }
               }
 
-              // 检查是否完成
+              // 检查是否完结
               if (finishReason === "stop") {
                 console.log("[Chat-API] Stream finished with stop");
                 controller.close();
@@ -198,7 +247,7 @@ export async function POST(req: Request) {
             currentMessages.push({
               role: "assistant",
               content: assistantMessage || null,
-              tool_calls: toolCalls,
+              toolCalls,
             });
 
             // 执行工具调用并添加工具结果
@@ -207,7 +256,7 @@ export async function POST(req: Request) {
               if (toolCall.type !== "function") continue;
 
               const toolName = toolCall.function.name;
-              const toolArgs = JSON.parse(toolCall.function.arguments);
+              const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
 
               console.log(
                 "[Chat-API] Calling tool:",
@@ -242,7 +291,7 @@ export async function POST(req: Request) {
               // 添加工具结果到消息历史
               currentMessages.push({
                 role: "tool",
-                tool_call_id: toolCall.id,
+                toolCallId: toolCall.id,
                 content: result,
               });
             }

@@ -1,6 +1,13 @@
-import OpenAI from "openai";
-
 type ToolName = "fetch_url" | "brave_search";
+
+type ChatTool = {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+};
 
 export type FetchUrlArgs = {
   url: string;
@@ -234,7 +241,7 @@ const isDisabled = (name: ToolName) =>
 const toolMap: Record<
   ToolName,
   {
-    spec: OpenAI.Chat.Completions.ChatCompletionTool;
+    spec: ChatTool;
     handler: ToolHandler;
     available: boolean;
     unavailableReason?: string;
@@ -320,8 +327,9 @@ Object.entries(toolMap)
     );
   });
 
-export const toolSpecs: OpenAI.Chat.Completions.ChatCompletionTool[] =
-  enabledToolEntries.map(([, tool]) => tool.spec);
+export const toolSpecs: ChatTool[] = enabledToolEntries.map(
+  ([, tool]) => tool.spec
+);
 
 const enabledToolHandlers = new Map<string, ToolHandler>(
   enabledToolEntries.map(([name, tool]) => [name, tool.handler])
