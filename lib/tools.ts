@@ -135,7 +135,7 @@ const fetchUrl: ToolHandler = async (args) => {
   }
 };
 
-const BRAVE_SEARCH_INTERVAL_MS = 1_000;
+const BRAVE_SEARCH_INTERVAL_MS = 2_000;
 let lastBraveSearchAt = 0;
 let braveSearchQueue: Promise<void> = Promise.resolve();
 
