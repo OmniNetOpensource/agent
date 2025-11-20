@@ -6,13 +6,9 @@ import {
   isSupportedChatModel,
   type ChatModelId,
 } from "@/lib/models";
-import {
-  getOpenRouterClient,
-  getOpenRouterHeaders,
-} from "@/lib/openrouter";
+import { getOpenRouterClient, getOpenRouterHeaders } from "@/lib/openrouter";
 type RequestBody = {
-  message?: string;
-  contentParts?: unknown[];
+  contentParts: unknown[];
   conversationHistory?: Array<{
     role: "user" | "assistant" | "system";
     content: string | unknown;
@@ -53,20 +49,12 @@ const encoder = new TextEncoder();
 export async function POST(req: Request) {
   try {
     const {
-      message: rawMessage,
       contentParts,
       conversationHistory = [],
       model,
     } = (await req.json()) as RequestBody;
 
-    const hasContentParts =
-      Array.isArray(contentParts) && contentParts.length > 0;
-    const textMessage = typeof rawMessage === "string" ? rawMessage : undefined;
-
-    if (
-      !hasContentParts &&
-      (typeof textMessage !== "string" || textMessage.length === 0)
-    ) {
+    if (!Array.isArray(contentParts) || contentParts.length === 0) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
@@ -96,9 +84,7 @@ export async function POST(req: Request) {
         .join(", ")
     );
 
-    const userContent = (hasContentParts ? contentParts : textMessage ?? "") as
-      | string
-      | unknown;
+    const userContent = contentParts as unknown;
 
     const messages: ChatMessage[] = [
       {
@@ -212,7 +198,10 @@ export async function POST(req: Request) {
                   ) {
                     // 追加参数
                     const currentToolCall = toolCalls[currentToolCallIndex];
-                    if (currentToolCall && currentToolCall.type === "function") {
+                    if (
+                      currentToolCall &&
+                      currentToolCall.type === "function"
+                    ) {
                       currentToolCall.function.arguments +=
                         toolCall.function.arguments;
                     }

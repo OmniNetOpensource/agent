@@ -2,74 +2,105 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  /* Base Surface Colors - Clean & Bright */
   --surface-base: #ffffff;
   --surface-muted: #f4f4f5; /* Zinc 100 */
   --surface-hover: #f4f4f5;
-  --surface-card: #ffffff;
+  --surface-card: rgba(255, 255, 255, 0.8);
+  --surface-float: rgba(255, 255, 255, 0.6);
   --surface-alt: #fafafa; /* Zinc 50 */
   --surface-user: #f4f4f5;
-  --surface-overlay: rgba(255, 255, 255, 0.9);
-  --border-subtle: #e4e4e7; /* Zinc 200 */
+  --surface-overlay: rgba(255, 255, 255, 0.8);
+
+  /* Borders - Subtle & Sharp */
+  --border-subtle: rgba(228, 228, 231, 0.6); /* Zinc 200 with alpha */
   --border-strong: #d4d4d8; /* Zinc 300 */
   --border-hover: #a1a1aa; /* Zinc 400 */
+
+  /* Typography - High Contrast */
   --text-primary: #18181b; /* Zinc 900 */
   --text-secondary: #52525b; /* Zinc 600 */
   --text-tertiary: #a1a1aa; /* Zinc 400 */
   --text-code: #18181b;
+
+  /* Brand / Action Colors */
   --color-primary: #18181b; /* Zinc 900 */
   --color-primary-hover: #27272a; /* Zinc 800 */
   --color-accent: #71717a; /* Zinc 500 */
+
+  /* Buttons */
   --button-primary-bg: #18181b;
   --button-primary-text: #ffffff;
   --button-primary-hover: #27272a;
-  --button-secondary-bg: #ffffff;
-  --button-secondary-border: #e4e4e7;
+  --button-secondary-bg: rgba(255, 255, 255, 0.5);
+  --button-secondary-border: rgba(228, 228, 231, 0.6);
   --button-secondary-text: #18181b;
-  --button-secondary-hover: #fafafa;
+  --button-secondary-hover: rgba(255, 255, 255, 0.8);
+
+  /* Code Blocks */
   --code-inline-bg: #f4f4f5;
   --code-block-bg: #fafafa;
   --code-block-border: #e4e4e7;
   --code-block-text: #18181b;
+
+  /* Radii & Shadows */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
   --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-float: 0 20px 40px -4px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(0, 0, 0, 0.05);
+
   --spacing-unit: 0.25rem;
-  /* Ensure Tailwind tokens are available in light mode too */
+
+  /* Tailwind compat */
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
   color-scheme: light;
 }
 
 html.dark {
+  /* Dark Mode - Deep & Rich */
   --surface-base: #09090b; /* Zinc 950 */
   --surface-muted: #18181b; /* Zinc 900 */
   --surface-hover: #27272a; /* Zinc 800 */
-  --surface-card: #09090b;
+  --surface-card: rgba(24, 24, 27, 0.6);
+  --surface-float: rgba(9, 9, 11, 0.6);
   --surface-alt: #121215;
   --surface-user: #18181b;
-  --surface-overlay: rgba(9, 9, 11, 0.9);
-  --border-subtle: #27272a;
+  --surface-overlay: rgba(9, 9, 11, 0.8);
+
+  --border-subtle: rgba(39, 39, 42, 0.6);
   --border-strong: #3f3f46;
   --border-hover: #52525b;
+
   --text-primary: #f4f4f5; /* Zinc 100 */
   --text-secondary: #a1a1aa; /* Zinc 400 */
   --text-tertiary: #71717a; /* Zinc 500 */
   --text-code: #e4e4e7;
+
   --color-primary: #ffffff;
   --color-primary-hover: #e4e4e7;
   --color-accent: #a1a1aa;
+
   --button-primary-bg: #ffffff;
   --button-primary-text: #09090b;
   --button-primary-hover: #e4e4e7;
-  --button-secondary-bg: transparent;
-  --button-secondary-border: #27272a;
+  --button-secondary-bg: rgba(24, 24, 27, 0.4);
+  --button-secondary-border: rgba(39, 39, 42, 0.6);
   --button-secondary-text: #f4f4f5;
-  --button-secondary-hover: #18181b;
+  --button-secondary-hover: rgba(39, 39, 42, 0.8);
+
   --code-inline-bg: #27272a;
   --code-block-bg: #18181b;
   --code-block-border: #27272a;
   --code-block-text: #f4f4f5;
+
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+  --shadow-float: 0 20px 40px -4px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.05);
+
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
   color-scheme: dark;
@@ -88,6 +119,7 @@ html.dark {
 html {
   background: var(--surface-base);
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -98,7 +130,44 @@ body {
   min-height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  animation: pageLoad 0.5s var(--transition-ease) both;
+  animation: pageLoad 0.8s var(--transition-ease) both;
+
+  /* Ambient Background Noise */
+  background-image: radial-gradient(
+      circle at 50% 0%,
+      rgba(0, 0, 0, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(circle at 100% 0%, rgba(0, 0, 0, 0.02) 0%, transparent 30%);
+}
+
+html.dark body {
+  background-image: radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(255, 255, 255, 0.02) 0%,
+      transparent 30%
+    );
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: var(--surface-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-float {
+  background: var(--surface-float);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-float);
 }
 
 /* Interactive elements transition */
@@ -108,27 +177,24 @@ select,
 textarea,
 [role="button"],
 .clickable {
-  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
-  transition-duration: 0.2s;
+  transition-property: all;
+  transition-duration: 0.3s;
   transition-timing-function: var(--transition-smooth);
 }
 
 /* Minimalist Link Style */
 a {
   color: var(--text-primary);
-  text-decoration: underline;
-  text-decoration-style: dashed;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  text-decoration-color: var(--text-tertiary);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--text-tertiary);
   transition: all 0.2s var(--transition-smooth);
   font-weight: 500;
 }
 
 a:hover {
   color: var(--text-primary);
-  text-decoration-color: var(--text-primary);
-  text-decoration-thickness: 1px;
+  border-bottom-color: var(--text-primary);
+  border-bottom-style: solid;
 }
 
 /* Exception for buttons or non-text links */
@@ -137,8 +203,11 @@ a:not([class*="btn"]):not([class*="button"]):not([class*="icon"]) {
 }
 
 /* Reset for standard UI controls if they are anchors */
-a.button, a[role="button"], .no-underline {
+a.button,
+a[role="button"],
+.no-underline {
   text-decoration: none;
+  border-bottom: none;
 }
 
 /* Ensure interactive elements show the expected pointer cursor */
@@ -146,6 +215,11 @@ button:not(:disabled):hover,
 a[href]:hover,
 [role="button"]:hover {
   cursor: pointer;
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .clickable:hover {
@@ -153,39 +227,33 @@ a[href]:hover,
 }
 
 ::selection {
-  background: rgba(131, 164, 235, 0.15);
-  color: inherit;
+  background: var(--text-primary);
+  color: var(--surface-base);
 }
 
-html.dark ::selection {
-  background: rgba(196, 145, 75, 0.25);
-  color: inherit;
-}
-
+/* Custom Scrollbar - Ultra Minimal */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface-muted);
-  border-radius: 999px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
+  background: var(--border-hover);
   border-radius: 999px;
-  border: 2px solid var(--surface-muted);
-  transition: background 0.15s ease;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
+  background: var(--text-secondary);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-accent) transparent;
+  scrollbar-color: var(--border-hover) transparent;
 }
 
 /* ============================================

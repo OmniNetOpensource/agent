@@ -1,7 +1,7 @@
 export type ChatModelId = string;
 
 export const DEFAULT_CHAT_MODEL_ID: ChatModelId =
-  process.env.OPENROUTER_DEFAULT_MODEL || "openrouter/auto";
+  process.env.OPENROUTER_DEFAULT_MODEL || "x-ai/grok-4.1-fast";
 
 export function isSupportedChatModel(
   value: string | undefined | null

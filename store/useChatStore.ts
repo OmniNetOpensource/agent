@@ -72,7 +72,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     for (const file of items) {
       if (file.size > MAX_ATTACHMENT_SIZE) {
         alert(
-          `文件「${file.name}」超过限制（最大 ${(MAX_ATTACHMENT_SIZE / (1024 * 1024)).toFixed(0)}MB），已跳过。`
+          `文件「${file.name}」超过限制（最大 ${(
+            MAX_ATTACHMENT_SIZE /
+            (1024 * 1024)
+          ).toFixed(0)}MB），已跳过。`
         );
         continue;
       }
@@ -350,7 +353,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       }
 
       for (const attachment of attachments) {
-        const base64Data = attachment.dataUrl.split(",")[1] || attachment.dataUrl;
+        const base64Data =
+          attachment.dataUrl.split(",")[1] || attachment.dataUrl;
 
         if (attachment.kind === "image") {
           contentParts.push({
@@ -382,7 +386,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          message: trimmed || undefined,
           contentParts,
           conversationHistory,
           model: selectedModel,
