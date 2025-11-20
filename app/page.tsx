@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { PanelLeft, Plus } from "lucide-react";
+import { useCallback } from "react";
+import { Plus } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { Composer } from "@/components/chat/Composer";
 import { MessageList } from "@/components/chat/MessageList";
@@ -20,8 +20,6 @@ export function ChatPage() {
   const isInitial = messageCount === 0;
   const canClearConversation = !pending && messageCount > 0;
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
   const handleClearConversation = useCallback(() => {
     if (!canClearConversation) {
       return;
@@ -29,36 +27,15 @@ export function ChatPage() {
     resetConversation();
   }, [canClearConversation, resetConversation]);
 
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev) => !prev);
-  }, []);
-
   return (
     <div className="flex h-screen bg-background text-foreground">
-      <div
-        className={`${
-          isSidebarOpen ? "w-72" : "w-0"
-        } shrink-0 transition-[width] duration-300 ease-in-out overflow-hidden`}
-      >
-        <div className="w-72 h-full">
-          <Sidebar
-            canClearConversation={canClearConversation}
-            onClear={handleClearConversation}
-            onToggle={toggleSidebar}
-          />
-        </div>
+      <div className="h-full shrink-0">
+        <Sidebar />
       </div>
       <div className="flex-1 overflow-hidden relative">
         <div className="flex h-full w-full flex-col ">
           <header className="flex flex-col gap-3 border-b border-(--border-subtle) bg-(--surface-card) px-4 sm:px-6 py-4">
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={toggleSidebar}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-                aria-label={isSidebarOpen ? "收起侧边栏" : "展开侧边栏"}
-              >
-                <PanelLeft className="h-5 w-5" />
-              </button>
               <label className="flex flex-1 min-w-[220px] items-center gap-3">
                 <span className="text-sm font-medium text-(--text-secondary)">
                   当前模型

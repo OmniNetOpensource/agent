@@ -1,28 +1,23 @@
 "use client";
 
-import { useSyncExternalStore, useCallback } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { Moon, Sun, Plus } from "lucide-react";
+import { Moon, PanelLeft, Plus, Sun } from "lucide-react";
+import { useChatStore } from "@/store/useChatStore";
 import { useTheme } from "@/hooks/useTheme";
 
-type SidebarProps = {
-  canClearConversation: boolean;
-  onClear: () => void;
-  onToggle: () => void;
-};
-
-export default function Sidebar({
-  canClearConversation,
-  onClear,
-  onToggle,
-}: SidebarProps) {
-  void onToggle;
+export default function Sidebar() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
     () => false
   );
   const { theme, toggleTheme } = useTheme();
+  const messages = useChatStore((state) => state.messages);
+  const pending = useChatStore((state) => state.pending);
+  const resetConversation = useChatStore((state) => state.resetConversation);
+  const canClearConversation = !pending && messages.length > 0;
 
   const handleThemeToggle = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -68,17 +63,53 @@ export default function Sidebar({
     [toggleTheme]
   );
 
+  const handleNewChat = useCallback(() => {
+    if (!canClearConversation) {
+      return;
+    }
+    resetConversation();
+  }, [canClearConversation, resetConversation]);
+
+  const toggleCollapsed = useCallback(() => {
+    setIsCollapsed((prev) => !prev);
+  }, []);
+
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-(--border-subtle) bg-(--surface-muted)">
-      <div className="flex items-center justify-between gap-2 border-b border-(--border-subtle) px-4 py-4">
+    <aside
+      className={`flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted) transition-[width] duration-300 ease-in-out ${
+        isCollapsed ? "w-16" : "w-72"
+      }`}
+    >
+      <div
+        className={`border-b border-(--border-subtle) px-3 py-[14.8px] ${
+          isCollapsed
+            ? "flex flex-col items-center gap-3"
+            : "flex items-center gap-2"
+        }`}
+      >
         <button
           type="button"
-          onClick={onClear}
+          onClick={toggleCollapsed}
+          aria-label={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+        >
+          <PanelLeft
+            className={`h-5 w-5 transition-transform ${
+              isCollapsed ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        <button
+          type="button"
+          onClick={handleNewChat}
           disabled={!canClearConversation}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) px-4 py-2 text-sm font-medium text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`inline-flex items-center justify-center gap-2 rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-sm font-medium text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+            isCollapsed ? "h-10 w-10" : "flex-1 px-4 py-2"
+          }`}
+          aria-label="新对话"
         >
           <Plus className="h-4 w-4" />
-          新对话
+          {!isCollapsed && <span>新对话</span>}
         </button>
         {mounted && (
           <button
@@ -97,9 +128,11 @@ export default function Sidebar({
         )}
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="rounded-xl border border-dashed border-(--border-subtle) px-4 py-6 text-center text-sm text-(--text-tertiary)">
-          历史记录功能暂未启用
-        </p>
+        {!isCollapsed && (
+          <p className="rounded-xl border border-dashed border-(--border-subtle) px-4 py-6 text-center text-sm text-(--text-tertiary)">
+            历史记录功能暂未启用
+          </p>
+        )}
       </div>
     </aside>
   );
