@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Nunito, Geist_Mono } from "next/font/google";
+import Sidebar from "@/components/Sidebar";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -26,9 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body
-        className={`${nunito.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
         <Script id="theme-init" strategy="beforeInteractive">{`
 (function () {
   try {
@@ -39,7 +38,12 @@ export default function RootLayout({
     dark ? c.add('dark') : c.remove('dark');
   } catch (e) {}
 })();`}</Script>
-        {children}
+        <div className="flex h-screen bg-background text-foreground">
+          <div className="h-full shrink-0">
+            <Sidebar />
+          </div>
+          <div className="relative flex-1 overflow-hidden">{children}</div>
+        </div>
       </body>
     </html>
   );

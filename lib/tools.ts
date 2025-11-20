@@ -135,15 +135,48 @@ const fetchUrl: ToolHandler = async (args) => {
   }
 };
 
-const braveSearch: ToolHandler = async (args) => {
-  const { query, freshness } = parseBraveSearchArgs(args);
-  const apiKey = process.env.BRAVE_API_KEY;
+const BRAVE_SEARCH_INTERVAL_MS = 1_000;
+let lastBraveSearchAt = 0;
+let braveSearchQueue: Promise<void> = Promise.resolve();
 
-  if (!apiKey) {
-    console.error("[Tools:brave_search] Missing BRAVE_API_KEY");
-    return "Error: BRAVE_API_KEY is not set";
-  }
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
+const enqueueBraveSearchCall = async <T>(
+  task: () => Promise<T>
+): Promise<T> => {
+  const runTask = async () => {
+    const now = Date.now();
+    const elapsed = now - lastBraveSearchAt;
+
+    if (elapsed < BRAVE_SEARCH_INTERVAL_MS) {
+      const waitTime = BRAVE_SEARCH_INTERVAL_MS - elapsed;
+      console.error(
+        "[Tools:brave_search] Throttling request, waiting",
+        `${waitTime}ms`
+      );
+      await sleep(waitTime);
+    }
+
+    lastBraveSearchAt = Date.now();
+    return task();
+  };
+
+  const queuedTask = braveSearchQueue
+    .catch(() => {})
+    .then(runTask);
+
+  braveSearchQueue = queuedTask.then(() => {}).catch(() => {});
+  return queuedTask;
+};
+
+const performBraveSearch = async (
+  query: string,
+  freshness: BraveSearchArgs["freshness"],
+  apiKey: string
+): Promise<string> => {
   console.error(
     "[Tools:brave_search] Searching:",
     query,
@@ -233,6 +266,20 @@ const braveSearch: ToolHandler = async (args) => {
         : String(error)
     }`;
   }
+};
+
+const braveSearch: ToolHandler = async (args) => {
+  const { query, freshness } = parseBraveSearchArgs(args);
+  const apiKey = process.env.BRAVE_API_KEY;
+
+  if (!apiKey) {
+    console.error("[Tools:brave_search] Missing BRAVE_API_KEY");
+    return "Error: BRAVE_API_KEY is not set";
+  }
+
+  return enqueueBraveSearchCall(() =>
+    performBraveSearch(query, freshness, apiKey)
+  );
 };
 
 const isDisabled = (name: ToolName) =>
