@@ -1,4 +1,5 @@
 import { memo, useState } from "react";
+import Image from "next/image";
 import Markdown from "@/components/Markdown";
 import { Message } from "@/types/chat";
 import { cx } from "@/utils/cx";
@@ -96,12 +97,13 @@ export const MessageItem = memo(function MessageItem({
                         title="点击查看附件"
                         download={attachment.name}
                       >
-                        <div className="h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
+                        <div className="relative h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
                           {attachment.kind === "image" ? (
-                            <img
+                            <Image
                               src={attachment.dataUrl}
                               alt={attachment.name}
-                              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                              fill
+                              className="object-cover transition-transform duration-200 group-hover:scale-105"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
