@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { ChatModelId } from "@/lib/models";
 
@@ -14,12 +15,49 @@ type ModelOption = {
   label: string;
 };
 
+const highlightLabel = (label: string, keyword: string): ReactNode => {
+  const trimmed = keyword.trim();
+  if (!trimmed) return label;
+
+  const lowerLabel = label.toLowerCase();
+  const lowerKeyword = trimmed.toLowerCase();
+  const kwLength = lowerKeyword.length;
+  const segments: ReactNode[] = [];
+
+  let searchIndex = 0;
+  let matchIndex = lowerLabel.indexOf(lowerKeyword, searchIndex);
+
+  if (matchIndex === -1) return label;
+
+  while (matchIndex !== -1) {
+    if (matchIndex > searchIndex) {
+      segments.push(label.slice(searchIndex, matchIndex));
+    }
+
+    segments.push(
+      <span key={`highlight-${matchIndex}`} className="text-blue-500 font-medium">
+        {label.slice(matchIndex, matchIndex + kwLength)}
+      </span>,
+    );
+
+    searchIndex = matchIndex + kwLength;
+    matchIndex = lowerLabel.indexOf(lowerKeyword, searchIndex);
+  }
+
+  if (searchIndex < label.length) {
+    segments.push(label.slice(searchIndex));
+  }
+
+  return segments;
+};
+
 export function ModelSelector({
   currentModel,
   onModelChange,
 }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [models, setModels] = useState<ModelOption[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,6 +67,15 @@ export function ModelSelector({
   const [visibleCount, setVisibleCount] = useState<number>(20);
   const [startIndex, setStartIndex] = useState<number>(0);
   const OVERSCAN = 3;
+
+  const visibleModels = useMemo(() => {
+    const trimmed = search.trim();
+    if (!trimmed) return models;
+    const lowerKeyword = trimmed.toLowerCase();
+    return models.filter((model) =>
+      model.label.toLowerCase().includes(lowerKeyword),
+    );
+  }, [models, search]);
 
   const currentModelLabel =
     models.find((m) => m.id === currentModel)?.label || currentModel;
@@ -108,31 +155,37 @@ export function ModelSelector({
   }, [isOpen, itemHeight, OVERSCAN]);
 
   useEffect(() => {
-    if (!isOpen || !scrollRef.current || !itemHeight || models.length === 0) return;
-    const currentIndex = models.findIndex((m) => m.id === currentModel);
+    if (!isOpen || !scrollRef.current || !itemHeight || visibleModels.length === 0) return;
+    const currentIndex = visibleModels.findIndex((m) => m.id === currentModel);
     if (currentIndex < 0) return;
     const container = scrollRef.current;
     const targetTop = currentIndex * itemHeight;
     container.scrollTop = targetTop;
     const rawIndex = Math.floor(targetTop / itemHeight) - OVERSCAN;
-    const maxStart = Math.max(0, models.length - visibleCount);
+    const maxStart = Math.max(0, visibleModels.length - visibleCount);
     const nextStart = Math.min(Math.max(rawIndex, 0), maxStart);
     setStartIndex(nextStart);
-  }, [isOpen, itemHeight, currentModel, models, OVERSCAN, visibleCount]);
+  }, [isOpen, itemHeight, currentModel, visibleModels, OVERSCAN, visibleCount]);
+
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTop = 0;
+    setStartIndex(0);
+  }, [search]);
 
   const handleScroll = () => {
     if (!scrollRef.current || !itemHeight) return;
     const container = scrollRef.current;
     const scrollTop = container.scrollTop;
     const rawIndex = Math.floor(scrollTop / itemHeight) - OVERSCAN;
-    const maxStart = Math.max(0, models.length - visibleCount);
+    const maxStart = Math.max(0, visibleModels.length - visibleCount);
     const nextStart = Math.min(Math.max(rawIndex, 0), maxStart);
     setStartIndex(nextStart);
   };
 
-  const safeVisibleCount = Math.min(visibleCount, models.length);
-  const endIndex = Math.min(models.length, startIndex + safeVisibleCount);
-  const totalHeight = itemHeight ? itemHeight * models.length : 0;
+  const safeVisibleCount = Math.min(visibleCount, visibleModels.length);
+  const endIndex = Math.min(visibleModels.length, startIndex + safeVisibleCount);
+  const totalHeight = itemHeight ? itemHeight * visibleModels.length : 0;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -159,103 +212,119 @@ export function ModelSelector({
       {isOpen && (
         <div className="absolute top-full mt-1 left-0 w-full z-50 min-w-[200px] overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card) shadow-lg origin-top-left">
           <div className="p-1">
-            {error && (
+            {error ? (
               <div className="px-3 py-2 text-xs text-(--text-secondary)">
                 模型加载失败，请重试
               </div>
-            )}
-            {!error && models.length === 0 && (
-              <div className="px-3 py-2 text-xs text-(--text-secondary)">
-                {loading ? "正在加载模型..." : "暂无可用模型"}
-              </div>
-            )}
-            {!error && models.length > 0 && (
-              <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="max-h-64 overflow-y-auto"
-              >
-                <div className="relative">
-                  <button
-                    ref={measurementRef}
-                    type="button"
-                    className={`
-                      flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
-                      text-(--text-secondary)
-                    `}
-                    style={{
-                      position: "absolute",
-                      visibility: "hidden",
-                      pointerEvents: "none",
-                    }}
-                    aria-hidden
-                    tabIndex={-1}
-                  >
-                    <span className="truncate">{models[0].label}</span>
-                  </button>
+            ) : (
+              <>
+                <div className="px-2 pb-2">
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="搜索模型..."
+                    disabled={models.length === 0 || loading}
+                    className="w-full rounded-lg border border-(--border-subtle) bg-(--surface-muted) px-3 py-2 text-sm text-foreground placeholder:text-(--text-tertiary) focus:outline-none focus:ring-2 focus:ring-(--border-strong) disabled:opacity-60"
+                  />
                 </div>
 
-                {itemHeight ? (
-                  <div style={{ position: "relative", height: totalHeight }}>
-                    {Array.from({ length: endIndex - startIndex }).map((_, idx) => {
-                      const modelIndex = startIndex + idx;
-                      const model = models[modelIndex];
-                      return (
-                        <div
-                          key={model.id}
-                          style={{
-                            position: "absolute",
-                            top: modelIndex * itemHeight,
-                            left: 0,
-                            right: 0,
-                          }}
-                        >
-                          <button
-                            onClick={() => {
-                              onModelChange(model.id);
-                              setIsOpen(false);
-                            }}
-                            className={`
-                              flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
-                              ${currentModel === model.id 
-                                ? "bg-(--surface-muted) text-foreground font-medium" 
-                                : "text-(--text-secondary) hover:bg-(--surface-hover) hover:text-foreground"
-                              }
-                            `}
-                          >
-                            <span className="truncate">{model.label}</span>
-                            {currentModel === model.id && (
-                              <Check className="w-3.5 h-3.5 text-foreground" />
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
+                {models.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-(--text-secondary)">
+                    {loading ? "正在加载模型..." : "暂无可用模型"}
+                  </div>
+                ) : visibleModels.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-(--text-secondary)">
+                    没有匹配的模型
                   </div>
                 ) : (
-                  models.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        onModelChange(model.id);
-                        setIsOpen(false);
-                      }}
-                      className={`
-                        flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
-                        ${currentModel === model.id 
-                          ? "bg-(--surface-muted) text-foreground font-medium" 
-                          : "text-(--text-secondary) hover:bg-(--surface-hover) hover:text-foreground"
-                        }
-                      `}
-                    >
-                      <span className="truncate">{model.label}</span>
-                      {currentModel === model.id && (
-                        <Check className="w-3.5 h-3.5 text-foreground" />
-                      )}
-                    </button>
-                  ))
+                  <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="max-h-64 overflow-y-auto"
+                  >
+                    <div className="relative">
+                      <button
+                        ref={measurementRef}
+                        type="button"
+                        className={`
+                          flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
+                          text-(--text-secondary)
+                        `}
+                        style={{
+                          position: "absolute",
+                          visibility: "hidden",
+                          pointerEvents: "none",
+                        }}
+                        aria-hidden
+                        tabIndex={-1}
+                      >
+                        <span className="truncate">{models[0].label}</span>
+                      </button>
+                    </div>
+
+                    {itemHeight ? (
+                      <div style={{ position: "relative", height: totalHeight }}>
+                        {Array.from({ length: endIndex - startIndex }).map((_, idx) => {
+                          const modelIndex = startIndex + idx;
+                          const model = visibleModels[modelIndex];
+                          return (
+                            <div
+                              key={model.id}
+                              style={{
+                                position: "absolute",
+                                top: modelIndex * itemHeight,
+                                left: 0,
+                                right: 0,
+                              }}
+                            >
+                              <button
+                                onClick={() => {
+                                  onModelChange(model.id);
+                                  setIsOpen(false);
+                                }}
+                                className={`
+                                  flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
+                                  ${currentModel === model.id 
+                                    ? "bg-(--surface-muted) text-foreground font-medium" 
+                                    : "text-(--text-secondary) hover:bg-(--surface-hover) hover:text-foreground"
+                                  }
+                                `}
+                              >
+                                <span className="truncate">{highlightLabel(model.label, search)}</span>
+                                {currentModel === model.id && (
+                                  <Check className="w-3.5 h-3.5 text-foreground" />
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      visibleModels.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => {
+                            onModelChange(model.id);
+                            setIsOpen(false);
+                          }}
+                          className={`
+                            flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
+                            ${currentModel === model.id 
+                              ? "bg-(--surface-muted) text-foreground font-medium" 
+                              : "text-(--text-secondary) hover:bg-(--surface-hover) hover:text-foreground"
+                            }
+                          `}
+                        >
+                          <span className="truncate">{highlightLabel(model.label, search)}</span>
+                          {currentModel === model.id && (
+                            <Check className="w-3.5 h-3.5 text-foreground" />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
