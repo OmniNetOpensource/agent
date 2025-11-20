@@ -1,6 +1,5 @@
 import {
   Attachment,
-  ChatContentPart,
   ContentBlock,
   Message,
   ResearchItem,
@@ -329,64 +328,14 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }));
 
     try {
-      const conversationHistory = get()
-        .messages.map((msg) => {
-          const contentBlocks = msg.blocks.filter(
-            (block) => block.type === "content"
-          );
-          const content = contentBlocks
-            .map((block) => block.content)
-            .join("\n\n");
-          return { role: msg.role, content };
-        })
-        .filter((entry) => {
-          if (entry.role !== "assistant") {
-            return true;
-          }
-          return entry.content.trim().length > 0;
-        });
-
-      const contentParts: ChatContentPart[] = [];
-
-      if (trimmed) {
-        contentParts.push({ type: "text", text: trimmed });
-      }
-
-      for (const attachment of attachments) {
-        const base64Data =
-          attachment.dataUrl.split(",")[1] || attachment.dataUrl;
-
-        if (attachment.kind === "image") {
-          contentParts.push({
-            type: "image_url",
-            imageUrl: { url: attachment.dataUrl },
-          });
-        } else if (attachment.kind === "video") {
-          contentParts.push({
-            type: "video_url",
-            videoUrl: { url: attachment.dataUrl },
-          });
-        } else if (attachment.kind === "audio") {
-          const format =
-            attachment.mimeType.split("/")[1]?.split(";")[0] || "wav";
-          contentParts.push({
-            type: "input_audio",
-            inputAudio: { data: base64Data, format },
-          });
-        } else {
-          contentParts.push({
-            type: "file",
-            file: { filename: attachment.name, file_data: base64Data },
-          });
-        }
-      }
+      // 发送完整的 messages 给后端（包括刚添加的用户消息）
+      const conversationHistory = get().messages;
 
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          contentParts,
           conversationHistory,
           model: selectedModel,
         }),

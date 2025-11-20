@@ -6,25 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 An AI chat interface built with Next.js 16 that talks to OpenRouter via the official @openrouter/sdk (OpenAI-compatible schema). The UI is research-focused, streaming the AI's thinking process, tool calls, and search results in real-time.
 
-## Development Commands
-
-```bash
-# Start development server (default port 3000)
-pnpm dev
-
-# Production build
-pnpm build
-
-# Type checking (without emitting files)
-pnpm type-check
-
-# Linting
-pnpm lint
-
-# Run both type checking and linting
-pnpm check
-```
-
 ## Environment Configuration
 
 Required environment variables in `.env.local`:
@@ -147,4 +128,4 @@ Research blocks auto-manage expansion state:
 
 # reminder
 
-- 运行 `pnpm check` 检查报�?
+- 运行 `pnpm check` 检查报 �?

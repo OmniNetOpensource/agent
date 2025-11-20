@@ -1,8 +1,7 @@
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Paperclip, Square, X, FileText, Image as ImageIcon, Music, Video } from "lucide-react";
+import { ChangeEvent, useCallback, useEffect, useRef } from "react";
+import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/utils/file";
 import { useChatComposer } from "@/hooks/useChat";
-import { Attachment } from "@/types/chat";
 
 type ComposerProps = {
   isInitial: boolean;
@@ -22,7 +21,6 @@ export function Composer({ isInitial }: ComposerProps) {
   } = useChatComposer();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isFocused, setIsFocused] = useState(false);
 
   const adjustTextareaHeight = useCallback(
     (element?: HTMLTextAreaElement | null) => {
@@ -37,7 +35,7 @@ export function Composer({ isInitial }: ComposerProps) {
       const paddingTopValue = parseFloat(computedStyle.paddingTop);
       const paddingBottomValue = parseFloat(computedStyle.paddingBottom);
 
-      const fallbackLineHeight = 24;
+      const fallbackLineHeight = 20;
       const lineHeight = Number.isFinite(lineHeightValue)
         ? lineHeightValue
         : fallbackLineHeight;
@@ -47,7 +45,7 @@ export function Composer({ isInitial }: ComposerProps) {
       const paddingBottom = Number.isFinite(paddingBottomValue)
         ? paddingBottomValue
         : 0;
-      const maxLines = 8;
+      const maxLines = 5;
       const maxHeight = lineHeight * maxLines + paddingTop + paddingBottom;
       const newHeight = Math.min(textarea.scrollHeight, maxHeight);
 
@@ -67,6 +65,7 @@ export function Composer({ isInitial }: ComposerProps) {
         return;
       }
       await addAttachments(Array.from(files));
+      // 允许重复选择同一文件
       event.target.value = "";
     },
     [addAttachments]
@@ -76,56 +75,32 @@ export function Composer({ isInitial }: ComposerProps) {
     fileInputRef.current?.click();
   }, []);
 
-  const getFileIcon = (kind: string) => {
-    switch (kind) {
-      case 'image': return <ImageIcon className="h-4 w-4" />;
-      case 'video': return <Video className="h-4 w-4" />;
-      case 'audio': return <Music className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
-  };
-
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const sendDisabled = pending ? false : !hasText && !hasAttachments;
-  
-  // Dynamic classes based on state
-  const wrapperClasses = isInitial
-    ? "flex min-h-full items-center justify-center p-4 sm:p-8"
-    : "absolute inset-x-0 bottom-0 z-20 flex justify-center p-4 pb-6 sm:px-8";
-    
-  const containerClasses = `
-    relative w-full max-w-3xl transition-all duration-300 ease-out
-    ${isInitial ? "scale-100 opacity-100" : "scale-100"}
-    ${isFocused ? "shadow-glow translate-y-[-2px]" : "shadow-float"}
-  `;
-
-  const glassClasses = `
-    bg-(--surface-card)/80 backdrop-blur-xl
-    border border-(--border-subtle)
-    rounded-[2rem]
-    overflow-hidden
-    transition-all duration-300
-  `;
+  const formClassName = isInitial
+    ? "flex h-full items-center justify-center py-12"
+    : "absolute inset-x-0 bottom-0 z-20 ";
+  const containerClassName = isInitial
+    ? "w-full max-w-3xl animate-enter-down"
+    : "w-full max-w-3xl mx-auto px-4 py-3 md:px-8 animate-enter-up";
 
   return (
     <form
       key={isInitial ? "form-initial" : "form-bottom"}
       onSubmit={handleSubmit}
-      className={wrapperClasses}
+      className={formClassName}
     >
-      <div className={containerClasses}>
-        <div className={`${glassClasses} flex flex-col`}>
-          
-          {/* Attachments Area */}
+      <div className={containerClassName}>
+        <div className="flex flex-col gap-3">
           {pendingAttachments.length > 0 && (
-            <div className="flex flex-wrap gap-3 p-4 pb-0 animate-fade-in">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-3 py-2">
               {pendingAttachments.map((attachment) => (
                 <div
                   key={attachment.id}
-                  className="group relative flex items-center gap-3 rounded-2xl border border-(--border-subtle)/50 bg-(--surface-muted)/50 pl-2 pr-8 py-2 transition-all hover:bg-(--surface-muted)"
+                  className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-(--border-subtle) bg-background px-3 py-2 shadow-sm"
                 >
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-(--border-subtle)/50 bg-white">
+                  <div className="h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
                     {attachment.kind === "image" ? (
                       <img
                         src={attachment.dataUrl}
@@ -134,15 +109,15 @@ export function Composer({ isInitial }: ComposerProps) {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
-                        {getFileIcon(attachment.kind)}
+                        <Paperclip className="h-5 w-5" />
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0 max-w-[120px]">
-                    <div className="truncate text-xs font-medium text-(--text-primary)">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">
                       {attachment.name}
                     </div>
-                    <div className="text-[10px] text-(--text-tertiary)">
+                    <div className="text-xs text-(--text-tertiary)">
                       {formatFileSize(attachment.size)}
                     </div>
                   </div>
@@ -150,34 +125,34 @@ export function Composer({ isInitial }: ComposerProps) {
                     type="button"
                     aria-label="移除附件"
                     onClick={() => removeAttachment(attachment.id)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-(--text-tertiary)/70 opacity-0 transition-all hover:bg-(--surface-card) hover:text-red-500 group-hover:opacity-100"
+                    className="rounded-full p-1 text-(--text-tertiary) transition-colors hover:bg-(--surface-card) hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Input Area */}
-          <div className="flex items-end gap-2 p-3">
-            <input
-              type="file"
-              ref={fileInputRef}
-              multiple
-              onChange={handleFileChange}
-              accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
-              className="hidden"
-            />
-            
-            <button
-              type="button"
-              onClick={handlePickFiles}
-              className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-all hover:bg-(--surface-muted) hover:text-(--text-primary)"
-              title="添加附件"
-            >
-              <Paperclip className="h-5 w-5 transition-transform group-hover:-rotate-45" />
-            </button>
+          <div className="flex flex-row gap-3 items-end justify-center w-full">
+            <div className="flex items-center">
+              <input
+                type="file"
+                ref={fileInputRef}
+                multiple
+                onChange={handleFileChange}
+                accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={handlePickFiles}
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                title="添加附件"
+              >
+                <Paperclip className="h-5 w-5" />
+              </button>
+            </div>
 
             <textarea
               ref={textareaRef}
@@ -188,14 +163,11 @@ export function Composer({ isInitial }: ComposerProps) {
                 setInput(event.target.value);
                 adjustTextareaHeight(event.currentTarget);
               }}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
               onKeyDown={handleKeyDown}
-              rows={1}
-              placeholder="Ask anything..."
-              className="flex-1 max-h-[200px] min-h-[44px] resize-none bg-transparent py-[10px] text-[15px] leading-relaxed text-(--text-primary) placeholder:text-(--text-tertiary)/70 focus:outline-none"
+              rows={2}
+              placeholder="输入您的消息..."
+              className="flex-1 min-h-18 resize-none rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-4 text-sm text-foreground placeholder:text-(--text-tertiary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:border-neutral-400 transition-shadow overflow-y-auto"
             />
-
             <button
               type={pending ? "button" : "submit"}
               disabled={sendDisabled}
@@ -205,38 +177,12 @@ export function Composer({ isInitial }: ComposerProps) {
                   stop();
                 }
               }}
-              className={`
-                flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300
-                ${
-                  sendDisabled
-                    ? "bg-(--surface-muted) text-(--text-tertiary) cursor-not-allowed"
-                    : "bg-(--button-primary-bg) text-(--button-primary-text) shadow-lg shadow-(--button-primary-bg)/20 hover:scale-105 hover:shadow-xl hover:shadow-(--button-primary-bg)/30 active:scale-95"
-                }
-              `}
+              className="w-fit h-fit p-3 inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-(--button-primary-bg) text-(--button-primary-text) hover:bg-(--button-primary-hover)"
             >
-              {pending ? (
-                <Square className="h-4 w-4 fill-current" />
-              ) : (
-                <ArrowUp className="h-5 w-5" />
-              )}
+              {pending ? <Square className="h-6 w-6" /> : <ArrowUp className="h-6 w-6" />}
             </button>
           </div>
         </div>
-        
-        {/* Footer helper text */}
-        {isInitial && (
-          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-(--text-tertiary) animate-fade-in animate-delay-1">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-4 w-4 rounded border border-(--border-subtle) bg-(--surface-muted) text-center font-mono text-[10px] leading-[14px]">↵</span>
-              发送
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-4 w-4 rounded border border-(--border-subtle) bg-(--surface-muted) text-center font-mono text-[10px] leading-[14px]">⇧</span>
-              <span className="inline-block h-4 w-4 rounded border border-(--border-subtle) bg-(--surface-muted) text-center font-mono text-[10px] leading-[14px]">↵</span>
-              换行
-            </span>
-          </div>
-        )}
       </div>
     </form>
   );

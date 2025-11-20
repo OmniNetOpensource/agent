@@ -7,12 +7,10 @@ import {
   type ChatModelId,
 } from "@/lib/models";
 import { getOpenRouterClient, getOpenRouterHeaders } from "@/lib/openrouter";
+import type { Message } from "@/types/chat";
+
 type RequestBody = {
-  contentParts: unknown[];
-  conversationHistory?: Array<{
-    role: "user" | "assistant" | "system";
-    content: string | unknown;
-  }>;
+  conversationHistory: Message[];
   model?: ChatModelId;
 };
 
@@ -49,12 +47,11 @@ const encoder = new TextEncoder();
 export async function POST(req: Request) {
   try {
     const {
-      contentParts,
-      conversationHistory = [],
+      conversationHistory,
       model,
     } = (await req.json()) as RequestBody;
 
-    if (!Array.isArray(contentParts) || contentParts.length === 0) {
+    if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
@@ -84,8 +81,6 @@ export async function POST(req: Request) {
         .join(", ")
     );
 
-    const userContent = contentParts as unknown;
-
     const messages: ChatMessage[] = [
       {
         role: "system",
@@ -100,17 +95,62 @@ export async function POST(req: Request) {
 - 获取更详细的信息：fetch 特定网页
 `,
       },
-      ...conversationHistory.map((msg) => ({
-        role: msg.role,
-        content:
-          typeof msg.content === "string"
-            ? msg.content
-            : String(msg.content ?? ""),
-      })),
-      {
-        role: "user",
-        content: userContent,
-      },
+      ...conversationHistory.map((msg) => {
+        // 只保留 content 和 attachments blocks，过滤掉 research blocks
+        const relevantBlocks = msg.blocks.filter(
+          (block) => block.type === "content" || block.type === "attachments"
+        );
+
+        const contentParts: unknown[] = [];
+
+        for (const block of relevantBlocks) {
+          if (block.type === "content") {
+            contentParts.push({
+              type: "text",
+              text: block.content,
+            });
+          } else if (block.type === "attachments") {
+            // 将 attachments 转换为多模态内容格式
+            for (const att of block.attachments) {
+              const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
+
+              if (att.kind === "image") {
+                contentParts.push({
+                  type: "image_url",
+                  imageUrl: { url: att.dataUrl },
+                });
+              } else if (att.kind === "video") {
+                contentParts.push({
+                  type: "video_url",
+                  videoUrl: { url: att.dataUrl },
+                });
+              } else if (att.kind === "audio") {
+                const format = att.mimeType.split("/")[1]?.split(";")[0] || "wav";
+                contentParts.push({
+                  type: "input_audio",
+                  inputAudio: { data: base64Data, format },
+                });
+              } else {
+                contentParts.push({
+                  type: "file",
+                  file: { filename: att.name, file_data: base64Data },
+                });
+              }
+            }
+          }
+        }
+
+        return {
+          role: msg.role,
+          content: contentParts,
+        };
+      }).filter((msg) => {
+        // 过滤掉空的 assistant 消息
+        if (msg.role !== "assistant") {
+          return true;
+        }
+        return Array.isArray(msg.content) && msg.content.length > 0;
+      }),
     ];
 
     const stream = new ReadableStream({
