@@ -1,4 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useRef } from "react";
+import Image from "next/image";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/utils/file";
 import { useChatComposer } from "@/hooks/useChat";
@@ -100,12 +101,15 @@ export function Composer({ isInitial }: ComposerProps) {
                   key={attachment.id}
                   className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-(--border-subtle) bg-background px-3 py-2 shadow-sm"
                 >
-                  <div className="h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
+                  <div className="relative h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
                     {attachment.kind === "image" ? (
-                      <img
+                      <Image
                         src={attachment.dataUrl}
                         alt={attachment.name}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
