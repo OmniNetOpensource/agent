@@ -1,11 +1,11 @@
 // app/c/[conversationId]/page.tsx
-import ChatPageClient from "@/components/ChatPageClient";
+import { ChatPage } from "@/app/page";
 
 type ConversationPageProps = {
-  params: Promise<{ conversationId: string }>;
+  params: { conversationId: string };
 };
 
-export default async function ConversationPage({ params }: ConversationPageProps) {
-  await params;
-  return <ChatPageClient />;
+export default function ConversationPage({ params }: ConversationPageProps) {
+  void params;
+  return <ChatPage />;
 }
