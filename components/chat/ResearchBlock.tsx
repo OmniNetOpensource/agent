@@ -2,6 +2,15 @@ import { memo, useEffect, useRef } from "react";
 import Markdown from "@/components/Markdown";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
+import { 
+  Brain, 
+  Wrench, 
+  FileText, 
+  ChevronRight, 
+  Loader2, 
+  Sparkles,
+  Terminal
+} from "lucide-react";
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
@@ -10,6 +19,7 @@ type ResearchBlockProps = {
   isExpanded: boolean;
   onToggleBlock: () => void;
   onToggleItem: (itemIndex: number) => void;
+  isActive?: boolean;
 };
 
 type ResearchBlockItemProps = {
@@ -28,17 +38,33 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   onScrollParent,
 }: ResearchBlockItemProps) {
   const contentId = `research-item-${itemKey}`;
-
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const getHeaderText =
-    item.kind === "thinking"
-      ? "💭 Thinking"
-      : item.kind === "tool_call"
-      ? `🔧 ${item.tool}`
-      : item.kind === "tool_result"
-      ? `📊 ${item.tool} Result`
-      : "";
+  const getIcon = () => {
+    switch (item.kind) {
+      case "thinking":
+        return <Brain className="h-3.5 w-3.5" />;
+      case "tool_call":
+        return <Wrench className="h-3.5 w-3.5" />;
+      case "tool_result":
+        return <FileText className="h-3.5 w-3.5" />;
+      default:
+        return <Terminal className="h-3.5 w-3.5" />;
+    }
+  };
+
+  const getTitle = () => {
+    switch (item.kind) {
+      case "thinking":
+        return "思考过程";
+      case "tool_call":
+        return `调用工具: ${item.tool}`;
+      case "tool_result":
+        return `工具返回: ${item.tool}`;
+      default:
+        return "未知操作";
+    }
+  };
 
   const content =
     item.kind === "thinking"
@@ -63,38 +89,52 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
     }
 
     onScrollParent?.();
-  }, [content]);
+  }, [content, isExpanded, onScrollParent]);
 
   return (
-    <div>
+    <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between bg-(--surface-muted) px-3 py-2 text-xs font-semibold text-(--text-secondary) transition-colors hover:bg-(--surface-hover)"
+        className={cx(
+          "flex w-full items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-(--surface-hover)",
+          isExpanded ? "bg-(--surface-hover)" : "bg-(--surface-card)"
+        )}
         aria-expanded={isExpanded}
         aria-controls={contentId}
       >
-        <span className="flex-1 text-left">{getHeaderText ?? ""}</span>
-        <span
-          aria-hidden="true"
-          className={cx(
-            "text-sm transition-transform",
-            isExpanded && "rotate-90"
-          )}
-        >
-          ▶
+        <div className={cx(
+          "flex items-center justify-center rounded-md p-1 transition-colors",
+          item.kind === "thinking" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+          item.kind === "tool_call" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+          item.kind === "tool_result" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+        )}>
+          {getIcon()}
+        </div>
+        
+        <span className="flex-1 text-left font-medium text-(--text-secondary)">
+          {getTitle()}
         </span>
+
+        <ChevronRight 
+          className={cx(
+            "h-3.5 w-3.5 text-(--text-tertiary) transition-transform duration-200",
+            isExpanded && "rotate-90"
+          )} 
+        />
       </button>
 
       <div
         id={contentId}
         ref={containerRef}
         className={cx(
-          "text-left max-h-[240px] overflow-y-auto overscroll-contain bg-(--surface-muted) p-4",
-          !isExpanded && "hidden"
+          "overflow-hidden transition-all duration-300 ease-in-out",
+          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        {isExpanded && <Markdown content={content} />}
+        <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs">
+          <Markdown content={content} />
+        </div>
       </div>
     </div>
   );
@@ -107,6 +147,7 @@ export const ResearchBlock = memo(function ResearchBlock({
   isExpanded,
   onToggleBlock,
   onToggleItem,
+  isActive,
 }: ResearchBlockProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -126,34 +167,70 @@ export const ResearchBlock = memo(function ResearchBlock({
     });
   };
 
+  // Count stats
+  const thinkingCount = items.filter(i => i.kind === 'thinking').length;
+  const toolCount = items.filter(i => i.kind === 'tool_call').length;
+
   return (
-    <div>
+    <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card) shadow-sm">
       <button
         type="button"
         onClick={onToggleBlock}
-        className="flex w-full items-center justify-between bg-(--surface-muted) px-4 py-3 text-xs font-medium text-(--text-secondary) transition-colors hover:bg-(--surface-hover)"
+        className={cx(
+          "flex w-full items-center justify-between px-4 py-3 transition-all hover:bg-(--surface-hover)",
+          isActive && "bg-blue-50/50 dark:bg-blue-900/10"
+        )}
         aria-expanded={isExpanded}
       >
-        <span className="flex-1 px-3 text-left">RESEARCHING...</span>
-        <span
-          aria-hidden="true"
+        <div className="flex items-center gap-3">
+          <div className={cx(
+            "flex h-6 w-6 items-center justify-center rounded-full",
+            isActive 
+              ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" 
+              : "bg-(--surface-muted) text-(--text-secondary)"
+          )}>
+            {isActive ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+          </div>
+          
+          <div className="flex flex-col items-start">
+            <span className={cx(
+              "text-xs font-semibold uppercase tracking-wider",
+              isActive ? "text-blue-600 dark:text-blue-400" : "text-(--text-secondary)"
+            )}>
+              {isActive ? "正在深度思考..." : "深度思考完成"}
+            </span>
+            {!isExpanded && items.length > 0 && (
+              <span className="text-[10px] text-(--text-tertiary)">
+                {thinkingCount} 个思考 · {toolCount} 个工具调用
+              </span>
+            )}
+          </div>
+        </div>
+
+        <ChevronRight 
           className={cx(
-            "text-sm transition-transform",
+            "h-4 w-4 text-(--text-tertiary) transition-transform duration-200",
             isExpanded && "rotate-90"
-          )}
-        >
-          ▶
-        </span>
+          )} 
+        />
       </button>
 
-      {isExpanded && (
-        <div
+      <div
+        className={cx(
+          "transition-all duration-300 ease-in-out",
+          isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div 
           ref={containerRef}
-          className="bg-(--surface-card) max-h-[320px] overflow-y-auto overscroll-contain"
+          className="max-h-[400px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-card)"
         >
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
-
             return (
               <ResearchBlockItem
                 key={itemKey}
@@ -165,8 +242,14 @@ export const ResearchBlock = memo(function ResearchBlock({
               />
             );
           })}
+          {isActive && (
+            <div className="flex items-center gap-2 p-4 text-xs text-(--text-tertiary) animate-pulse">
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+              <span>AI 正在分析...</span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 });

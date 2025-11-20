@@ -36,9 +36,6 @@ export const MessageItem = memo(function MessageItem({
           : "mr-auto shadow-lg w-full"
       )}
     >
-      <div className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-(--text-tertiary)">
-        {isUser ? "你" : "AI 助手"}
-      </div>
 
       {isUser ? (
         <div className="text-base leading-relaxed text-foreground">
@@ -64,6 +61,7 @@ export const MessageItem = memo(function MessageItem({
                   onToggleItem={(itemIndex) =>
                     onToggleResearchItem(index, blockIndex, itemIndex)
                   }
+                  isActive={isStreaming && blockIndex === message.blocks.length - 1}
                 />
               );
             }
