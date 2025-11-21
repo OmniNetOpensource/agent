@@ -3,12 +3,7 @@ import { PendingIndicator } from "./PendingIndicator";
 import { useChatMessages } from "@/hooks/useChat";
 
 export function MessageList() {
-  const {
-    messages,
-    pending,
-    toggleResearchBlock,
-    toggleResearchItem,
-  } = useChatMessages();
+  const { messages, pending } = useChatMessages();
 
   if (messages.length === 0) {
     return null;
@@ -31,8 +26,6 @@ export function MessageList() {
               message={message}
               index={index}
               isStreaming={isStreaming}
-              onToggleResearchBlock={toggleResearchBlock}
-              onToggleResearchItem={toggleResearchItem}
             />
           );
         })}

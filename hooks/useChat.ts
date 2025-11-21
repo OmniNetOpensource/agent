@@ -4,16 +4,10 @@ import { useChatStore } from "@/store/useChatStore";
 export function useChatMessages() {
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
-  const toggleResearchBlock = useChatStore(
-    (state) => state.toggleResearchBlock
-  );
-  const toggleResearchItem = useChatStore((state) => state.toggleResearchItem);
 
   return {
     messages,
     pending,
-    toggleResearchBlock,
-    toggleResearchItem,
   };
 }
 

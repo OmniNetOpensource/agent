@@ -1,41 +1,50 @@
 import { memo } from "react";
 import Markdown from "@/components/Markdown";
+import { useChatStore } from "@/store/useChatStore";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
-import { 
-  Brain, 
-  Wrench, 
-  FileText, 
-  ChevronRight, 
-  Loader2, 
+import {
+  Brain,
+  Wrench,
+  FileText,
+  ChevronRight,
+  Loader2,
   Sparkles,
-  Terminal
+  Terminal,
 } from "lucide-react";
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
   blockIndex: number;
   messageIndex: number;
-  isExpanded: boolean;
-  onToggleBlock: () => void;
-  onToggleItem: (itemIndex: number) => void;
   isActive?: boolean;
 };
 
 type ResearchBlockItemProps = {
   item: ResearchItemData;
   itemKey: string;
-  isExpanded: boolean;
-  onToggle: () => void;
+  messageIndex: number;
+  blockIndex: number;
+  itemIndex: number;
 };
 
 const ResearchBlockItem = memo(function ResearchBlockItem({
   item,
   itemKey,
-  isExpanded,
-  onToggle,
+  messageIndex,
+  blockIndex,
+  itemIndex,
 }: ResearchBlockItemProps) {
   const contentId = `research-item-${itemKey}`;
+  const isExpanded = useChatStore((state) => {
+    const message = state.messages[messageIndex];
+    const block = message?.blocks[blockIndex];
+    if (!block || block.type !== "research") {
+      return false;
+    }
+    const researchItem = block.items[itemIndex];
+    return researchItem?.isExpanded ?? false;
+  });
 
   const getIcon = () => {
     switch (item.kind) {
@@ -76,7 +85,11 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
     <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
       <button
         type="button"
-        onClick={onToggle}
+        onClick={() =>
+          useChatStore
+            .getState()
+            .toggleResearchItem(messageIndex, blockIndex, itemIndex)
+        }
         className={cx(
           "flex w-full items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-(--surface-hover)",
           isExpanded ? "bg-(--surface-hover)" : "bg-(--surface-card)"
@@ -124,20 +137,28 @@ export const ResearchBlock = memo(function ResearchBlock({
   items,
   blockIndex,
   messageIndex,
-  isExpanded,
-  onToggleBlock,
-  onToggleItem,
   isActive,
 }: ResearchBlockProps) {
+  const isExpanded = useChatStore((state) => {
+    const message = state.messages[messageIndex];
+    const block = message?.blocks[blockIndex];
+    if (!block || block.type !== "research") {
+      return false;
+    }
+    return block.isExpanded;
+  });
+
   // Count stats
-  const thinkingCount = items.filter(i => i.kind === 'thinking').length;
-  const toolCount = items.filter(i => i.kind === 'tool_call').length;
+  const thinkingCount = items.filter((i) => i.kind === "thinking").length;
+  const toolCount = items.filter((i) => i.kind === "tool_call").length;
 
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card)/50 shadow-soft backdrop-blur-sm">
       <button
         type="button"
-        onClick={onToggleBlock}
+        onClick={() =>
+          useChatStore.getState().toggleResearchBlock(messageIndex, blockIndex)
+        }
         className={cx(
           "flex w-full items-center justify-between px-4 py-3 transition-all hover:bg-(--surface-hover)",
           isActive && "bg-blue-50/30 dark:bg-blue-900/10"
@@ -197,8 +218,9 @@ export const ResearchBlock = memo(function ResearchBlock({
                 key={itemKey}
                 item={item}
                 itemKey={itemKey}
-                isExpanded={item.isExpanded}
-                onToggle={() => onToggleItem(itemIndex)}
+                messageIndex={messageIndex}
+                blockIndex={blockIndex}
+                itemIndex={itemIndex}
               />
             );
           })}

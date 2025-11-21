@@ -11,20 +11,12 @@ type MessageItemProps = {
   message: Message;
   index: number;
   isStreaming: boolean;
-  onToggleResearchBlock: (messageIndex: number, blockIndex: number) => void;
-  onToggleResearchItem: (
-    messageIndex: number,
-    blockIndex: number,
-    itemIndex: number
-  ) => void;
 };
 
 export const MessageItem = memo(function MessageItem({
   message,
   index,
   isStreaming,
-  onToggleResearchBlock,
-  onToggleResearchItem,
 }: MessageItemProps) {
   const isUser = message.role === "user";
   const [isCopied, setIsCopied] = useState(false);
@@ -131,13 +123,6 @@ export const MessageItem = memo(function MessageItem({
                     items={block.items}
                     blockIndex={blockIndex}
                     messageIndex={index}
-                    isExpanded={block.isExpanded}
-                    onToggleBlock={() =>
-                      onToggleResearchBlock(index, blockIndex)
-                    }
-                    onToggleItem={(itemIndex) =>
-                      onToggleResearchItem(index, blockIndex, itemIndex)
-                    }
                     isActive={
                       isStreaming && blockIndex === message.blocks.length - 1
                     }
