@@ -2,7 +2,6 @@ import {
   ChatTool,
   ToolDefinition,
   ToolHandler,
-  isToolDisabled,
 } from "./types";
 
 export type BraveSearchArgs = {
@@ -211,16 +210,7 @@ const braveSearchSpec: ChatTool = {
   },
 };
 
-const isDisabled = isToolDisabled("brave_search");
-const hasApiKey = Boolean(process.env.BRAVE_API_KEY);
-
 export const braveSearchTool: ToolDefinition = {
   spec: braveSearchSpec,
   handler: braveSearch,
-  available: !isDisabled && hasApiKey,
-  unavailableReason: isDisabled
-    ? "disabled via MCP_DISABLE_BRAVE_SEARCH"
-    : hasApiKey
-    ? undefined
-    : "missing BRAVE_API_KEY",
 };

@@ -3,7 +3,6 @@ import {
   ToolDefinition,
   ToolHandler,
   cleanHtmlToText,
-  isToolDisabled,
 } from "./types";
 
 export type FetchUrlArgs = {
@@ -34,7 +33,7 @@ const fetchUrl: ToolHandler = async (args) => {
   console.error("[Tools:fetch_url] Fetching URL:", url);
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(`https://r.jina.ai/${url}`);
 
     if (!response.ok) {
       console.error(
@@ -104,13 +103,7 @@ const fetchUrlSpec: ChatTool = {
   },
 };
 
-const isDisabled = isToolDisabled("fetch_url");
-
 export const fetchUrlTool: ToolDefinition = {
   spec: fetchUrlSpec,
   handler: fetchUrl,
-  available: !isDisabled,
-  unavailableReason: isDisabled
-    ? "disabled via MCP_DISABLE_FETCH_URL"
-    : undefined,
 };

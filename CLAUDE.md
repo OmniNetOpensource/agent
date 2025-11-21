@@ -14,8 +14,6 @@ Required environment variables in `.env.local`:
 - **OPENROUTER_DEFAULT_MODEL**: Optional default model id (e.g. `openrouter/auto`)
 - **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: Optional but recommended headers for OpenRouter
 - **BRAVE_API_KEY**: Optional. Enables web search tool
-- **MCP_DISABLE_FETCH_URL**: Set "true" to disable URL fetching tool
-- **MCP_DISABLE_BRAVE_SEARCH**: Set "true" to disable search tool
 
 ## Architecture
 
@@ -42,7 +40,7 @@ All streaming happens in [app/api/chat/route.ts](app/api/chat/route.ts) with up 
 Modular tool system in [lib/tools.ts](lib/tools.ts):
 
 - **Tool registration**: Each tool has a `spec` (OpenAI-style tool schema via OpenRouter SDK), `handler`, and availability check
-- **Dynamic enabling**: Tools auto-disable if missing API keys or if `MCP_DISABLE_*` flag is set
+- **Dynamic enabling**: Tools auto-disable if missing API keys
 - **Result truncation**: All tool results are truncated to 10,000 characters
 - **Built-in tools**:
   - `fetch_url`: Fetches and strips HTML/JS/CSS from URLs

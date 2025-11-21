@@ -45,7 +45,6 @@
 ## Environment & Security Tips
 
 - Store API keys (e.g. `OPENROUTER_API_KEY`, `BRAVE_API_KEY`) only in `.env.local`; never commit secrets.
-- Use `MCP_DISABLE_FETCH_URL` and `MCP_DISABLE_BRAVE_SEARCH` to control tool access when developing locally.
 
 # 用户偏好
 

@@ -14,11 +14,7 @@ export type ToolHandler = (args: unknown) => Promise<string>;
 export type ToolDefinition = {
   spec: ChatTool;
   handler: ToolHandler;
-  available: boolean;
-  unavailableReason?: string;
 };
-
-export const TOOL_DISABLE_PREFIX = "MCP_DISABLE_";
 
 export const cleanHtmlToText = (html: string) =>
   html
@@ -27,6 +23,3 @@ export const cleanHtmlToText = (html: string) =>
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-export const isToolDisabled = (name: ToolName) =>
-  process.env[`${TOOL_DISABLE_PREFIX}${name.toUpperCase()}`] === "true";

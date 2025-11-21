@@ -7,35 +7,31 @@ import {
   type ToolName,
 } from "./tools/types";
 
-const toolMap: Record<ToolName, ToolDefinition> = {
+const allTools: Record<ToolName, ToolDefinition> = {
   fetch_url: fetchUrlTool,
   brave_search: braveSearchTool,
 };
 
-const enabledToolEntries = Object.entries(toolMap).filter(
-  ([, tool]) => tool.available
-);
+// Only include brave_search if API key is available
+const hasApiKey = Boolean(process.env.BRAVE_API_KEY);
+const toolMap = hasApiKey
+  ? allTools
+  : ({ fetch_url: fetchUrlTool } as Record<ToolName, ToolDefinition>);
 
-enabledToolEntries.forEach(([name]) => {
+const toolEntries = Object.entries(toolMap);
+
+toolEntries.forEach(([name]) => {
   console.error("[Tools] Enabled tool:", name);
 });
 
-Object.entries(toolMap)
-  .filter(([, tool]) => !tool.available)
-  .forEach(([name, tool]) => {
-    console.error(
-      "[Tools] Skipping tool:",
-      name,
-      tool.unavailableReason ? `(${tool.unavailableReason})` : ""
-    );
-  });
+if (!hasApiKey) {
+  console.error("[Tools] Skipping tool: brave_search (missing BRAVE_API_KEY)");
+}
 
-export const toolSpecs: ChatTool[] = enabledToolEntries.map(
-  ([, tool]) => tool.spec
-);
+export const toolSpecs: ChatTool[] = toolEntries.map(([, tool]) => tool.spec);
 
 const enabledToolHandlers = new Map<string, ToolHandler>(
-  enabledToolEntries.map(([name, tool]) => [name, tool.handler])
+  toolEntries.map(([name, tool]) => [name, tool.handler])
 );
 
 export const callToolByName = async (
@@ -45,7 +41,7 @@ export const callToolByName = async (
   const handler = enabledToolHandlers.get(name);
   if (!handler) {
     console.error("[Tools] Tool not available:", name);
-    return `Error: Tool "${name}" is not available or disabled.`;
+    return `Error: Tool "${name}" is not available.`;
   }
 
   try {
