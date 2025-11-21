@@ -50,19 +50,18 @@ export const MessageItem = memo(function MessageItem({
     <div
       key={`${message.role}-${index}`}
       className={cx(
-        "flex flex-col space-y-2",
+        "flex flex-col space-y-2 animate-enter-up",
         isUser
-          ? "ml-auto max-w-[720px]"
-          : "mr-auto w-full"
+          ? "ml-auto max-w-[85%]"
+          : "mr-auto w-full max-w-[95%]"
       )}
     >
       <div
         className={cx(
-          "rounded-2xl border border-(--border-subtle) bg-(--surface-card) shadow-sm p-6",
-          "space-y-3",
+          "rounded-3xl p-6 transition-all",
           isUser
-            ? "bg-(--surface-user) shadow-none"
-            : "shadow-lg"
+            ? "bg-(--surface-user) text-foreground"
+            : "bg-transparent"
         )}
       >
         {isUser ? (

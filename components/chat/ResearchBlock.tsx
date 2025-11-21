@@ -172,22 +172,22 @@ export const ResearchBlock = memo(function ResearchBlock({
   const toolCount = items.filter(i => i.kind === 'tool_call').length;
 
   return (
-    <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card) shadow-sm">
+    <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card)/50 shadow-soft backdrop-blur-sm">
       <button
         type="button"
         onClick={onToggleBlock}
         className={cx(
           "flex w-full items-center justify-between px-4 py-3 transition-all hover:bg-(--surface-hover)",
-          isActive && "bg-blue-50/50 dark:bg-blue-900/10"
+          isActive && "bg-blue-50/30 dark:bg-blue-900/10"
         )}
         aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-3">
           <div className={cx(
-            "flex h-6 w-6 items-center justify-center rounded-full",
+            "flex h-6 w-6 items-center justify-center rounded-full shadow-sm ring-1 ring-inset",
             isActive 
-              ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" 
-              : "bg-(--surface-muted) text-(--text-secondary)"
+              ? "bg-white text-blue-600 ring-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-900" 
+              : "bg-white text-(--text-secondary) ring-(--border-subtle) dark:bg-(--surface-muted)"
           )}>
             {isActive ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -198,36 +198,36 @@ export const ResearchBlock = memo(function ResearchBlock({
           
           <div className="flex flex-col items-start">
             <span className={cx(
-              "text-xs font-semibold uppercase tracking-wider",
+              "text-xs font-bold uppercase tracking-wider",
               isActive ? "text-blue-600 dark:text-blue-400" : "text-(--text-secondary)"
             )}>
-              {isActive ? "正在深度思考..." : "深度思考完成"}
+              {isActive ? "正在思考..." : "思考过程"}
             </span>
             {!isExpanded && items.length > 0 && (
-              <span className="text-[10px] text-(--text-tertiary)">
-                {thinkingCount} 个思考 · {toolCount} 个工具调用
+              <span className="text-[10px] text-(--text-tertiary) font-medium">
+                {thinkingCount} 步骤 · {toolCount} 工具
               </span>
             )}
           </div>
         </div>
 
-        <ChevronRight 
-          className={cx(
-            "h-4 w-4 text-(--text-tertiary) transition-transform duration-200",
-            isExpanded && "rotate-90"
-          )} 
-        />
+        <div className={cx(
+          "flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 hover:bg-(--surface-hover)",
+          isExpanded && "rotate-90 bg-(--surface-hover)"
+        )}>
+            <ChevronRight className="h-4 w-4 text-(--text-tertiary)" />
+        </div>
       </button>
 
       <div
         className={cx(
-          "transition-all duration-300 ease-in-out",
-          isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+          "transition-all duration-500 cubic-bezier(0.32,0.72,0,1)",
+          isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
         <div 
           ref={containerRef}
-          className="max-h-[400px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-card)"
+          className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)/30"
         >
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;

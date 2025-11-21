@@ -76,25 +76,25 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted) transition-[width] duration-300 ease-in-out ${
-        isCollapsed ? "w-16" : "w-72"
+      className={`flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
+        isCollapsed ? "w-20" : "w-[280px]"
       }`}
     >
       <div
-        className={`border-b border-(--border-subtle) px-3 py-[14.8px] ${
+        className={`px-4 py-5 ${
           isCollapsed
-            ? "flex flex-col items-center gap-3"
-            : "flex items-center gap-2"
+            ? "flex flex-col items-center gap-4"
+            : "flex items-center justify-between gap-2"
         }`}
       >
         <button
           type="button"
           onClick={toggleCollapsed}
           aria-label={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-(--surface-hover) hover:text-foreground active:scale-95"
         >
           <PanelLeft
-            className={`h-5 w-5 transition-transform ${
+            className={`h-5 w-5 transition-transform duration-500 ${
               isCollapsed ? "rotate-180" : ""
             }`}
           />
@@ -103,21 +103,21 @@ export default function Sidebar() {
           type="button"
           onClick={handleNewChat}
           disabled={!canClearConversation}
-          className={`inline-flex items-center justify-center gap-2 rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-sm font-medium text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-            isCollapsed ? "h-10 w-10" : "flex-1 px-4 py-2"
+          className={`group relative inline-flex items-center justify-center overflow-hidden rounded-lg bg-background shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-sm disabled:hover:translate-y-0 ${
+            isCollapsed ? "h-10 w-10 rounded-xl" : "h-9 flex-1 px-3"
           }`}
           aria-label="新对话"
         >
-          <Plus className="h-4 w-4" />
-          {!isCollapsed && <span>新对话</span>}
+          <Plus className={`h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90 ${isCollapsed ? "" : "mr-2"}`} />
+          {!isCollapsed && <span className="text-sm font-medium text-foreground">新对话</span>}
         </button>
-        {mounted && (
+        {mounted && !isCollapsed && (
           <button
             type="button"
             onClick={handleThemeToggle}
             title="切换深色模式"
             aria-label="切换深色模式"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-(--surface-hover) hover:text-foreground"
           >
             {theme === "dark" ? (
               <Sun className="h-5 w-5" />
@@ -127,11 +127,35 @@ export default function Sidebar() {
           </button>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      
+      {mounted && isCollapsed && (
+        <div className="flex justify-center pb-4">
+           <button
+            type="button"
+            onClick={handleThemeToggle}
+            title="切换深色模式"
+            aria-label="切换深色模式"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-(--surface-hover) hover:text-foreground"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-4 py-2">
         {!isCollapsed && (
-          <p className="rounded-xl border border-dashed border-(--border-subtle) px-4 py-6 text-center text-sm text-(--text-tertiary)">
-            历史记录功能暂未启用
-          </p>
+          <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-6 text-center">
+            <p className="text-xs text-(--text-tertiary) font-medium tracking-wide">
+              历史记录
+            </p>
+            <p className="mt-1 text-xs text-(--text-tertiary)/60">
+              暂未启用
+            </p>
+          </div>
         )}
       </div>
     </aside>

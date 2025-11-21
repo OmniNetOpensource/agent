@@ -79,12 +79,13 @@ export function Composer({ isInitial }: ComposerProps) {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const sendDisabled = pending ? false : !hasText && !hasAttachments;
+
   const formClassName = isInitial
     ? "flex h-full items-center justify-center py-12"
-    : "absolute inset-x-0 bottom-0 z-20 ";
+    : "absolute inset-x-0 bottom-0 z-20 pointer-events-none";
   const containerClassName = isInitial
-    ? "w-full max-w-3xl animate-enter-down"
-    : "w-full max-w-3xl mx-auto px-4 py-3 md:px-8 animate-enter-up";
+    ? "w-full max-w-3xl animate-enter-down px-6"
+    : "w-full max-w-3xl mx-auto px-4 py-6 animate-enter-up pointer-events-auto";
 
   return (
     <form
@@ -95,33 +96,33 @@ export function Composer({ isInitial }: ComposerProps) {
       <div className={containerClassName}>
         <div className="flex flex-col gap-3">
           {pendingAttachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-3 py-2">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-(--border-subtle) bg-(--surface-card)/80 backdrop-blur-xl px-4 py-3 shadow-lg">
               {pendingAttachments.map((attachment) => (
                 <div
                   key={attachment.id}
-                  className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-(--border-subtle) bg-background px-3 py-2 shadow-sm"
+                  className="flex min-w-[200px] max-w-[240px] items-center gap-3 rounded-xl border border-(--border-subtle) bg-background p-2 pr-3 shadow-sm"
                 >
-                  <div className="relative h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-(--border-subtle) bg-(--surface-muted)">
                     {attachment.kind === "image" ? (
                       <Image
                         src={attachment.dataUrl}
                         alt={attachment.name}
                         fill
-                        sizes="48px"
+                        sizes="40px"
                         className="object-cover"
                         unoptimized
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
-                        <Paperclip className="h-5 w-5" />
+                        <Paperclip className="h-4 w-4" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-foreground">
+                    <div className="truncate text-xs font-medium text-foreground">
                       {attachment.name}
                     </div>
-                    <div className="text-xs text-(--text-tertiary)">
+                    <div className="text-[10px] text-(--text-tertiary)">
                       {formatFileSize(attachment.size)}
                     </div>
                   </div>
@@ -129,34 +130,33 @@ export function Composer({ isInitial }: ComposerProps) {
                     type="button"
                     aria-label="移除附件"
                     onClick={() => removeAttachment(attachment.id)}
-                    className="rounded-full p-1 text-(--text-tertiary) transition-colors hover:bg-(--surface-card) hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+                    className="rounded-full p-1 text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="flex flex-row gap-3 items-end justify-center w-full">
-            <div className="flex items-center">
-              <input
-                type="file"
-                ref={fileInputRef}
-                multiple
-                onChange={handleFileChange}
-                accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={handlePickFiles}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-(--button-secondary-border) bg-(--button-secondary-bg) text-(--button-secondary-text) transition-colors hover:bg-(--button-secondary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
-                title="添加附件"
-              >
-                <Paperclip className="h-5 w-5" />
-              </button>
-            </div>
+          <div className="relative flex w-full items-end gap-2 rounded-[24px] border border-(--border-subtle) bg-(--surface-card)/80 p-2 shadow-lg backdrop-blur-xl transition-all focus-within:border-(--border-hover) focus-within:bg-(--surface-card) focus-within:shadow-xl">
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              onChange={handleFileChange}
+              accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
+              className="hidden"
+            />
+            
+            <button
+              type="button"
+              onClick={handlePickFiles}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+              title="添加附件"
+            >
+              <Paperclip className="h-5 w-5" />
+            </button>
 
             <textarea
               ref={textareaRef}
@@ -168,10 +168,12 @@ export function Composer({ isInitial }: ComposerProps) {
                 adjustTextareaHeight(event.currentTarget);
               }}
               onKeyDown={handleKeyDown}
-              rows={2}
+              rows={1}
               placeholder="输入您的消息..."
-              className="flex-1 min-h-18 resize-none rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-5 py-4 text-sm text-foreground placeholder:text-(--text-tertiary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:border-neutral-400 transition-shadow overflow-y-auto"
+              className="min-h-[40px] max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
+              style={{ height: '44px' }}
             />
+
             <button
               type={pending ? "button" : "submit"}
               disabled={sendDisabled}
@@ -181,9 +183,13 @@ export function Composer({ isInitial }: ComposerProps) {
                   stop();
                 }
               }}
-              className="w-fit h-fit p-3 inline-flex items-center justify-center rounded-full font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-(--button-primary-bg) text-(--button-primary-text) hover:bg-(--button-primary-hover)"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                sendDisabled
+                  ? "bg-(--surface-muted) text-(--text-tertiary) cursor-not-allowed"
+                  : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-md"
+              }`}
             >
-              {pending ? <Square className="h-6 w-6" /> : <ArrowUp className="h-6 w-6" />}
+              {pending ? <Square className="h-4 w-4 fill-current" /> : <ArrowUp className="h-5 w-5" />}
             </button>
           </div>
         </div>

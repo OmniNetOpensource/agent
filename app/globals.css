@@ -2,76 +2,130 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  /* Base HSL values for easier manipulation */
+  --base-white: 0 0% 100%;
+  --base-black: 240 10% 3.9%;
+
+  /* Light Theme - Refined & Airy */
   --surface-base: #ffffff;
-  --surface-muted: #f4f4f5; /* Zinc 100 */
-  --surface-hover: #f4f4f5;
-  --surface-card: #ffffff;
-  --surface-alt: #fafafa; /* Zinc 50 */
+  --surface-muted: #f8f9fa; /* Slightly cooler gray */
+  --surface-hover: #f3f4f6;
+  --surface-card: rgba(255, 255, 255, 0.8);
+  --surface-alt: #fafafa;
   --surface-user: #f4f4f5;
-  --surface-overlay: rgba(255, 255, 255, 0.9);
-  --border-subtle: #e4e4e7; /* Zinc 200 */
-  --border-strong: #d4d4d8; /* Zinc 300 */
-  --border-hover: #a1a1aa; /* Zinc 400 */
-  --text-primary: #18181b; /* Zinc 900 */
-  --text-secondary: #52525b; /* Zinc 600 */
-  --text-tertiary: #a1a1aa; /* Zinc 400 */
+  --surface-overlay: rgba(255, 255, 255, 0.85);
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-hover: rgba(0, 0, 0, 0.2);
+
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
   --text-code: #18181b;
-  --color-primary: #18181b; /* Zinc 900 */
-  --color-primary-hover: #27272a; /* Zinc 800 */
-  --color-accent: #71717a; /* Zinc 500 */
+
+  --color-primary: #18181b;
+  --color-primary-hover: #27272a;
+  --color-accent: #71717a;
+
   --button-primary-bg: #18181b;
   --button-primary-text: #ffffff;
   --button-primary-hover: #27272a;
-  --button-secondary-bg: #ffffff;
-  --button-secondary-border: #e4e4e7;
+
+  --button-secondary-bg: rgba(255, 255, 255, 0.6);
+  --button-secondary-border: rgba(0, 0, 0, 0.08);
   --button-secondary-text: #18181b;
-  --button-secondary-hover: #fafafa;
+  --button-secondary-hover: rgba(0, 0, 0, 0.04);
+
   --code-inline-bg: #f4f4f5;
   --code-block-bg: #fafafa;
-  --code-block-border: #e4e4e7;
+  --code-block-border: rgba(0, 0, 0, 0.06);
   --code-block-text: #18181b;
+
   --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+
+  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  --shadow-float: 0 20px 40px -12px rgba(0, 0, 0, 0.1);
+
   --spacing-unit: 0.25rem;
-  /* Ensure Tailwind tokens are available in light mode too */
+
+  /* Tailwind mappings */
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
+
+  /* Component mappings */
+  --color-muted: var(--surface-muted);
+  --color-muted-foreground: var(--text-tertiary);
+
+  --color-popover: var(--surface-card);
+  --color-popover-foreground: var(--text-primary);
+
+  --color-card: var(--surface-card);
+  --color-card-foreground: var(--text-primary);
+
+  --color-border: var(--border-subtle);
+  --color-input: var(--border-subtle);
+
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--button-primary-text);
+
+  --color-secondary: var(--surface-muted);
+  --color-secondary-foreground: var(--text-primary);
+
+  --color-accent: var(--surface-hover);
+  --color-accent-foreground: var(--text-primary);
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-ring: var(--border-hover);
+
   color-scheme: light;
 }
 
 html.dark {
-  --surface-base: #09090b; /* Zinc 950 */
-  --surface-muted: #18181b; /* Zinc 900 */
-  --surface-hover: #27272a; /* Zinc 800 */
-  --surface-card: #09090b;
-  --surface-alt: #121215;
+  /* Dark Theme - Deep & Cinematic */
+  --surface-base: #09090b;
+  --surface-muted: #121214;
+  --surface-hover: #1e1e22;
+  --surface-card: rgba(18, 18, 20, 0.7);
+  --surface-alt: #121214;
   --surface-user: #18181b;
-  --surface-overlay: rgba(9, 9, 11, 0.9);
-  --border-subtle: #27272a;
-  --border-strong: #3f3f46;
-  --border-hover: #52525b;
-  --text-primary: #f4f4f5; /* Zinc 100 */
-  --text-secondary: #a1a1aa; /* Zinc 400 */
-  --text-tertiary: #71717a; /* Zinc 500 */
+  --surface-overlay: rgba(9, 9, 11, 0.85);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.2);
+
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
   --text-code: #e4e4e7;
+
   --color-primary: #ffffff;
   --color-primary-hover: #e4e4e7;
   --color-accent: #a1a1aa;
+
   --button-primary-bg: #ffffff;
   --button-primary-text: #09090b;
   --button-primary-hover: #e4e4e7;
-  --button-secondary-bg: transparent;
-  --button-secondary-border: #27272a;
+
+  --button-secondary-bg: rgba(255, 255, 255, 0.05);
+  --button-secondary-border: rgba(255, 255, 255, 0.1);
   --button-secondary-text: #f4f4f5;
-  --button-secondary-hover: #18181b;
+  --button-secondary-hover: rgba(255, 255, 255, 0.1);
+
   --code-inline-bg: #27272a;
   --code-block-bg: #18181b;
-  --code-block-border: #27272a;
+  --code-block-border: rgba(255, 255, 255, 0.1);
   --code-block-text: #f4f4f5;
+
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
+
   color-scheme: dark;
 }
 
@@ -80,8 +134,10 @@ html.dark {
   --color-foreground: var(--text-primary);
   --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
-  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Custom Easings */
+  --transition-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+  --transition-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1); /* bouncy */
   --transition-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
@@ -98,80 +154,48 @@ body {
   min-height: 100vh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  animation: pageLoad 0.5s var(--transition-ease) both;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Interactive elements transition */
+/* Glass Utility */
+.glass {
+  background: var(--surface-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-strong {
+  background: var(--surface-overlay);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Interactive elements */
 button,
 input,
 select,
 textarea,
 [role="button"] {
-  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
-  transition-duration: 0.2s;
+  transition-property: all;
+  transition-duration: 0.3s;
   transition-timing-function: var(--transition-smooth);
 }
 
-/* Minimalist Link Style */
-a {
-  color: var(--text-primary);
-  text-decoration: underline;
-  text-decoration-style: dashed;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  text-decoration-color: var(--text-tertiary);
-  transition: all 0.2s var(--transition-smooth);
-  font-weight: 500;
-}
-
-a:hover {
-  color: var(--text-primary);
-  text-decoration-color: var(--text-primary);
-  text-decoration-thickness: 1px;
-}
-
-/* Exception for buttons or non-text links */
-a:not([class*="btn"]):not([class*="button"]):not([class*="icon"]) {
-  /* Applied to text links */
-}
-
-/* Reset for standard UI controls if they are anchors */
-a.button, a[role="button"] {
-  text-decoration: none;
-}
-
-/* Ensure interactive elements show the expected pointer cursor */
-button:not(:disabled):hover,
-a[href]:hover,
-[role="button"]:hover {
-  cursor: pointer;
-}
-
-::selection {
-  background: rgba(131, 164, 235, 0.15);
-  color: inherit;
-}
-
-html.dark ::selection {
-  background: rgba(196, 145, 75, 0.25);
-  color: inherit;
-}
-
+/* Custom Scrollbar - Minimal */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface-muted);
-  border-radius: 999px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
-  border-radius: 999px;
-  border: 2px solid var(--surface-muted);
-  transition: background 0.15s ease;
+  background: var(--border-hover);
+  border-radius: 99px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -180,17 +204,45 @@ html.dark ::selection {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-accent) transparent;
+  scrollbar-color: var(--border-hover) transparent;
 }
 
-/* ============================================
-   动画定义 - 使用平滑的缓动曲线
-   ============================================ */
-
-@keyframes pageLoad {
+/* Animations */
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
   }
   to {
     opacity: 1;
@@ -198,47 +250,24 @@ html.dark ::selection {
   }
 }
 
-@keyframes fadeSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 动画类 */
 .animate-enter-up {
-  animation: fadeSlideUp 0.4s var(--transition-ease) both;
+  animation: slideUpFade 0.6s var(--transition-smooth) both;
 }
 
 .animate-enter-down {
-  animation: fadeSlideDown 0.4s var(--transition-ease) both;
+  animation: slideDownFade 0.6s var(--transition-smooth) both;
 }
 
-/* ============================================
-   Typography Prose 自定义样式
-   ============================================ */
+.animate-scale-in {
+  animation: scaleIn 0.4s var(--transition-smooth) both;
+}
 
-/* 覆盖 prose 的默认颜色，使用自定义 CSS 变量 */
+/* Typography Prose */
 .prose {
   --tw-prose-body: var(--text-primary);
   --tw-prose-headings: var(--text-primary);
   --tw-prose-lead: var(--text-secondary);
-  --tw-prose-links: var(--color-primary);
+  --tw-prose-links: var(--text-primary);
   --tw-prose-bold: var(--text-primary);
   --tw-prose-counters: var(--text-secondary);
   --tw-prose-bullets: var(--text-secondary);
@@ -251,44 +280,34 @@ html.dark ::selection {
   --tw-prose-pre-bg: var(--code-block-bg);
   --tw-prose-th-borders: var(--border-subtle);
   --tw-prose-td-borders: var(--border-subtle);
-}
 
-/* 深色模式下的 prose 颜色 */
-html.dark .prose {
-  --tw-prose-body: var(--text-primary);
-  --tw-prose-headings: var(--text-primary);
-  --tw-prose-lead: var(--text-secondary);
-  --tw-prose-links: var(--color-primary);
-  --tw-prose-bold: var(--text-primary);
-  --tw-prose-counters: var(--text-secondary);
-  --tw-prose-bullets: var(--text-secondary);
-  --tw-prose-hr: var(--border-subtle);
-  --tw-prose-quotes: var(--text-primary);
-  --tw-prose-quote-borders: var(--border-subtle);
-  --tw-prose-captions: var(--text-secondary);
-  --tw-prose-code: var(--text-code);
-  --tw-prose-pre-code: var(--code-block-text);
-  --tw-prose-pre-bg: var(--code-block-bg);
-  --tw-prose-th-borders: var(--border-subtle);
-  --tw-prose-td-borders: var(--border-subtle);
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 65ch;
 }
 
 .prose a {
-  text-decoration-style: dashed;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  text-decoration: none;
+  border-bottom: 1px solid var(--text-tertiary);
+  transition: border-color 0.2s ease;
 }
 
 .prose a:hover {
-  color: var(--text-primary);
-  text-decoration-color: var(--text-primary);
+  border-color: var(--text-primary);
 }
 
-.prose code::before,
-.prose code::after {
-  content: "";
+.prose code {
+  background: var(--code-inline-bg);
+  padding: 0.2em 0.4em;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  font-size: 0.875em;
+}
+
+.prose pre {
+  background: var(--code-block-bg);
+  border: 1px solid var(--code-block-border);
+  border-radius: var(--radius-md);
 }
 
 /* View Transitions */

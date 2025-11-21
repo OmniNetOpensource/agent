@@ -194,9 +194,9 @@ export function ModelSelector({
         onClick={() => setIsOpen(!isOpen)}
         className={`
           flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
-          bg-(--surface-muted) hover:bg-(--surface-hover) border border-(--border-subtle)
-          text-foreground min-w-[180px] justify-between
-          ${isOpen ? "ring-2 ring-neutral-400/20 border-neutral-400/40" : ""}
+          bg-background/50 hover:bg-accent/50 border border-border/50 backdrop-blur-sm
+          text-foreground min-w-[180px] justify-between shadow-sm hover:shadow-md
+          ${isOpen ? "ring-2 ring-primary/20 border-primary/40 bg-accent/50" : ""}
         `}
       >
         <span className="truncate">
@@ -206,49 +206,49 @@ export function ModelSelector({
             ? "模型加载失败"
             : currentModelLabel || "未选择模型"}
         </span>
-        <ChevronDown className={`w-4 h-4 text-(--text-tertiary) transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 w-full z-50 min-w-[200px] overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card) shadow-lg origin-top-left">
-          <div className="p-1">
+        <div className="absolute top-full mt-2 left-0 w-full z-50 min-w-[240px] overflow-hidden rounded-2xl border border-border/50 bg-popover/80 backdrop-blur-xl shadow-float origin-top-left animate-enter-down">
+          <div className="p-1.5">
             {error ? (
-              <div className="px-3 py-2 text-xs text-(--text-secondary)">
+              <div className="px-3 py-2 text-xs text-muted-foreground">
                 模型加载失败，请重试
               </div>
             ) : (
               <>
-                <div className="px-2 pb-2">
+                <div className="px-2 pb-2 pt-1">
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="搜索模型..."
                     disabled={models.length === 0 || loading}
-                    className="w-full rounded-lg border border-(--border-subtle) bg-(--surface-muted) px-3 py-2 text-sm text-foreground placeholder:text-(--text-tertiary) focus:outline-none focus:ring-2 focus:ring-(--border-strong) disabled:opacity-60"
+                    className="w-full rounded-lg border border-border/50 bg-muted/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-60"
                   />
                 </div>
 
                 {models.length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-(--text-secondary)">
+                  <div className="px-3 py-2 text-xs text-muted-foreground text-center">
                     {loading ? "正在加载模型..." : "暂无可用模型"}
                   </div>
                 ) : visibleModels.length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-(--text-secondary)">
+                  <div className="px-3 py-2 text-xs text-muted-foreground text-center">
                     没有匹配的模型
                   </div>
                 ) : (
                   <div
                     ref={scrollRef}
                     onScroll={handleScroll}
-                    className="max-h-64 overflow-y-auto"
+                    className="max-h-[320px] overflow-y-auto px-1"
                   >
                     <div className="relative">
                       <button
                         ref={measurementRef}
                         type="button"
                         className={`
-                          flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
-                          text-(--text-secondary)
+                          flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-colors
+                          text-muted-foreground
                         `}
                         style={{
                           position: "absolute",
@@ -283,16 +283,16 @@ export function ModelSelector({
                                   setIsOpen(false);
                                 }}
                                 className={`
-                                  flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
+                                  flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-all duration-200 group
                                   ${currentModel === model.id 
-                                    ? "bg-(--surface-muted) text-foreground font-medium" 
-                                    : "text-(--text-secondary) hover:bg-(--surface-hover) hover:text-foreground"
+                                    ? "bg-primary/10 text-primary font-medium" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                   }
                                 `}
                               >
                                 <span className="truncate">{highlightLabel(model.label, search)}</span>
                                 {currentModel === model.id && (
-                                  <Check className="w-3.5 h-3.5 text-foreground" />
+                                  <Check className="w-3.5 h-3.5 text-primary animate-scale-in" />
                                 )}
                               </button>
                             </div>
@@ -308,16 +308,16 @@ export function ModelSelector({
                             setIsOpen(false);
                           }}
                           className={`
-                            flex w-full items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors
+                            flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-all duration-200
                             ${currentModel === model.id 
-                              ? "bg-(--surface-muted) text-foreground font-medium" 
-                              : "text-(--text-secondary) hover:bg-(--surface-hover) hover:text-foreground"
+                              ? "bg-primary/10 text-primary font-medium" 
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                             }
                           `}
                         >
                           <span className="truncate">{highlightLabel(model.label, search)}</span>
                           {currentModel === model.id && (
-                            <Check className="w-3.5 h-3.5 text-foreground" />
+                            <Check className="w-3.5 h-3.5 text-primary animate-scale-in" />
                           )}
                         </button>
                       ))
