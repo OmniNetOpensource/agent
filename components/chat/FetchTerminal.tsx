@@ -141,7 +141,7 @@ export const FetchTerminal: React.FC<FetchTerminalProps> = ({
           className={`
             relative p-4 overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-(--border-hover) scrollbar-track-transparent
             transition-all duration-300 ease-in-out font-mono
-            ${isExpanded ? 'h-56 opacity-100' : 'h-0 p-0 opacity-0'}
+            ${isExpanded ? 'h-56 opacity-100' : 'h-0 p-0 opacity-0 hidden'}
           `}
         >
           <div className="relative z-10 space-y-1">

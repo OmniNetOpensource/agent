@@ -166,9 +166,9 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-sm text-(--text-secondary)">
             <div className="relative flex h-4 w-4 items-center justify-center">
                <div className="absolute inset-0 animate-ping rounded-full bg-(--text-tertiary) opacity-20" />
-               <Search className="relative h-3.5 w-3.5 animate-pulse text-(--text-primary)" />
+               <Search className="relative h-3.5 w-3.5 animate-pulse text-foreground" />
             </div>
-            <span className="font-mono text-xs text-(--text-tertiary)">SEARCHING_QUERY: <span className="font-bold text-(--text-primary)">{query}</span></span>
+            <span className="font-mono text-xs text-(--text-tertiary)">SEARCHING_QUERY: <span className="font-bold text-foreground">{query}</span></span>
           </div>
         )}
 
@@ -176,7 +176,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         {braveResults ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2 px-1 text-xs font-medium text-(--text-tertiary)">
-              <Zap className="h-3.5 w-3.5 text-(--text-primary)" />
+              <Zap className="h-3.5 w-3.5 text-foreground" />
               <span className="font-mono uppercase tracking-wider">Search Results: {query}</span>
             </div>
             {braveResults.length > 0 ? (
@@ -386,7 +386,7 @@ export const ResearchBlock = memo(function ResearchBlock({
 
         <div className={cx(
           "flex h-6 w-6 items-center justify-center rounded bg-(--surface-muted) border border-(--border-subtle) transition-all duration-200 hover:bg-(--surface-hover)",
-          isExpanded && "rotate-90 bg-(--surface-hover) text-(--text-primary)"
+          isExpanded && "rotate-90 bg-(--surface-hover) text-foreground"
         )}>
           <ChevronRight className="h-4 w-4 text-current" />
         </div>
