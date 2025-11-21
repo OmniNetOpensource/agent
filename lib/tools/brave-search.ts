@@ -9,6 +9,23 @@ export type BraveSearchArgs = {
   freshness?: "pd" | "pw" | "pm" | "py";
 };
 
+type BraveWebResult = {
+  title?: unknown;
+  url?: unknown;
+  description?: unknown;
+  [key: string]: unknown;
+};
+
+type BraveSearchPayload = {
+  query: string;
+  results: Array<{
+    title: string;
+    url: string;
+    description: string;
+  }>;
+  rawResults: BraveWebResult[];
+};
+
 export const parseBraveSearchArgs = (args: unknown): BraveSearchArgs => {
   if (!args || typeof args !== "object") {
     throw new Error("brave_search requires an object with a query");
@@ -75,6 +92,58 @@ const enqueueBraveSearchCall = async <T>(
   return queuedTask;
 };
 
+const formatBraveSearchResponse = (
+  query: string,
+  data: { web?: { results?: BraveWebResult[] } }
+): string => {
+  const rawResults = Array.isArray(data.web?.results) ? data.web?.results : [];
+
+  const results: BraveSearchPayload["results"] = rawResults
+    .map((result) => {
+      if (!result || typeof result !== "object") {
+        return null;
+      }
+
+      const title =
+        typeof result.title === "string" && result.title.trim().length > 0
+          ? result.title
+          : "";
+      const url =
+        typeof result.url === "string" && result.url.trim().length > 0
+          ? result.url
+          : "";
+      const description =
+        typeof result.description === "string" ? result.description : "";
+
+      if (!title && !url) {
+        return null;
+      }
+
+      return {
+        title: title || url,
+        url,
+        description,
+      };
+    })
+    .filter(
+      (
+        result
+      ): result is {
+        title: string;
+        url: string;
+        description: string;
+      } => Boolean(result && result.url)
+    );
+
+  const payload: BraveSearchPayload = {
+    query,
+    results,
+    rawResults,
+  };
+
+  return JSON.stringify(payload);
+};
+
 const performBraveSearch = async (
   query: string,
   freshness: BraveSearchArgs["freshness"],
@@ -117,45 +186,10 @@ const performBraveSearch = async (
       return `Brave Search API error: ${response.status} ${response.statusText}`;
     }
 
-    const data = await response.json();
-
-    let resultText = `Search results for: "${query}"\n\n`;
-
-    if (data.web?.results && data.web.results.length > 0) {
-      resultText += "Web Results:\n\n";
-      data.web.results.forEach(
-        (
-          result: { title: string; url: string; description?: string },
-          index: number
-        ) => {
-          resultText += `${index + 1}. ${result.title}\n`;
-          resultText += `   URL: ${result.url}\n`;
-          resultText += `   ${result.description || "No description"}\n\n`;
-        }
-      );
-    }
-
-    if (data.news?.results && data.news.results.length > 0) {
-      resultText += "\nNews Results:\n\n";
-      data.news.results
-        .slice(0, 3)
-        .forEach(
-          (
-            result: { title: string; source?: string; description?: string },
-            index: number
-          ) => {
-            resultText += `${index + 1}. ${result.title}\n`;
-            resultText += `   Source: ${result.source || "Unknown"}\n`;
-            resultText += `   ${result.description || ""}\n\n`;
-          }
-        );
-    }
-
-    if (!data.web?.results || data.web.results.length === 0) {
-      resultText = `No results found for "${query}"`;
-    }
-
-    return resultText;
+    const data = (await response.json()) as {
+      web?: { results?: BraveWebResult[] };
+    };
+    return formatBraveSearchResponse(query, data);
   } catch (error) {
     console.error(
       "[Tools:brave_search] Error:",

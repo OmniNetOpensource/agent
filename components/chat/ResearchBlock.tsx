@@ -3,6 +3,7 @@ import Markdown from "@/components/Markdown";
 import { useChatStore } from "@/store/useChatStore";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
+import { SearchResultCard } from "./SearchResultCard";
 import {
   Brain,
   Wrench,
@@ -12,6 +13,63 @@ import {
   Sparkles,
   Terminal,
 } from "lucide-react";
+
+type BraveSearchResult = {
+  title: string;
+  url: string;
+  description: string;
+};
+
+const parseBraveSearchResults = (
+  rawResult: string
+): BraveSearchResult[] | null => {
+  try {
+    const data = JSON.parse(rawResult);
+    const rawResults =
+      (Array.isArray(data?.results) && data.results) ||
+      (Array.isArray(data?.rawResults) && data.rawResults) ||
+      (Array.isArray(data?.web?.results) && data.web.results) ||
+      [];
+
+    if (!Array.isArray(rawResults)) {
+      return null;
+    }
+
+    const normalized = rawResults
+      .map((item) => {
+        if (!item || typeof item !== "object") {
+          return null;
+        }
+
+        const title =
+          "title" in item && typeof item.title === "string"
+            ? item.title.trim()
+            : "";
+        const url =
+          "url" in item && typeof item.url === "string" ? item.url : "";
+        const description =
+          "description" in item && typeof item.description === "string"
+            ? item.description
+            : "";
+
+        if (!title && !url) {
+          return null;
+        }
+
+        return {
+          title: title || url,
+          url,
+          description,
+        };
+      })
+      .filter((item): item is BraveSearchResult => Boolean(item?.url));
+
+    return normalized;
+  } catch (error) {
+    console.warn("[ResearchBlock] Failed to parse brave_search result", error);
+    return null;
+  }
+};
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
@@ -81,6 +139,38 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       ? item.result
       : "";
 
+  const braveResults =
+    item.kind === "tool_result" && item.tool === "brave_search"
+      ? parseBraveSearchResults(item.result)
+      : null;
+
+  const renderedContent =
+    braveResults !== null ? (
+      braveResults.length > 0 ? (
+        <div className="horizontal-scroll overflow-x-auto bg-(--surface-muted) px-4 py-4">
+          <div className="flex gap-3 pb-1 pl-1 pr-4">
+            {braveResults.map((result, index) => (
+              <SearchResultCard
+                key={`${result.url}-${index}`}
+                title={result.title}
+                url={result.url}
+                description={result.description}
+                delay={index * 90}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-(--surface-muted) p-4 text-xs text-(--text-tertiary)">
+          没有找到相关的搜索结果
+        </div>
+      )
+    ) : (
+      <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs">
+        <Markdown content={content} />
+      </div>
+    );
+
   return (
     <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
       <button
@@ -125,9 +215,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs">
-          <Markdown content={content} />
-        </div>
+        {renderedContent}
       </div>
     </div>
   );
