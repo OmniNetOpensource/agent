@@ -96,7 +96,7 @@ export function Composer({ isInitial }: ComposerProps) {
       <div className={containerClassName}>
         <div className="flex flex-col gap-3">
           {pendingAttachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-(--border-subtle) bg-(--surface-card)/80 backdrop-blur-xl px-4 py-3 shadow-lg">
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-4 py-3 shadow-lg">
               {pendingAttachments.map((attachment) => (
                 <div
                   key={attachment.id}
@@ -139,7 +139,7 @@ export function Composer({ isInitial }: ComposerProps) {
             </div>
           )}
 
-          <div className="relative flex w-full items-end gap-2 rounded-[24px] border border-(--border-subtle) bg-(--surface-card)/80 p-2 shadow-lg backdrop-blur-xl transition-all focus-within:border-(--border-hover) focus-within:bg-(--surface-card) focus-within:shadow-xl">
+          <div className="relative flex w-full items-end gap-2 rounded-[24px] border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg transition-all focus-within:border-(--border-hover) focus-within:shadow-xl">
             <input
               type="file"
               ref={fileInputRef}

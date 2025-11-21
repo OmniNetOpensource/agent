@@ -10,7 +10,7 @@
   --surface-base: #ffffff;
   --surface-muted: #f8f9fa; /* Slightly cooler gray */
   --surface-hover: #f3f4f6;
-  --surface-card: rgba(255, 255, 255, 0.8);
+  --surface-card: #ffffff;
   --surface-alt: #fafafa;
   --surface-user: #f4f4f5;
   --surface-overlay: rgba(255, 255, 255, 0.85);
@@ -91,7 +91,7 @@ html.dark {
   --surface-base: #09090b;
   --surface-muted: #121214;
   --surface-hover: #1e1e22;
-  --surface-card: rgba(18, 18, 20, 0.7);
+  --surface-card: #121214;
   --surface-alt: #121214;
   --surface-user: #18181b;
   --surface-overlay: rgba(9, 9, 11, 0.85);
