@@ -4,6 +4,7 @@ import { useChatStore } from "@/store/useChatStore";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
 import { SearchResultCard } from "./SearchResultCard";
+import { FetchTerminal } from "./FetchTerminal";
 import {
   Brain,
   Wrench,
@@ -84,6 +85,7 @@ type ResearchBlockItemProps = {
   messageIndex: number;
   blockIndex: number;
   itemIndex: number;
+  items: ResearchItemData[];
 };
 
 const ResearchBlockItem = memo(function ResearchBlockItem({
@@ -92,6 +94,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   messageIndex,
   blockIndex,
   itemIndex,
+  items,
 }: ResearchBlockItemProps) {
   const contentId = `research-item-${itemKey}`;
   const isExpanded = useChatStore((state) => {
@@ -103,6 +106,42 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
     const researchItem = block.items[itemIndex];
     return researchItem?.isExpanded ?? false;
   });
+
+  // Handle fetch_url tool visualization
+  if (item.kind === "tool_call" && item.tool === "fetch_url") {
+    const nextItem = items[itemIndex + 1];
+    const resultItem =
+      nextItem?.kind === "tool_result" && nextItem.tool === "fetch_url"
+        ? nextItem
+        : null;
+
+    const url = typeof item.args.url === "string" ? item.args.url : "Unknown URL";
+
+    return (
+      <div className="animate-enter-down px-4">
+        <FetchTerminal
+          url={url}
+          status={resultItem ? (resultItem.result.startsWith("Error") ? "error" : "complete") : "pending"}
+          result={resultItem?.result}
+          isExpanded={isExpanded}
+          onToggle={() =>
+            useChatStore
+              .getState()
+              .toggleResearchItem(messageIndex, blockIndex, itemIndex)
+          }
+        />
+      </div>
+    );
+  }
+
+  // Hide fetch_url result as it's handled by the call item
+  if (item.kind === "tool_result" && item.tool === "fetch_url") {
+    const prevItem = items[itemIndex - 1];
+    if (prevItem?.kind === "tool_call" && prevItem.tool === "fetch_url") {
+      return null;
+    }
+    // Fallback if no preceding call found (edge case)
+  }
 
   const getIcon = () => {
     switch (item.kind) {
@@ -195,16 +234,16 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         )}>
           {getIcon()}
         </div>
-        
+
         <span className="flex-1 text-left font-medium text-(--text-secondary)">
           {getTitle()}
         </span>
 
-        <ChevronRight 
+        <ChevronRight
           className={cx(
             "h-3.5 w-3.5 text-(--text-tertiary) transition-transform duration-200",
             isExpanded && "rotate-90"
-          )} 
+          )}
         />
       </button>
 
@@ -256,8 +295,8 @@ export const ResearchBlock = memo(function ResearchBlock({
         <div className="flex items-center gap-3">
           <div className={cx(
             "flex h-6 w-6 items-center justify-center rounded-full shadow-sm ring-1 ring-inset",
-            isActive 
-              ? "bg-white text-blue-600 ring-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-900" 
+            isActive
+              ? "bg-white text-blue-600 ring-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-900"
               : "bg-white text-(--text-secondary) ring-(--border-subtle) dark:bg-(--surface-muted)"
           )}>
             {isActive ? (
@@ -266,7 +305,7 @@ export const ResearchBlock = memo(function ResearchBlock({
               <Sparkles className="h-3.5 w-3.5" />
             )}
           </div>
-          
+
           <div className="flex flex-col items-start">
             <span className={cx(
               "text-xs font-bold uppercase tracking-wider",
@@ -286,7 +325,7 @@ export const ResearchBlock = memo(function ResearchBlock({
           "flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 hover:bg-(--surface-hover)",
           isExpanded && "rotate-90 bg-(--surface-hover)"
         )}>
-            <ChevronRight className="h-4 w-4 text-(--text-tertiary)" />
+          <ChevronRight className="h-4 w-4 text-(--text-tertiary)" />
         </div>
       </button>
 
@@ -296,7 +335,7 @@ export const ResearchBlock = memo(function ResearchBlock({
           isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div 
+        <div
           className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)/30"
         >
           {items.map((item, itemIndex) => {
@@ -309,6 +348,7 @@ export const ResearchBlock = memo(function ResearchBlock({
                 messageIndex={messageIndex}
                 blockIndex={blockIndex}
                 itemIndex={itemIndex}
+                items={items}
               />
             );
           })}
