@@ -11,8 +11,11 @@ import {
   FileText,
   ChevronRight,
   Loader2,
-  Sparkles,
   Terminal,
+  Activity,
+  Cpu,
+  Search,
+  Zap,
 } from "lucide-react";
 
 type BraveSearchResult = {
@@ -160,9 +163,12 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       <div className="animate-enter-down px-4 py-2">
         {/* Searching State */}
         {!resultItem && (
-          <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-card) p-3 text-sm text-(--text-secondary)">
-            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-            <span>正在搜索: <span className="font-medium text-foreground">{query}</span></span>
+          <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-sm text-(--text-secondary)">
+            <div className="relative flex h-4 w-4 items-center justify-center">
+               <div className="absolute inset-0 animate-ping rounded-full bg-(--text-tertiary) opacity-20" />
+               <Search className="relative h-3.5 w-3.5 animate-pulse text-(--text-primary)" />
+            </div>
+            <span className="font-mono text-xs text-(--text-tertiary)">SEARCHING_QUERY: <span className="font-bold text-(--text-primary)">{query}</span></span>
           </div>
         )}
 
@@ -170,12 +176,16 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         {braveResults ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2 px-1 text-xs font-medium text-(--text-tertiary)">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>搜索结果: {query}</span>
+              <Zap className="h-3.5 w-3.5 text-(--text-primary)" />
+              <span className="font-mono uppercase tracking-wider">Search Results: {query}</span>
             </div>
             {braveResults.length > 0 ? (
-              <div className="overflow-x-auto bg-(--surface-muted) rounded-xl border border-(--border-subtle) p-2">
-                <div className="flex gap-3 w-max">
+              <div className="overflow-x-auto bg-(--surface-muted) rounded-xl border border-(--border-subtle) p-3 relative group/scroll">
+                 {/* Scroll indicators */}
+                 <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-10 pointer-events-none" />
+                 <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-10 pointer-events-none" />
+                 
+                <div className="flex gap-3 w-max pb-2">
                   {braveResults.map((result, index) => (
                     <SearchResultCard
                       key={`${result.url}-${index}`}
@@ -188,13 +198,13 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-4 text-center text-xs text-(--text-tertiary)">
-                没有找到相关的搜索结果
+              <div className="rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-4 text-center text-xs font-mono text-(--text-tertiary)">
+                &gt; SYSTEM: NO_RESULTS_FOUND
               </div>
             )}
           </div>
         ) : resultItem ? (
-          <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs rounded-lg border border-(--border-subtle)">
+          <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs rounded-lg border border-(--border-subtle) font-mono text-(--text-secondary)">
             <Markdown content={resultItem.result} />
           </div>
         ) : null}
@@ -226,13 +236,13 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   const getTitle = () => {
     switch (item.kind) {
       case "thinking":
-        return "思考过程";
+        return "THOUGHT_PROCESS";
       case "tool_call":
-        return `调用工具: ${item.tool}`;
+        return `EXEC_TOOL: ${item.tool}`;
       case "tool_result":
-        return `工具返回: ${item.tool}`;
+        return `RETURN_VAL: ${item.tool}`;
       default:
-        return "未知操作";
+        return "UNKNOWN_OP";
     }
   };
 
@@ -246,7 +256,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       : "";
 
   const renderedContent = (
-    <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs">
+    <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs font-mono text-(--text-secondary) border-t border-(--border-subtle)">
       <Markdown content={content} />
     </div>
   );
@@ -262,21 +272,21 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         }
         className={cx(
           "flex w-full items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-(--surface-hover)",
-          isExpanded ? "bg-(--surface-hover)" : "bg-(--surface-card)"
+          isExpanded ? "bg-(--surface-hover)" : "bg-transparent"
         )}
         aria-expanded={isExpanded}
         aria-controls={contentId}
       >
         <div className={cx(
-          "flex items-center justify-center rounded-md p-1 transition-colors",
-          item.kind === "thinking" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-          item.kind === "tool_call" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-          item.kind === "tool_result" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          "flex items-center justify-center rounded-md p-1 transition-colors border",
+          item.kind === "thinking" && "bg-(--surface-card) text-foreground border-(--border-strong)",
+          item.kind === "tool_call" && "bg-(--surface-card) text-(--text-secondary) border-(--border-subtle)",
+          item.kind === "tool_result" && "bg-(--surface-card) text-(--text-tertiary) border-(--border-subtle)"
         )}>
           {getIcon()}
         </div>
 
-        <span className="flex-1 text-left font-medium text-(--text-secondary)">
+        <span className="flex-1 text-left font-mono font-medium text-(--text-secondary) tracking-tight">
           {getTitle()}
         </span>
 
@@ -321,7 +331,13 @@ export const ResearchBlock = memo(function ResearchBlock({
   const toolCount = items.filter((i) => i.kind === "tool_call").length;
 
   return (
-    <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-(--surface-card)/50 shadow-soft backdrop-blur-sm">
+    <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-background shadow-soft">
+      {/* Top Decor Bar */}
+      <div className={cx(
+         "h-0.5 w-full transition-colors duration-500",
+         isActive ? "bg-linear-to-r from-(--color-brand) via-(--color-info) to-(--color-brand) bg-size-[200%_100%] animate-shimmer" : "bg-(--border-subtle)"
+      )} />
+      
       <button
         type="button"
         onClick={() =>
@@ -329,44 +345,50 @@ export const ResearchBlock = memo(function ResearchBlock({
         }
         className={cx(
           "flex w-full items-center justify-between px-4 py-3 transition-all hover:bg-(--surface-hover)",
-          isActive && "bg-blue-50/30 dark:bg-blue-900/10"
+          isActive && "bg-(--surface-hover)"
         )}
         aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-3">
           <div className={cx(
-            "flex h-6 w-6 items-center justify-center rounded-full shadow-sm ring-1 ring-inset",
+            "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm transition-all duration-300 border",
             isActive
-              ? "bg-white text-blue-600 ring-blue-100 dark:bg-blue-950 dark:text-blue-400 dark:ring-blue-900"
-              : "bg-white text-(--text-secondary) ring-(--border-subtle) dark:bg-(--surface-muted)"
+              ? "bg-(--surface-card) text-(--color-brand) border-(--color-brand)"
+              : "bg-(--surface-muted) text-(--text-tertiary) border-(--border-subtle)"
           )}>
             {isActive ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="h-3.5 w-3.5" />
+              <Cpu className="h-4 w-4" />
             )}
           </div>
 
           <div className="flex flex-col items-start">
             <span className={cx(
-              "text-xs font-bold uppercase tracking-wider",
-              isActive ? "text-blue-600 dark:text-blue-400" : "text-(--text-secondary)"
+              "text-xs font-bold uppercase tracking-widest font-mono",
+              isActive ? "text-(--color-brand)" : "text-(--text-tertiary)"
             )}>
-              {isActive ? "正在思考..." : "思考过程"}
+              {isActive ? "PROCESSING_TASK..." : "TASK_COMPLETED"}
             </span>
             {!isExpanded && items.length > 0 && (
-              <span className="text-[10px] text-(--text-tertiary) font-medium">
-                {thinkingCount} 步骤 · {toolCount} 工具
-              </span>
+              <div className="flex items-center gap-2 text-[10px] text-(--text-tertiary) font-mono mt-0.5">
+                <span className="flex items-center gap-1">
+                  <Activity className="h-3 w-3" /> {thinkingCount} OPS
+                </span>
+                <span>|</span>
+                <span className="flex items-center gap-1">
+                  <Wrench className="h-3 w-3" /> {toolCount} TOOLS
+                </span>
+              </div>
             )}
           </div>
         </div>
 
         <div className={cx(
-          "flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 hover:bg-(--surface-hover)",
-          isExpanded && "rotate-90 bg-(--surface-hover)"
+          "flex h-6 w-6 items-center justify-center rounded bg-(--surface-muted) border border-(--border-subtle) transition-all duration-200 hover:bg-(--surface-hover)",
+          isExpanded && "rotate-90 bg-(--surface-hover) text-(--text-primary)"
         )}>
-          <ChevronRight className="h-4 w-4 text-(--text-tertiary)" />
+          <ChevronRight className="h-4 w-4 text-current" />
         </div>
       </button>
 
@@ -377,7 +399,7 @@ export const ResearchBlock = memo(function ResearchBlock({
         )}
       >
         <div
-          className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)/30"
+          className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)"
         >
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
@@ -394,9 +416,12 @@ export const ResearchBlock = memo(function ResearchBlock({
             );
           })}
           {isActive && (
-            <div className="flex items-center gap-2 p-4 text-xs text-(--text-tertiary) animate-pulse">
-              <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-              <span>AI 正在分析...</span>
+            <div className="flex items-center gap-3 p-4 text-xs font-mono text-(--text-secondary)">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-(--text-tertiary) opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-(--text-secondary)"></span>
+              </span>
+              <span className="animate-pulse">AI_AGENT_ANALYZING_DATA_STREAM...</span>
             </div>
           )}
         </div>

@@ -109,6 +109,19 @@ html.dark {
   --color-primary-hover: #e4e4e7;
   --color-accent: #a1a1aa;
 
+  /* Awwwards Palette - Dark Mode Vibrancy */
+  --color-brand: #818cf8; /* Indigo 400 */
+  --color-brand-foreground: #ffffff;
+  
+  --color-success: #34d399; /* Emerald 400 */
+  --color-success-foreground: #022c22;
+
+  --color-warning: #fbbf24; /* Amber 400 */
+  --color-warning-foreground: #451a03;
+
+  --color-info: #60a5fa; /* Blue 400 */
+  --color-info-foreground: #1e3a8a;
+
   --button-primary-bg: #ffffff;
   --button-primary-text: #09090b;
   --button-primary-hover: #e4e4e7;
@@ -285,6 +298,10 @@ textarea,
 
 .animate-scale-in {
   animation: scaleIn 0.4s var(--transition-smooth) both;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
 }
 
 /* Typography Prose */
