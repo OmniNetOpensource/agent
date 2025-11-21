@@ -140,7 +140,74 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
     if (prevItem?.kind === "tool_call" && prevItem.tool === "fetch_url") {
       return null;
     }
-    // Fallback if no preceding call found (edge case)
+  }
+
+  // Handle brave_search tool visualization
+  if (item.kind === "tool_call" && item.tool === "brave_search") {
+    const nextItem = items[itemIndex + 1];
+    const resultItem =
+      nextItem?.kind === "tool_result" && nextItem.tool === "brave_search"
+        ? nextItem
+        : null;
+
+    const query =
+      typeof item.args.query === "string" ? item.args.query : "Unknown query";
+    const braveResults = resultItem
+      ? parseBraveSearchResults(resultItem.result)
+      : null;
+
+    return (
+      <div className="animate-enter-down px-4 py-2">
+        {/* Searching State */}
+        {!resultItem && (
+          <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-card) p-3 text-sm text-(--text-secondary)">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+            <span>正在搜索: <span className="font-medium text-foreground">{query}</span></span>
+          </div>
+        )}
+
+        {/* Results State */}
+        {braveResults ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 px-1 text-xs font-medium text-(--text-tertiary)">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>搜索结果: {query}</span>
+            </div>
+            {braveResults.length > 0 ? (
+              <div className="overflow-x-auto bg-(--surface-muted) rounded-xl border border-(--border-subtle) p-2">
+                <div className="flex gap-3 w-max">
+                  {braveResults.map((result, index) => (
+                    <SearchResultCard
+                      key={`${result.url}-${index}`}
+                      title={result.title}
+                      url={result.url}
+                      description={result.description}
+                      delay={index * 90}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-4 text-center text-xs text-(--text-tertiary)">
+                没有找到相关的搜索结果
+              </div>
+            )}
+          </div>
+        ) : resultItem ? (
+          <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs rounded-lg border border-(--border-subtle)">
+            <Markdown content={resultItem.result} />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Hide brave_search result as it's handled by the call item
+  if (item.kind === "tool_result" && item.tool === "brave_search") {
+    const prevItem = items[itemIndex - 1];
+    if (prevItem?.kind === "tool_call" && prevItem.tool === "brave_search") {
+      return null;
+    }
   }
 
   const getIcon = () => {
@@ -178,37 +245,11 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       ? item.result
       : "";
 
-  const braveResults =
-    item.kind === "tool_result" && item.tool === "brave_search"
-      ? parseBraveSearchResults(item.result)
-      : null;
-
-  const renderedContent =
-    braveResults !== null ? (
-      braveResults.length > 0 ? (
-        <div className="horizontal-scroll overflow-x-auto bg-(--surface-muted) px-4 py-4">
-          <div className="flex gap-3 pb-1 pl-1 pr-4">
-            {braveResults.map((result, index) => (
-              <SearchResultCard
-                key={`${result.url}-${index}`}
-                title={result.title}
-                url={result.url}
-                description={result.description}
-                delay={index * 90}
-              />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-(--surface-muted) p-4 text-xs text-(--text-tertiary)">
-          没有找到相关的搜索结果
-        </div>
-      )
-    ) : (
-      <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs">
-        <Markdown content={content} />
-      </div>
-    );
+  const renderedContent = (
+    <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs">
+      <Markdown content={content} />
+    </div>
+  );
 
   return (
     <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
