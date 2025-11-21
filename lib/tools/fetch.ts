@@ -32,6 +32,42 @@ const fetchUrl: ToolHandler = async (args) => {
   const { url } = parseFetchUrlArgs(args);
   console.error("[Tools:fetch_url] Fetching URL:", url);
 
+  // Try Jina AI Reader first
+  const jinaUrl = `https://r.jina.ai/${url}`;
+  console.error("[Tools:fetch_url] Trying Jina AI Reader:", jinaUrl);
+
+  try {
+    const jinaResponse = await fetch(jinaUrl);
+
+    if (jinaResponse.ok) {
+      const jinaText = await jinaResponse.text();
+      console.error(
+        "[Tools:fetch_url] Jina AI Reader success, text length:",
+        jinaText.length,
+        "bytes"
+      );
+      return jinaText;
+    } else {
+      console.error(
+        "[Tools:fetch_url] Jina AI Reader HTTP error:",
+        jinaResponse.status,
+        jinaResponse.statusText,
+        "- falling back to original URL"
+      );
+    }
+  } catch (jinaError) {
+    console.error(
+      "[Tools:fetch_url] Jina AI Reader error:",
+      typeof jinaError === "object" && jinaError !== null
+        ? (jinaError as Error).message
+        : String(jinaError),
+      "- falling back to original URL"
+    );
+  }
+
+  // Fallback to original URL
+  console.error("[Tools:fetch_url] Fetching original URL:", url);
+
   try {
     const response = await fetch(url);
 
