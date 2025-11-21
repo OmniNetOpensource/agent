@@ -1,6 +1,5 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import Markdown from "@/components/Markdown";
-import { useChatStore } from "@/store/useChatStore";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
 import { SearchResultCard } from "./SearchResultCard";
@@ -85,8 +84,6 @@ type ResearchBlockProps = {
 type ResearchBlockItemProps = {
   item: ResearchItemData;
   itemKey: string;
-  messageIndex: number;
-  blockIndex: number;
   itemIndex: number;
   items: ResearchItemData[];
 };
@@ -94,21 +91,12 @@ type ResearchBlockItemProps = {
 const ResearchBlockItem = memo(function ResearchBlockItem({
   item,
   itemKey,
-  messageIndex,
-  blockIndex,
   itemIndex,
   items,
 }: ResearchBlockItemProps) {
   const contentId = `research-item-${itemKey}`;
-  const isExpanded = useChatStore((state) => {
-    const message = state.messages[messageIndex];
-    const block = message?.blocks[blockIndex];
-    if (!block || block.type !== "research") {
-      return false;
-    }
-    const researchItem = block.items[itemIndex];
-    return researchItem?.isExpanded ?? false;
-  });
+  const [isExpanded, setIsExpanded] = useState(false);
+  const toggleItem = () => setIsExpanded((prev) => !prev);
 
   // Handle fetch_url tool visualization
   if (item.kind === "tool_call" && item.tool === "fetch_url") {
@@ -127,11 +115,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           status={resultItem ? (resultItem.result.startsWith("Error") ? "error" : "complete") : "pending"}
           result={resultItem?.result}
           isExpanded={isExpanded}
-          onToggle={() =>
-            useChatStore
-              .getState()
-              .toggleResearchItem(messageIndex, blockIndex, itemIndex)
-          }
+          onToggle={toggleItem}
         />
       </div>
     );
@@ -265,11 +249,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
     <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
       <button
         type="button"
-        onClick={() =>
-          useChatStore
-            .getState()
-            .toggleResearchItem(messageIndex, blockIndex, itemIndex)
-        }
+        onClick={toggleItem}
         className={cx(
           "flex w-full items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-(--surface-hover)",
           isExpanded ? "bg-(--surface-hover)" : "bg-transparent"
@@ -317,14 +297,8 @@ export const ResearchBlock = memo(function ResearchBlock({
   messageIndex,
   isActive,
 }: ResearchBlockProps) {
-  const isExpanded = useChatStore((state) => {
-    const message = state.messages[messageIndex];
-    const block = message?.blocks[blockIndex];
-    if (!block || block.type !== "research") {
-      return false;
-    }
-    return block.isExpanded;
-  });
+  const [isExpanded, setIsExpanded] = useState(false);
+  const toggleBlock = () => setIsExpanded((prev) => !prev);
 
   // Count stats
   const thinkingCount = items.filter((i) => i.kind === "thinking").length;
@@ -340,9 +314,7 @@ export const ResearchBlock = memo(function ResearchBlock({
       
       <button
         type="button"
-        onClick={() =>
-          useChatStore.getState().toggleResearchBlock(messageIndex, blockIndex)
-        }
+        onClick={toggleBlock}
         className={cx(
           "flex w-full items-center justify-between px-4 py-3 transition-all hover:bg-(--surface-hover)",
           isActive && "bg-(--surface-hover)"
@@ -408,8 +380,6 @@ export const ResearchBlock = memo(function ResearchBlock({
                 key={itemKey}
                 item={item}
                 itemKey={itemKey}
-                messageIndex={messageIndex}
-                blockIndex={blockIndex}
                 itemIndex={itemIndex}
                 items={items}
               />
