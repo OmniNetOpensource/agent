@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo } from "react";
 import Markdown from "@/components/Markdown";
 import type { ResearchItem as ResearchItemData } from "@/types/chat";
 import { cx } from "@/utils/cx";
@@ -27,7 +27,6 @@ type ResearchBlockItemProps = {
   itemKey: string;
   isExpanded: boolean;
   onToggle: () => void;
-  onScrollParent?: () => void;
 };
 
 const ResearchBlockItem = memo(function ResearchBlockItem({
@@ -35,10 +34,8 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   itemKey,
   isExpanded,
   onToggle,
-  onScrollParent,
 }: ResearchBlockItemProps) {
   const contentId = `research-item-${itemKey}`;
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const getIcon = () => {
     switch (item.kind) {
@@ -75,22 +72,6 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       ? item.result
       : "";
 
-  useEffect(() => {
-    if (!isExpanded) {
-      return;
-    }
-
-    const el = containerRef.current;
-    if (el) {
-      el.scrollTo({
-        top: el.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-
-    onScrollParent?.();
-  }, [content, isExpanded, onScrollParent]);
-
   return (
     <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
       <button
@@ -126,7 +107,6 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
 
       <div
         id={contentId}
-        ref={containerRef}
         className={cx(
           "overflow-hidden transition-all duration-300 ease-in-out",
           isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
@@ -149,24 +129,6 @@ export const ResearchBlock = memo(function ResearchBlock({
   onToggleItem,
   isActive,
 }: ResearchBlockProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const scrollParentToBottom = () => {
-    if (!isExpanded) {
-      return;
-    }
-
-    const el = containerRef.current;
-    if (!el) {
-      return;
-    }
-
-    el.scrollTo({
-      top: el.scrollHeight,
-      behavior: "smooth",
-    });
-  };
-
   // Count stats
   const thinkingCount = items.filter(i => i.kind === 'thinking').length;
   const toolCount = items.filter(i => i.kind === 'tool_call').length;
@@ -226,7 +188,6 @@ export const ResearchBlock = memo(function ResearchBlock({
         )}
       >
         <div 
-          ref={containerRef}
           className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)/30"
         >
           {items.map((item, itemIndex) => {
@@ -238,7 +199,6 @@ export const ResearchBlock = memo(function ResearchBlock({
                 itemKey={itemKey}
                 isExpanded={item.isExpanded}
                 onToggle={() => onToggleItem(itemIndex)}
-                onScrollParent={scrollParentToBottom}
               />
             );
           })}
