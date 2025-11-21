@@ -51,17 +51,13 @@ export const MessageItem = memo(function MessageItem({
       key={`${message.role}-${index}`}
       className={cx(
         "flex flex-col space-y-2 animate-enter-up",
-        isUser
-          ? "ml-auto max-w-[85%]"
-          : "mr-auto w-full max-w-[95%]"
+        isUser ? "ml-auto max-w-[85%]" : "mr-auto w-full max-w-[95%]"
       )}
     >
       <div
         className={cx(
           "rounded-3xl p-6 transition-all",
-          isUser
-            ? "bg-(--surface-user) text-foreground"
-            : "bg-transparent"
+          isUser ? "bg-(--surface-user) text-foreground" : "bg-transparent"
         )}
       >
         {isUser ? (
@@ -82,10 +78,7 @@ export const MessageItem = memo(function MessageItem({
 
               if (block.type === "attachments") {
                 return (
-                  <div
-                    key={blockKey}
-                    className="flex flex-wrap gap-3"
-                  >
+                  <div key={blockKey} className="flex flex-wrap gap-3">
                     {block.attachments.map((attachment) => (
                       <a
                         key={attachment.id}
@@ -139,11 +132,15 @@ export const MessageItem = memo(function MessageItem({
                     blockIndex={blockIndex}
                     messageIndex={index}
                     isExpanded={block.isExpanded}
-                    onToggleBlock={() => onToggleResearchBlock(index, blockIndex)}
+                    onToggleBlock={() =>
+                      onToggleResearchBlock(index, blockIndex)
+                    }
                     onToggleItem={(itemIndex) =>
                       onToggleResearchItem(index, blockIndex, itemIndex)
                     }
-                    isActive={isStreaming && blockIndex === message.blocks.length - 1}
+                    isActive={
+                      isStreaming && blockIndex === message.blocks.length - 1
+                    }
                   />
                 );
               }

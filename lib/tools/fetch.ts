@@ -33,7 +33,7 @@ const fetchUrl: ToolHandler = async (args) => {
   console.error("[Tools:fetch_url] Fetching URL:", url);
 
   try {
-    const response = await fetch(`https://r.jina.ai/${url}`);
+    const response = await fetch(url);
 
     if (!response.ok) {
       console.error(
