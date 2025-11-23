@@ -5,13 +5,13 @@ import { cx } from "@/utils/cx";
 import { SearchResultCard } from "./SearchResultCard";
 import { FetchTerminal } from "./FetchTerminal";
 import {
+  Activity,
   Brain,
   Wrench,
   FileText,
   ChevronRight,
   Loader2,
   Terminal,
-  Activity,
   Cpu,
   Search,
   Zap,
@@ -100,20 +100,50 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
 
   // Handle fetch_url tool visualization
   if (item.kind === "tool_call" && item.tool === "fetch_url") {
-    const nextItem = items[itemIndex + 1];
-    const resultItem =
-      nextItem?.kind === "tool_result" && nextItem.tool === "fetch_url"
-        ? nextItem
-        : null;
+    const subsequentItems = items.slice(itemIndex + 1);
+    const resultIndex = subsequentItems.findIndex(
+      (candidate) =>
+        candidate.kind === "tool_result" && candidate.tool === "fetch_url"
+    );
+
+    const itemsUntilResult =
+      resultIndex >= 0
+        ? subsequentItems.slice(0, resultIndex + 1)
+        : subsequentItems;
+
+    const resultItem = itemsUntilResult.find(
+      (candidate): candidate is Extract<ResearchItemData, { kind: "tool_result" }> =>
+        candidate.kind === "tool_result" && candidate.tool === "fetch_url"
+    );
+
+    const progressItems = itemsUntilResult.filter(
+      (candidate): candidate is Extract<ResearchItemData, { kind: "tool_progress" }> =>
+        candidate.kind === "tool_progress" && candidate.tool === "fetch_url"
+    );
 
     const url = typeof item.args.url === "string" ? item.args.url : "Unknown URL";
+    const latestProgress = progressItems[progressItems.length - 1];
+
+    const status: "pending" | "complete" | "error" = resultItem
+      ? resultItem.result.startsWith("Error")
+        ? "error"
+        : "complete"
+      : latestProgress?.stage === "error"
+      ? "error"
+      : "pending";
 
     return (
       <div className="animate-enter-down px-4">
         <FetchTerminal
           url={url}
-          status={resultItem ? (resultItem.result.startsWith("Error") ? "error" : "complete") : "pending"}
+          status={status}
           result={resultItem?.result}
+          progress={progressItems.map((progress) => ({
+            stage: progress.stage,
+            message: progress.message,
+            receivedBytes: progress.receivedBytes,
+            totalBytes: progress.totalBytes,
+          }))}
           isExpanded={isExpanded}
           onToggle={toggleItem}
         />
@@ -123,6 +153,14 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
 
   // Hide fetch_url result as it's handled by the call item
   if (item.kind === "tool_result" && item.tool === "fetch_url") {
+    const prevItem = items[itemIndex - 1];
+    if (prevItem?.kind === "tool_call" && prevItem.tool === "fetch_url") {
+      return null;
+    }
+  }
+
+  // Hide fetch_url progress since it's grouped with the call item
+  if (item.kind === "tool_progress" && item.tool === "fetch_url") {
     const prevItem = items[itemIndex - 1];
     if (prevItem?.kind === "tool_call" && prevItem.tool === "fetch_url") {
       return null;
@@ -212,6 +250,8 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         return <Wrench className="h-3.5 w-3.5" />;
       case "tool_result":
         return <FileText className="h-3.5 w-3.5" />;
+      case "tool_progress":
+        return <Activity className="h-3.5 w-3.5" />;
       default:
         return <Terminal className="h-3.5 w-3.5" />;
     }
@@ -225,6 +265,8 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         return `EXEC_TOOL: ${item.tool}`;
       case "tool_result":
         return `RETURN_VAL: ${item.tool}`;
+      case "tool_progress":
+        return `PROGRESS: ${item.tool}`;
       default:
         return "UNKNOWN_OP";
     }
@@ -237,6 +279,8 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       ? `\`\`\`json\n${JSON.stringify(item.args, null, 2)}\n\`\`\``
       : item.kind === "tool_result"
       ? item.result
+      : item.kind === "tool_progress"
+      ? `${item.stage}: ${item.message}`
       : "";
 
   const renderedContent = (

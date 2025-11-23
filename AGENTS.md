@@ -11,15 +11,6 @@
 - `utils/`: Small helpers (formatting, storage, classnames).
 - `public/`: Static assets; `.next/` is build output and ignored.
 
-## Build, Test, and Development Commands
-
-- `pnpm dev`: Start the development server on port 3000.
-- `pnpm build`: Production build; should be clean before merging.
-- `pnpm start`: Run the built app locally.
-- `pnpm type-check`: TypeScript type checking only.
-- `pnpm lint`: Run ESLint (`eslint-config-next` core-web-vitals).
-- `pnpm check`: Run type-check, lint, and build; preferred pre-push command.
-
 ## Coding Style & Naming Conventions
 
 - Language: TypeScript + React functional components.
@@ -45,6 +36,12 @@
 ## Environment & Security Tips
 
 - Store API keys (e.g. `OPENROUTER_API_KEY`, `BRAVE_API_KEY`) only in `.env.local`; never commit secrets.
+
+## At the end of developing
+
+- using `pnpm check` to check errors & warnings
+
+- commit this change
 
 # 用户偏好
 

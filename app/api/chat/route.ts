@@ -8,6 +8,7 @@ import {
 } from "@/lib/models";
 import { getOpenRouterClient, getOpenRouterHeaders } from "@/lib/openrouter";
 import type { Message } from "@/types/chat";
+import type { ToolProgressUpdate } from "@/lib/tools/types";
 
 type RequestBody = {
   conversationHistory: Message[];
@@ -305,7 +306,22 @@ export async function POST(req: Request) {
               );
 
               // 调用工具
-              const result = await callToolByName(toolName, toolArgs);
+              const result = await callToolByName(
+                toolName,
+                toolArgs,
+                (progress: ToolProgressUpdate) => {
+                  const toolProgressData = {
+                    type: "tool_progress",
+                    tool: toolName,
+                    ...progress,
+                  };
+                  controller.enqueue(
+                    encoder.encode(
+                      `data: ${JSON.stringify(toolProgressData)}\n\n`
+                    )
+                  );
+                }
+              );
 
               // 向客户端发送工具结果
               const toolResultData = {

@@ -205,7 +205,7 @@ const performBraveSearch = async (
   }
 };
 
-const braveSearch: ToolHandler = async (args) => {
+const braveSearch: ToolHandler = async (args, _onProgress) => {
   const { query, freshness } = parseBraveSearchArgs(args);
   const apiKey = process.env.BRAVE_API_KEY;
 

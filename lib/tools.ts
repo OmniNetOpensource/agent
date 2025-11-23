@@ -4,6 +4,7 @@ import {
   type ChatTool,
   type ToolDefinition,
   type ToolHandler,
+  type ToolProgressCallback,
   type ToolName,
 } from "./tools/types";
 
@@ -36,7 +37,8 @@ const enabledToolHandlers = new Map<string, ToolHandler>(
 
 export const callToolByName = async (
   name: string,
-  args: unknown
+  args: unknown,
+  onProgress?: ToolProgressCallback
 ): Promise<string> => {
   const handler = enabledToolHandlers.get(name);
   if (!handler) {
@@ -45,7 +47,7 @@ export const callToolByName = async (
   }
 
   try {
-    return await handler(args);
+    return await handler(args, onProgress);
   } catch (error) {
     console.error(
       `[Tools] Error calling tool "${name}":`,

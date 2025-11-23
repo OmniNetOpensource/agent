@@ -2,6 +2,7 @@ import {
   ChatTool,
   ToolDefinition,
   ToolHandler,
+  ToolProgressCallback,
   cleanHtmlToText,
 } from "./types";
 
@@ -28,7 +29,97 @@ export const parseFetchUrlArgs = (args: unknown): FetchUrlArgs => {
   return { url };
 };
 
-const fetchUrl: ToolHandler = async (args) => {
+const PROGRESS_CHUNK_BYTES = 50 * 1024;
+const PROGRESS_INTERVAL_MS = 500;
+
+const formatKilobytes = (bytes: number) =>
+  (bytes / 1024).toFixed(1);
+
+const emitProgress = async (
+  onProgress: ToolProgressCallback | undefined,
+  update: Parameters<ToolProgressCallback>[0]
+) => {
+  if (onProgress) {
+    await onProgress(update);
+  }
+};
+
+const readStreamWithProgress = async (
+  response: Response,
+  onProgress?: ToolProgressCallback
+): Promise<string> => {
+  if (!response.body) {
+    const text = await response.text();
+    await emitProgress(onProgress, {
+      stage: "complete",
+      message: `接收完成，总计 ${formatKilobytes(text.length)} KB`,
+      receivedBytes: text.length,
+    });
+    return text;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  let result = "";
+  let receivedBytes = 0;
+  const totalBytesHeader = response.headers.get("content-length");
+  const totalBytes =
+    totalBytesHeader && !Number.isNaN(Number(totalBytesHeader))
+      ? Number(totalBytesHeader)
+      : undefined;
+  let lastReportedBytes = 0;
+  let lastReportedTime = Date.now();
+
+  await emitProgress(onProgress, {
+    stage: "receiving",
+    message: "已连接，开始接收数据...",
+    receivedBytes,
+    totalBytes,
+  });
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+
+    receivedBytes += value.byteLength;
+    result += decoder.decode(value, { stream: true });
+
+    const now = Date.now();
+    if (
+      receivedBytes - lastReportedBytes >= PROGRESS_CHUNK_BYTES ||
+      now - lastReportedTime >= PROGRESS_INTERVAL_MS
+    ) {
+      lastReportedBytes = receivedBytes;
+      lastReportedTime = now;
+
+      await emitProgress(onProgress, {
+        stage: "receiving",
+        message: `正在接收数据 (${formatKilobytes(receivedBytes)} KB${
+          totalBytes !== undefined ? ` / ${formatKilobytes(totalBytes)} KB` : ""
+        })`,
+        receivedBytes,
+        totalBytes,
+      });
+    }
+  }
+
+  result += decoder.decode();
+
+  await emitProgress(onProgress, {
+    stage: "complete",
+    message: `接收完成，总计 ${formatKilobytes(receivedBytes)} KB${
+      totalBytes !== undefined ? ` / ${formatKilobytes(totalBytes)} KB` : ""
+    }`,
+    receivedBytes,
+    totalBytes,
+  });
+
+  return result;
+};
+
+const fetchUrl: ToolHandler = async (args, onProgress) => {
   const { url } = parseFetchUrlArgs(args);
   console.error("[Tools:fetch_url] Fetching URL:", url);
 
@@ -37,10 +128,18 @@ const fetchUrl: ToolHandler = async (args) => {
   console.error("[Tools:fetch_url] Trying Jina AI Reader:", jinaUrl);
 
   try {
+    await emitProgress(onProgress, {
+      stage: "start",
+      message: "开始连接 Jina AI Reader...",
+    });
+
     const jinaResponse = await fetch(jinaUrl);
 
     if (jinaResponse.ok) {
-      const jinaText = await jinaResponse.text();
+      const jinaText = await readStreamWithProgress(
+        jinaResponse,
+        onProgress
+      );
       console.error(
         "[Tools:fetch_url] Jina AI Reader success, text length:",
         jinaText.length,
@@ -54,6 +153,10 @@ const fetchUrl: ToolHandler = async (args) => {
         jinaResponse.statusText,
         "- falling back to original URL"
       );
+      await emitProgress(onProgress, {
+        stage: "error",
+        message: `Jina AI Reader 返回 HTTP ${jinaResponse.status}`,
+      });
     }
   } catch (jinaError) {
     console.error(
@@ -63,10 +166,18 @@ const fetchUrl: ToolHandler = async (args) => {
         : String(jinaError),
       "- falling back to original URL"
     );
+    await emitProgress(onProgress, {
+      stage: "start",
+      message: "Jina AI Reader 不可用，切换为直接抓取...",
+    });
   }
 
   // Fallback to original URL
   console.error("[Tools:fetch_url] Fetching original URL:", url);
+  await emitProgress(onProgress, {
+    stage: "start",
+    message: `开始连接 ${url}...`,
+  });
 
   try {
     const response = await fetch(url);
@@ -77,27 +188,40 @@ const fetchUrl: ToolHandler = async (args) => {
         response.status,
         response.statusText
       );
+      await emitProgress(onProgress, {
+        stage: "error",
+        message: `HTTP 错误：${response.status} ${response.statusText}`,
+      });
       return `Error: HTTP ${response.status} ${response.statusText}`;
     }
 
     const contentType = response.headers.get("content-type") || "";
     console.error("[Tools:fetch_url] Content-Type:", contentType);
 
+    const rawText = await readStreamWithProgress(response, onProgress);
+
     if (contentType.includes("application/json")) {
-      const json = await response.json();
-      const jsonText = JSON.stringify(json, null, 2);
-      console.error("[Tools:fetch_url] JSON response length:", jsonText.length);
-      return jsonText;
+      try {
+        const parsed = JSON.parse(rawText);
+        const jsonText = JSON.stringify(parsed, null, 2);
+        console.error(
+          "[Tools:fetch_url] JSON response length:",
+          jsonText.length
+        );
+        return jsonText;
+      } catch (error) {
+        console.error("[Tools:fetch_url] JSON parse error:", error);
+        return rawText;
+      }
     }
 
-    const text = await response.text();
     console.error(
       "[Tools:fetch_url] Fetched text/HTML length:",
-      text.length,
+      rawText.length,
       "bytes"
     );
 
-    const cleaned = cleanHtmlToText(text);
+    const cleaned = cleanHtmlToText(rawText);
     console.error(
       "[Tools:fetch_url] Cleaned text length:",
       cleaned.length,
@@ -111,6 +235,14 @@ const fetchUrl: ToolHandler = async (args) => {
         ? (error as Error).message
         : String(error)
     );
+    await emitProgress(onProgress, {
+      stage: "error",
+      message: `请求失败：${
+        typeof error === "object" && error !== null
+          ? (error as Error).message
+          : String(error)
+      }`,
+    });
     return `Error fetching URL: ${
       typeof error === "object" && error !== null
         ? (error as Error).message

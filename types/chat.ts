@@ -5,7 +5,15 @@ export type ResearchItem =
       tool: string;
       args: Record<string, unknown>;
     }
-  | { kind: "tool_result"; tool: string; result: string };
+  | { kind: "tool_result"; tool: string; result: string }
+  | {
+      kind: "tool_progress";
+      tool: string;
+      stage: string;
+      message: string;
+      receivedBytes?: number;
+      totalBytes?: number;
+    };
 
 export type Attachment = {
   id: string;

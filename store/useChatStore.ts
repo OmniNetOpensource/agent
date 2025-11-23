@@ -306,6 +306,32 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                       ? data.args
                       : {}) as Record<string, unknown>,
                   });
+                } else if (data.type === "tool_progress") {
+                  const tool =
+                    typeof data.tool === "string" ? data.tool : "未知工具";
+                  const stage =
+                    typeof data.stage === "string" ? data.stage : "progress";
+                  const message =
+                    typeof data.message === "string"
+                      ? data.message
+                      : String(data.message ?? "");
+                  const receivedBytes =
+                    typeof data.receivedBytes === "number"
+                      ? data.receivedBytes
+                      : undefined;
+                  const totalBytes =
+                    typeof data.totalBytes === "number"
+                      ? data.totalBytes
+                      : undefined;
+
+                  get().appendToAssistant({
+                    kind: "tool_progress",
+                    tool,
+                    stage,
+                    message,
+                    receivedBytes,
+                    totalBytes,
+                  });
                 } else if (data.type === "tool_result") {
                   let resultText: string;
                   if (typeof data.result === "string") {
