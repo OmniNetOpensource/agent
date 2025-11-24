@@ -155,19 +155,6 @@ export function ModelSelector({
   }, [isOpen, itemHeight, OVERSCAN]);
 
   useEffect(() => {
-    if (!isOpen || !scrollRef.current || !itemHeight || visibleModels.length === 0) return;
-    const currentIndex = visibleModels.findIndex((m) => m.id === currentModel);
-    if (currentIndex < 0) return;
-    const container = scrollRef.current;
-    const targetTop = currentIndex * itemHeight;
-    container.scrollTop = targetTop;
-    const rawIndex = Math.floor(targetTop / itemHeight) - OVERSCAN;
-    const maxStart = Math.max(0, visibleModels.length - visibleCount);
-    const nextStart = Math.min(Math.max(rawIndex, 0), maxStart);
-    setStartIndex(nextStart);
-  }, [isOpen, itemHeight, currentModel, visibleModels, OVERSCAN, visibleCount]);
-
-  useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = 0;
     setStartIndex(0);

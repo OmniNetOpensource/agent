@@ -188,20 +188,20 @@ export async function POST(req: Request) {
 
     const stream = new ReadableStream({
       async start(controller) {
+        const currentMessages: ChatMessage[] = [...messages];
+        const maxIterations = 20; // 防止无限循环
+        let iteration = 0;
+        let finalAssistantMessage: string | null = null;
+        let streamClosed = false;
+
+        const closeStream = () => {
+          if (!streamClosed) {
+            controller.close();
+            streamClosed = true;
+          }
+        };
+
         try {
-          const currentMessages: ChatMessage[] = [...messages];
-          const maxIterations = 20; // 防止无限循环
-          let iteration = 0;
-          let finalAssistantMessage: string | null = null;
-          let streamClosed = false;
-
-          const closeStream = () => {
-            if (!streamClosed) {
-              controller.close();
-              streamClosed = true;
-            }
-          };
-
           while (iteration < maxIterations) {
             iteration++;
             console.log(
