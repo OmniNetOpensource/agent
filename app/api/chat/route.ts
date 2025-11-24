@@ -45,17 +45,27 @@ type ChatMessage = {
   name?: string;
 };
 
+// Type for OpenRouter SDK's chat.send method (SDK types may be incomplete)
+type ChatSendMethod = {
+  send: (
+    params: {
+      model: string;
+      messages: ChatMessage[];
+      tools?: unknown[];
+      stream: boolean;
+    },
+    options?: { headers?: Record<string, string> }
+  ) => Promise<AsyncIterable<StreamChunk>>;
+};
+
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
 
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
   try {
-    const {
-      userMessage,
-      isNewConversation,
-      model,
-    } = (await req.json()) as RequestBody;
+    const { userMessage, isNewConversation, model } =
+      (await req.json()) as RequestBody;
 
     if (
       !userMessage ||
@@ -112,62 +122,65 @@ export async function POST(req: Request) {
 - 获取更详细的信息：fetch 特定网页
 `,
       },
-      ...serverConversationHistory.map((msg) => {
-        // 只保留 content 和 attachments blocks，过滤掉 research blocks
-        const relevantBlocks = msg.blocks.filter(
-          (block) => block.type === "content" || block.type === "attachments"
-        );
+      ...serverConversationHistory
+        .map((msg) => {
+          // 只保留 content 和 attachments blocks，过滤掉 research blocks
+          const relevantBlocks = msg.blocks.filter(
+            (block) => block.type === "content" || block.type === "attachments"
+          );
 
-        const contentParts: unknown[] = [];
+          const contentParts: unknown[] = [];
 
-        for (const block of relevantBlocks) {
-          if (block.type === "content") {
-            contentParts.push({
-              type: "text",
-              text: block.content,
-            });
-          } else if (block.type === "attachments") {
-            // 将 attachments 转换为多模态内容格式
-            for (const att of block.attachments) {
-              const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
+          for (const block of relevantBlocks) {
+            if (block.type === "content") {
+              contentParts.push({
+                type: "text",
+                text: block.content,
+              });
+            } else if (block.type === "attachments") {
+              // 将 attachments 转换为多模态内容格式
+              for (const att of block.attachments) {
+                const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
 
-              if (att.kind === "image") {
-                contentParts.push({
-                  type: "image_url",
-                  imageUrl: { url: att.dataUrl },
-                });
-              } else if (att.kind === "video") {
-                contentParts.push({
-                  type: "video_url",
-                  videoUrl: { url: att.dataUrl },
-                });
-              } else if (att.kind === "audio") {
-                const format = att.mimeType.split("/")[1]?.split(";")[0] || "wav";
-                contentParts.push({
-                  type: "input_audio",
-                  inputAudio: { data: base64Data, format },
-                });
-              } else {
-                contentParts.push({
-                  type: "file",
-                  file: { filename: att.name, file_data: base64Data },
-                });
+                if (att.kind === "image") {
+                  contentParts.push({
+                    type: "image_url",
+                    imageUrl: { url: att.dataUrl },
+                  });
+                } else if (att.kind === "video") {
+                  contentParts.push({
+                    type: "video_url",
+                    videoUrl: { url: att.dataUrl },
+                  });
+                } else if (att.kind === "audio") {
+                  const format =
+                    att.mimeType.split("/")[1]?.split(";")[0] || "wav";
+                  contentParts.push({
+                    type: "input_audio",
+                    inputAudio: { data: base64Data, format },
+                  });
+                } else {
+                  contentParts.push({
+                    type: "file",
+                    file: { filename: att.name, file_data: base64Data },
+                  });
+                }
               }
             }
           }
-        }
 
-        return {
-          role: msg.role,
-          content: contentParts,
-        };
-      }).filter((msg) => {
-        // 过滤掉空的 assistant 消息
-        if (msg.role !== "assistant") {
-          return true;
-        }
-        return Array.isArray(msg.content) && msg.content.length > 0;
-      }),
+          return {
+            role: msg.role,
+            content: contentParts,
+          };
+        })
+        .filter((msg) => {
+          // 过滤掉空的 assistant 消息
+          if (msg.role !== "assistant") {
+            return true;
+          }
+          return Array.isArray(msg.content) && msg.content.length > 0;
+        }),
     ];
 
     const stream = new ReadableStream({
@@ -193,8 +206,9 @@ export async function POST(req: Request) {
               currentMessages.length
             );
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const completion = await (openRouterClient.chat as any).send(
+            const completion = await (
+              openRouterClient.chat as ChatSendMethod
+            ).send(
               {
                 model: requestedModel,
                 messages: currentMessages,
@@ -387,17 +401,14 @@ export async function POST(req: Request) {
               encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
             );
             finalAssistantMessage =
-              finalAssistantMessage ??
-              "\n\n[已达到最大工具调用次数限制]";
+              finalAssistantMessage ?? "\n\n[已达到最大工具调用次数限制]";
             closeStream();
           }
 
           if (finalAssistantMessage !== null) {
             serverConversationHistory.push({
               role: "assistant",
-              blocks: [
-                { type: "content", content: finalAssistantMessage },
-              ],
+              blocks: [{ type: "content", content: finalAssistantMessage }],
             });
           }
 

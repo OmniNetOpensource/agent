@@ -1,9 +1,4 @@
-import {
-  Attachment,
-  ContentBlock,
-  Message,
-  ResearchItem,
-} from "@/types/chat";
+import { Attachment, ContentBlock, Message, ResearchItem } from "@/types/chat";
 import { ChatModelId, DEFAULT_CHAT_MODEL_ID } from "@/lib/models";
 import {
   MAX_ATTACHMENT_SIZE,
