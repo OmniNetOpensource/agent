@@ -39,7 +39,6 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       case "brave_search":
         return <BraveSearch item={item} items={items} itemIndex={itemIndex} />;
       default:
-        // Development warning for missing tool UI
         if (process.env.NODE_ENV === "development") {
           console.error(
             `[ResearchBlock] No UI component registered for tool: ${item.tool}`
@@ -50,23 +49,6 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
             ⚠️ Missing UI for tool: <strong>{item.tool}</strong>
           </div>
         );
-    }
-  }
-
-  // tool_result and tool_progress are handled by their respective tool_call components
-  // If we reach here, it means the item wasn't consumed by its tool component
-  if (item.kind === "tool_result" || item.kind === "tool_progress") {
-    const prevItem = items[itemIndex - 1];
-    // Only hide if the previous item is the matching tool_call
-    if (prevItem?.kind === "tool_call" && prevItem.tool === item.tool) {
-      return null;
-    }
-
-    // Orphaned result/progress - show warning in development
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        `[ResearchBlock] Orphaned ${item.kind} for tool: ${item.tool}`
-      );
     }
   }
 
