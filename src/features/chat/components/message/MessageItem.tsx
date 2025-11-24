@@ -4,7 +4,7 @@ import Markdown from "@/src/shared/components/Markdown";
 import { Message } from "@/src/features/chat/types/chat";
 import { cx } from "@/src/shared/utils/cx";
 import { formatFileSize } from "@/src/shared/utils/file";
-import { ResearchBlock } from "./ResearchBlock";
+import { ResearchBlock } from "./research/ResearchBlock";
 import { Copy, Check, Paperclip } from "lucide-react";
 
 type MessageItemProps = {

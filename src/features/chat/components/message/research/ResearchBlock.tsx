@@ -2,8 +2,8 @@ import { memo, useState } from "react";
 import Markdown from "@/src/shared/components/Markdown";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
 import { cx } from "@/src/shared/utils/cx";
-import { FetchUrlItem } from "./FetchUrlItem";
-import { BraveSearchItem } from "./BraveSearchItem";
+import { FetchUrl } from "./tools/FetchUrl";
+import { BraveSearch } from "./tools/BraveSearch";
 import {
   Activity,
   Brain,
@@ -42,7 +42,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   // Handle fetch_url tool visualization
   if (item.kind === "tool_call" && item.tool === "fetch_url") {
     return (
-      <FetchUrlItem
+      <FetchUrl
         item={item}
         items={items}
         itemIndex={itemIndex}
@@ -71,7 +71,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   // Handle brave_search tool visualization
   if (item.kind === "tool_call" && item.tool === "brave_search") {
     return (
-      <BraveSearchItem item={item} items={items} itemIndex={itemIndex} />
+      <BraveSearch item={item} items={items} itemIndex={itemIndex} />
     );
   }
 

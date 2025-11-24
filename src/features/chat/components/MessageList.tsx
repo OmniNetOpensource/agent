@@ -1,5 +1,5 @@
-import { MessageItem } from "./MessageItem";
-import { PendingIndicator } from "./PendingIndicator";
+import { MessageItem } from "./message/MessageItem";
+import { PendingIndicator } from "./message/PendingIndicator";
 import { useChatMessages } from "@/src/features/chat/hooks/useChat";
 
 export function MessageList() {

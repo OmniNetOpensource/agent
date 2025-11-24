@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck, Terminal } from "lucide-react";
+import type { ResearchItem } from "@/src/features/chat/types/chat";
+
+// ============================================================================
+// Types & Utilities
+// ============================================================================
 
 type FetchStatus = "pending" | "complete" | "error";
 
@@ -12,15 +17,6 @@ type FetchProgress = {
 };
 
 type LogTone = "info" | "success" | "warning" | "error";
-
-interface FetchTerminalProps {
-  url: string;
-  status: FetchStatus;
-  result?: string;
-  progress?: FetchProgress[];
-  isExpanded?: boolean;
-  onToggle?: () => void;
-}
 
 const formatKilobytes = (bytes?: number) => {
   if (typeof bytes !== "number" || Number.isNaN(bytes)) {
@@ -54,7 +50,28 @@ const formatLogText = (entry: FetchProgress) => {
   return `${text}${suffix}`;
 };
 
-export const FetchTerminal: React.FC<FetchTerminalProps> = ({
+function tryGetHostname(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+// ============================================================================
+// FetchTerminal Component (Internal)
+// ============================================================================
+
+interface FetchTerminalProps {
+  url: string;
+  status: FetchStatus;
+  result?: string;
+  progress?: FetchProgress[];
+  isExpanded?: boolean;
+  onToggle?: () => void;
+}
+
+const FetchTerminal: React.FC<FetchTerminalProps> = ({
   url,
   status = "pending",
   result,
@@ -63,14 +80,6 @@ export const FetchTerminal: React.FC<FetchTerminalProps> = ({
   onToggle,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const tryGetHostname = (u: string) => {
-    try {
-      return new URL(u).hostname;
-    } catch {
-      return u;
-    }
-  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -221,3 +230,74 @@ export const FetchTerminal: React.FC<FetchTerminalProps> = ({
     </div>
   );
 };
+
+// ============================================================================
+// FetchUrl Component (Main Export)
+// ============================================================================
+
+type FetchUrlProps = {
+  item: Extract<ResearchItem, { kind: "tool_call" }>;
+  items: ResearchItem[];
+  itemIndex: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+};
+
+export function FetchUrl({
+  item,
+  items,
+  itemIndex,
+  isExpanded,
+  onToggle,
+}: FetchUrlProps) {
+  // Find subsequent items until we hit the result
+  const subsequentItems = items.slice(itemIndex + 1);
+  const resultIndex = subsequentItems.findIndex(
+    (candidate) =>
+      candidate.kind === "tool_result" && candidate.tool === "fetch_url"
+  );
+
+  const itemsUntilResult =
+    resultIndex >= 0
+      ? subsequentItems.slice(0, resultIndex + 1)
+      : subsequentItems;
+
+  const resultItem = itemsUntilResult.find(
+    (candidate): candidate is Extract<ResearchItem, { kind: "tool_result" }> =>
+      candidate.kind === "tool_result" && candidate.tool === "fetch_url"
+  );
+
+  const progressItems = itemsUntilResult.filter(
+    (candidate): candidate is Extract<ResearchItem, { kind: "tool_progress" }> =>
+      candidate.kind === "tool_progress" && candidate.tool === "fetch_url"
+  );
+
+  const url = typeof item.args.url === "string" ? item.args.url : "Unknown URL";
+  const latestProgress = progressItems[progressItems.length - 1];
+
+  const status: "pending" | "complete" | "error" = resultItem
+    ? resultItem.result.startsWith("Error")
+      ? "error"
+      : "complete"
+    : latestProgress?.stage === "error"
+    ? "error"
+    : "pending";
+
+  return (
+    <div className="animate-enter-down px-4">
+      <FetchTerminal
+        url={url}
+        status={status}
+        result={resultItem?.result}
+        progress={progressItems.map((progress) => ({
+          stage: progress.stage,
+          message: progress.message,
+          receivedBytes: progress.receivedBytes,
+          totalBytes: progress.totalBytes,
+        }))}
+        isExpanded={isExpanded}
+        onToggle={onToggle}
+      />
+    </div>
+  );
+}
