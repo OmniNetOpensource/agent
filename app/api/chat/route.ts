@@ -10,8 +10,12 @@ import { getOpenRouterClient, getOpenRouterHeaders } from "@/lib/openrouter";
 import type { Message } from "@/types/chat";
 import type { ToolProgressUpdate } from "@/lib/tools/types";
 
+// 内存中的会话历史存储（服务器重启后会丢失）
+let serverConversationHistory: Message[] = [];
+
 type RequestBody = {
-  conversationHistory: Message[];
+  userMessage: Message;
+  isNewConversation?: boolean;
   model?: ChatModelId;
 };
 
@@ -48,13 +52,25 @@ const encoder = new TextEncoder();
 export async function POST(req: Request) {
   try {
     const {
-      conversationHistory,
+      userMessage,
+      isNewConversation,
       model,
     } = (await req.json()) as RequestBody;
 
-    if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+    if (
+      !userMessage ||
+      userMessage.role !== "user" ||
+      !Array.isArray(userMessage.blocks) ||
+      userMessage.blocks.length === 0
+    ) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
+
+    if (isNewConversation) {
+      serverConversationHistory = [];
+    }
+
+    serverConversationHistory.push(userMessage);
 
     const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
 
@@ -96,7 +112,7 @@ export async function POST(req: Request) {
 - 获取更详细的信息：fetch 特定网页
 `,
       },
-      ...conversationHistory.map((msg) => {
+      ...serverConversationHistory.map((msg) => {
         // 只保留 content 和 attachments blocks，过滤掉 research blocks
         const relevantBlocks = msg.blocks.filter(
           (block) => block.type === "content" || block.type === "attachments"
@@ -160,6 +176,15 @@ export async function POST(req: Request) {
           const currentMessages: ChatMessage[] = [...messages];
           const maxIterations = 20; // 防止无限循环
           let iteration = 0;
+          let finalAssistantMessage: string | null = null;
+          let streamClosed = false;
+
+          const closeStream = () => {
+            if (!streamClosed) {
+              controller.close();
+              streamClosed = true;
+            }
+          };
 
           while (iteration < maxIterations) {
             iteration++;
@@ -187,6 +212,7 @@ export async function POST(req: Request) {
               function: { name: string; arguments: string };
             }> = [];
             let currentToolCallIndex = -1;
+            let finishedWithStop = false;
 
             for await (const chunk of completion as AsyncIterable<StreamChunk>) {
               const delta = chunk?.choices?.[0]?.delta;
@@ -253,8 +279,8 @@ export async function POST(req: Request) {
               // 检查是否完结
               if (finishReason === "stop") {
                 console.log("[Chat-API] Stream finished with stop");
-                controller.close();
-                return;
+                finishedWithStop = true;
+                break;
               }
 
               if (finishReason === "tool_calls" && toolCalls.length > 0) {
@@ -266,11 +292,18 @@ export async function POST(req: Request) {
               }
             }
 
+            if (finishedWithStop) {
+              finalAssistantMessage = assistantMessage;
+              closeStream();
+              break;
+            }
+
             // 如果没有工具调用，结束循环
             if (toolCalls.length === 0) {
               console.log("[Chat-API] No tool calls, ending");
-              controller.close();
-              return;
+              finalAssistantMessage = assistantMessage;
+              closeStream();
+              break;
             }
 
             // 添加助手消息（包含工具调用）
@@ -344,7 +377,7 @@ export async function POST(req: Request) {
             // 继续下一轮对话（让模型基于工具结果生成回答）
           }
 
-          if (iteration >= maxIterations) {
+          if (iteration >= maxIterations && !streamClosed) {
             console.log("[Chat-API] Max iterations reached");
             const data = {
               type: "content",
@@ -353,9 +386,22 @@ export async function POST(req: Request) {
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
             );
+            finalAssistantMessage =
+              finalAssistantMessage ??
+              "\n\n[已达到最大工具调用次数限制]";
+            closeStream();
           }
 
-          controller.close();
+          if (finalAssistantMessage !== null) {
+            serverConversationHistory.push({
+              role: "assistant",
+              blocks: [
+                { type: "content", content: finalAssistantMessage },
+              ],
+            });
+          }
+
+          closeStream();
         } catch (error) {
           console.error("[Chat-API] Error:", error);
           controller.error(error);

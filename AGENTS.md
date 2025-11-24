@@ -37,12 +37,6 @@
 
 - Store API keys (e.g. `OPENROUTER_API_KEY`, `BRAVE_API_KEY`) only in `.env.local`; never commit secrets.
 
-## At the end of developing
-
-- using `pnpm check` to check errors & warnings
-
-- commit this change
-
 # 用户偏好
 
 - 先看完项目相关代码再回答问题

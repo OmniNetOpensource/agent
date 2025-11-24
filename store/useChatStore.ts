@@ -245,7 +245,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }));
 
     try {
-      // 发送完整的 messages 给后端（包括刚添加的用户消息）
       const conversationHistory = get().messages;
 
       const response = await fetch("/api/chat", {
@@ -253,7 +252,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          conversationHistory,
+          userMessage,
+          isNewConversation: conversationHistory.length === 1,
           model: selectedModel,
         }),
       });
