@@ -2,10 +2,10 @@
 
 import { useCallback } from "react";
 import { Plus } from "lucide-react";
-import { Composer } from "@/components/chat/Composer";
-import { MessageList } from "@/components/chat/MessageList";
-import { ModelSelector } from "@/components/ui/ModelSelector";
-import { useChatStore } from "@/store/useChatStore";
+import { Composer } from "@/src/features/chat/components/Composer";
+import { MessageList } from "@/src/features/chat/components/MessageList";
+import { ModelSelector } from "@/src/features/model/components/ModelSelector";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
 export function ChatPage() {
   const messages = useChatStore((state) => state.messages);

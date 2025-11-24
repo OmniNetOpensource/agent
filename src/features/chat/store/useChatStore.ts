@@ -1,10 +1,15 @@
-import { Attachment, ContentBlock, Message, ResearchItem } from "@/types/chat";
-import { ChatModelId, DEFAULT_CHAT_MODEL_ID } from "@/lib/models";
+import {
+  Attachment,
+  ContentBlock,
+  Message,
+  ResearchItem,
+} from "@/src/features/chat/types/chat";
+import { ChatModelId, DEFAULT_CHAT_MODEL_ID } from "@/src/features/model/lib/models";
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,
   readFileAsDataUrl,
-} from "@/utils/file";
+} from "@/src/shared/utils/file";
 import { create } from "zustand";
 
 export type ChatState = {

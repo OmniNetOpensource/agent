@@ -1,5 +1,5 @@
 import { FormEvent, KeyboardEvent, useCallback } from "react";
-import { useChatStore } from "@/store/useChatStore";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
 export function useChatMessages() {
   const messages = useChatStore((state) => state.messages);

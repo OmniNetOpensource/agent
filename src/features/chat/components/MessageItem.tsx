@@ -1,9 +1,9 @@
 import { memo, useState } from "react";
 import Image from "next/image";
-import Markdown from "@/components/Markdown";
-import { Message } from "@/types/chat";
-import { cx } from "@/utils/cx";
-import { formatFileSize } from "@/utils/file";
+import Markdown from "@/src/shared/components/Markdown";
+import { Message } from "@/src/features/chat/types/chat";
+import { cx } from "@/src/shared/utils/cx";
+import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "./ResearchBlock";
 import { Copy, Check, Paperclip } from "lucide-react";
 

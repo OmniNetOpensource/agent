@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { ChatModelId } from "@/lib/models";
+import { ChatModelId } from "@/src/features/model/lib/models";
 
 interface ModelSelectorProps {
   currentModel: ChatModelId;

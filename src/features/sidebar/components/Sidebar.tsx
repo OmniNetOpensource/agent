@@ -3,8 +3,8 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { Moon, PanelLeft, Plus, Sun } from "lucide-react";
-import { useChatStore } from "@/store/useChatStore";
-import { useTheme } from "@/hooks/useTheme";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useTheme } from "@/src/features/theme/hooks/useTheme";
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);

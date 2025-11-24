@@ -1,7 +1,7 @@
-import type { ResearchItem } from "@/types/chat";
+import type { ResearchItem } from "@/src/features/chat/types/chat";
 import { SearchResultCard } from "./SearchResultCard";
 import { Search, Zap } from "lucide-react";
-import Markdown from "@/components/Markdown";
+import Markdown from "@/src/shared/components/Markdown";
 
 type BraveSearchResult = {
   title: string;

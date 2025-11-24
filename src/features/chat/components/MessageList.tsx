@@ -1,6 +1,6 @@
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
-import { useChatMessages } from "@/hooks/useChat";
+import { useChatMessages } from "@/src/features/chat/hooks/useChat";
 
 export function MessageList() {
   const { messages, pending } = useChatMessages();

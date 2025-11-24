@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { fetchOpenRouterModels } from "@/lib/openrouter";
-import { DEFAULT_CHAT_MODEL_ID } from "@/lib/models";
+import { fetchOpenRouterModels } from "@/src/features/model/lib/openrouter";
+import { DEFAULT_CHAT_MODEL_ID } from "@/src/features/model/lib/models";
 
 export async function GET() {
   try {

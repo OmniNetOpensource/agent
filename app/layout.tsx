@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Nunito, Geist_Mono } from "next/font/google";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/src/features/sidebar/components/Sidebar";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 

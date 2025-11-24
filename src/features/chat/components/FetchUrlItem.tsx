@@ -1,4 +1,4 @@
-import type { ResearchItem } from "@/types/chat";
+import type { ResearchItem } from "@/src/features/chat/types/chat";
 import { FetchTerminal } from "./FetchTerminal";
 
 type FetchUrlItemProps = {

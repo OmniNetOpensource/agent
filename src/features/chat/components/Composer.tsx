@@ -1,8 +1,8 @@
 import { ChangeEvent, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
-import { formatFileSize } from "@/utils/file";
-import { useChatComposer } from "@/hooks/useChat";
+import { formatFileSize } from "@/src/shared/utils/file";
+import { useChatComposer } from "@/src/features/chat/hooks/useChat";
 
 type ComposerProps = {
   isInitial: boolean;

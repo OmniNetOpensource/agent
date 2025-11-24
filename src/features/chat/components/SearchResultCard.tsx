@@ -1,5 +1,5 @@
 import { ExternalLink, Globe, Lock } from "lucide-react";
-import { cx } from "@/utils/cx";
+import { cx } from "@/src/shared/utils/cx";
 
 type SearchResultCardProps = {
   title: string;

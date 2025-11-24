@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
-import Markdown from "@/components/Markdown";
-import type { ResearchItem as ResearchItemData } from "@/types/chat";
-import { cx } from "@/utils/cx";
+import Markdown from "@/src/shared/components/Markdown";
+import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
+import { cx } from "@/src/shared/utils/cx";
 import { FetchUrlItem } from "./FetchUrlItem";
 import { BraveSearchItem } from "./BraveSearchItem";
 import {
