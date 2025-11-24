@@ -16,15 +16,11 @@ type ResearchBlockProps = {
 type ResearchBlockItemProps = {
   item: ResearchItemData;
   itemKey: string;
-  itemIndex: number;
-  items: ResearchItemData[];
 };
 
 const ResearchBlockItem = memo(function ResearchBlockItem({
   item,
   itemKey,
-  itemIndex,
-  items,
 }: ResearchBlockItemProps) {
   // Handle thinking
   if (item.kind === "thinking") {
@@ -32,21 +28,23 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   }
 
   // Handle tool calls - each tool component handles its own result/progress
-  if (item.kind === "tool_call") {
-    switch (item.tool) {
+  if (item.kind === "tool") {
+    const toolName = item.data.call.tool;
+
+    switch (toolName) {
       case "fetch_url":
-        return <FetchUrl item={item} items={items} itemIndex={itemIndex} />;
+        return <FetchUrl tool={item.data} />;
       case "brave_search":
-        return <BraveSearch item={item} items={items} itemIndex={itemIndex} />;
+        return <BraveSearch tool={item.data} />;
       default:
         if (process.env.NODE_ENV === "development") {
           console.error(
-            `[ResearchBlock] No UI component registered for tool: ${item.tool}`
+            `[ResearchBlock] No UI component registered for tool: ${toolName}`
           );
         }
         return (
           <div className="px-4 py-2 text-xs text-(--color-destructive) font-mono border-l-2 border-(--color-destructive) bg-(--surface-muted)">
-            ⚠️ Missing UI for tool: <strong>{item.tool}</strong>
+            ⚠️ Missing UI for tool: <strong>{toolName}</strong>
           </div>
         );
     }
@@ -66,7 +64,7 @@ export const ResearchBlock = memo(function ResearchBlock({
 
   // Count stats
   const thinkingCount = items.filter((i) => i.kind === "thinking").length;
-  const toolCount = items.filter((i) => i.kind === "tool_call").length;
+  const toolCount = items.filter((i) => i.kind === "tool").length;
 
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-background shadow-soft">
@@ -152,8 +150,6 @@ export const ResearchBlock = memo(function ResearchBlock({
                 key={itemKey}
                 item={item}
                 itemKey={itemKey}
-                itemIndex={itemIndex}
-                items={items}
               />
             );
           })}

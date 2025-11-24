@@ -3,6 +3,7 @@ import {
   ContentBlock,
   Message,
   ResearchItem,
+  ToolProgress,
 } from "@/src/features/chat/types/chat";
 import {
   ChatModelId,
@@ -24,6 +25,12 @@ export type ChatState = {
   pendingAttachments: Attachment[];
 };
 
+type ToolLifecycleUpdate =
+  | ({ kind: "tool_progress"; tool: string } & ToolProgress)
+  | { kind: "tool_result"; tool: string; result: string };
+
+type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
+
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
@@ -31,7 +38,7 @@ export type ChatActions = {
   clearConversation: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
-  appendToAssistant: (addition: ContentBlock | ResearchItem) => void;
+  appendToAssistant: (addition: AssistantAddition) => void;
   sendMessage: (value?: string) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
@@ -123,23 +130,45 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         return next.length - 1;
       };
 
-      if ("kind" in addition) {
-        const assistantIndex = ensureAssistantIndex();
-        const assistantMessage = next[assistantIndex];
-        const blocks = [...assistantMessage.blocks];
+      const ensureResearchBlock = (blocks: ContentBlock[]) => {
         const lastBlock = blocks[blocks.length - 1];
-
         if (!lastBlock || lastBlock.type !== "research") {
-          blocks.push({ type: "research", items: [{ ...addition }] });
-        } else {
-          const items = [...lastBlock.items];
+          blocks.push({ type: "research", items: [] });
+          return blocks.length - 1;
+        }
+        return blocks.length - 1;
+      };
+
+      const findToolIndex = (items: ResearchItem[], toolName: string) => {
+        let fallback = -1;
+        for (let i = items.length - 1; i >= 0; i--) {
+          const item = items[i];
+          if (item.kind === "tool" && item.data.call.tool === toolName) {
+            if (!item.data.result) {
+              return i;
+            }
+            if (fallback === -1) {
+              fallback = i;
+            }
+          }
+        }
+        return fallback;
+      };
+
+      if ("kind" in addition) {
+        if (addition.kind === "thinking") {
+          const assistantIndex = ensureAssistantIndex();
+          const assistantMessage = next[assistantIndex];
+          const blocks = [...assistantMessage.blocks];
+          const researchIndex = ensureResearchBlock(blocks);
+          const researchBlock = blocks[researchIndex] as Extract<
+            ContentBlock,
+            { type: "research" }
+          >;
+          const items = [...researchBlock.items];
           const lastItem = items[items.length - 1];
 
-          if (
-            lastItem &&
-            lastItem.kind === "thinking" &&
-            addition.kind === "thinking"
-          ) {
+          if (lastItem?.kind === "thinking") {
             items[items.length - 1] = {
               ...lastItem,
               text: lastItem.text + addition.text,
@@ -148,14 +177,115 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             items.push({ ...addition });
           }
 
-          blocks[blocks.length - 1] = {
-            ...lastBlock,
+          blocks[researchIndex] = {
+            ...researchBlock,
             items,
           };
+
+          next[assistantIndex] = { ...assistantMessage, blocks };
+          return { messages: next };
         }
 
-        next[assistantIndex] = { ...assistantMessage, blocks };
-        return { messages: next };
+        if (addition.kind === "tool") {
+          const assistantIndex = ensureAssistantIndex();
+          const assistantMessage = next[assistantIndex];
+          const blocks = [...assistantMessage.blocks];
+          const researchIndex = ensureResearchBlock(blocks);
+          const researchBlock = blocks[researchIndex] as Extract<
+            ContentBlock,
+            { type: "research" }
+          >;
+
+          blocks[researchIndex] = {
+            ...researchBlock,
+            items: [...researchBlock.items, { ...addition }],
+          };
+
+          next[assistantIndex] = { ...assistantMessage, blocks };
+          return { messages: next };
+        }
+
+        if (addition.kind === "tool_progress") {
+          const assistantIndex = ensureAssistantIndex();
+          const assistantMessage = next[assistantIndex];
+          const blocks = [...assistantMessage.blocks];
+          const researchIndex = ensureResearchBlock(blocks);
+          const researchBlock = blocks[researchIndex] as Extract<
+            ContentBlock,
+            { type: "research" }
+          >;
+          const items = [...researchBlock.items];
+          const targetIndex = findToolIndex(items, addition.tool);
+          const progressEntry: ToolProgress = {
+            stage: addition.stage,
+            message: addition.message,
+            receivedBytes: addition.receivedBytes,
+            totalBytes: addition.totalBytes,
+          };
+
+          if (targetIndex === -1) {
+            items.push({
+              kind: "tool",
+              data: {
+                call: { tool: addition.tool, args: {} },
+                progress: [progressEntry],
+              },
+            });
+          } else {
+            const targetItem = items[targetIndex];
+            if (targetItem.kind === "tool") {
+              items[targetIndex] = {
+                ...targetItem,
+                data: {
+                  ...targetItem.data,
+                  progress: [...(targetItem.data.progress ?? []), progressEntry],
+                },
+              };
+            }
+          }
+
+          blocks[researchIndex] = { ...researchBlock, items };
+          next[assistantIndex] = { ...assistantMessage, blocks };
+          return { messages: next };
+        }
+
+        if (addition.kind === "tool_result") {
+          const assistantIndex = ensureAssistantIndex();
+          const assistantMessage = next[assistantIndex];
+          const blocks = [...assistantMessage.blocks];
+          const researchIndex = ensureResearchBlock(blocks);
+          const researchBlock = blocks[researchIndex] as Extract<
+            ContentBlock,
+            { type: "research" }
+          >;
+          const items = [...researchBlock.items];
+          const targetIndex = findToolIndex(items, addition.tool);
+
+          if (targetIndex === -1) {
+            items.push({
+              kind: "tool",
+              data: {
+                call: { tool: addition.tool, args: {} },
+                result: { result: addition.result },
+              },
+            });
+          } else {
+            const targetItem = items[targetIndex];
+            if (targetItem.kind === "tool") {
+              items[targetIndex] = {
+                ...targetItem,
+                data: {
+                  ...targetItem.data,
+                  result: { result: addition.result },
+                },
+              };
+            }
+          }
+
+          blocks[researchIndex] = { ...researchBlock, items };
+          next[assistantIndex] = { ...assistantMessage, blocks };
+          return { messages: next };
+        }
       }
 
       if (addition.type === "research") {
@@ -304,13 +434,19 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                         : String(data.content ?? ""),
                   });
                 } else if (data.type === "tool_call") {
+                  const tool =
+                    typeof data.tool === "string" ? data.tool : "未知工具";
                   get().appendToAssistant({
-                    kind: "tool_call",
-                    tool:
-                      typeof data.tool === "string" ? data.tool : "未知工具",
-                    args: (data.args && typeof data.args === "object"
-                      ? data.args
-                      : {}) as Record<string, unknown>,
+                    kind: "tool",
+                    data: {
+                      call: {
+                        tool,
+                        args: (data.args && typeof data.args === "object"
+                          ? data.args
+                          : {}) as Record<string, unknown>,
+                      },
+                      progress: [],
+                    },
                   });
                 } else if (data.type === "tool_progress") {
                   const tool =

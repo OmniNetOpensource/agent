@@ -1,8 +1,8 @@
-import type { ResearchItem } from "@/src/features/chat/types/chat";
+import type { Tool } from "@/src/features/chat/types/chat";
 import Markdown from "@/src/shared/components/Markdown";
 import { Search, Zap, ExternalLink, Globe, Lock } from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
-import { collectToolItems } from "../utils";
+import { getToolLifecycle } from "../utils";
 
 // ============================================================================
 // Types & Utilities
@@ -171,33 +171,19 @@ function SearchResultCard({
 // ============================================================================
 
 type BraveSearchProps = {
-  item: Extract<ResearchItem, { kind: "tool_call" }>;
-  items: ResearchItem[];
-  itemIndex: number;
+  tool: Tool;
 };
 
-export function BraveSearch({
-  item,
-  items,
-  itemIndex,
-}: BraveSearchProps) {
-  // Use helper to collect related items
-  const { result: resultItem } = collectToolItems(
-    items,
-    itemIndex,
-    "brave_search"
-  );
-
+export function BraveSearch({ tool }: BraveSearchProps) {
+  const { result } = getToolLifecycle(tool);
   const query =
-    typeof item.args.query === "string" ? item.args.query : "Unknown query";
-  const braveResults = resultItem
-    ? parseBraveSearchResults(resultItem.result)
-    : null;
+    typeof tool.call.args.query === "string" ? tool.call.args.query : "Unknown query";
+  const braveResults = result ? parseBraveSearchResults(result.result) : null;
 
   return (
     <div className="animate-enter-down px-4 py-2">
       {/* Searching State */}
-      {!resultItem && (
+      {!result && (
         <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-sm text-(--text-secondary)">
           <div className="relative flex h-4 w-4 items-center justify-center">
             <div className="absolute inset-0 animate-ping rounded-full bg-(--text-tertiary) opacity-20" />
@@ -243,9 +229,9 @@ export function BraveSearch({
             </div>
           )}
         </div>
-      ) : resultItem ? (
+      ) : result ? (
         <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs rounded-lg border border-(--border-subtle) font-mono text-(--text-secondary)">
-          <Markdown content={resultItem.result} />
+          <Markdown content={result.result} />
         </div>
       ) : null}
     </div>

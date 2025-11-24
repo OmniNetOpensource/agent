@@ -1,21 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Terminal } from "lucide-react";
-import type { ResearchItem } from "@/src/features/chat/types/chat";
-import { collectToolItems } from "../utils";
+import type { Tool, ToolProgress } from "@/src/features/chat/types/chat";
+import { getToolLifecycle } from "../utils";
 
 // ============================================================================
 // Types & Utilities
 // ============================================================================
 
 type FetchStatus = "pending" | "complete" | "error";
-
-type FetchProgress = {
-  stage: string;
-  message: string;
-  receivedBytes?: number;
-  totalBytes?: number;
-};
 
 type LogTone = "info" | "success" | "warning" | "error";
 
@@ -33,7 +26,7 @@ const deriveTone = (stage: string): LogTone => {
   return "info";
 };
 
-const formatLogText = (entry: FetchProgress) => {
+const formatLogText = (entry: ToolProgress) => {
   const text = entry.message?.trim() || entry.stage;
   if (entry.receivedBytes === undefined) {
     return text;
@@ -66,7 +59,7 @@ function tryGetHostname(url: string) {
 interface FetchTerminalProps {
   url: string;
   status: FetchStatus;
-  progress?: FetchProgress[];
+  progress?: ToolProgress[];
 }
 
 const FetchTerminal: React.FC<FetchTerminalProps> = ({
@@ -215,28 +208,17 @@ const FetchTerminal: React.FC<FetchTerminalProps> = ({
 // ============================================================================
 
 type FetchUrlProps = {
-  item: Extract<ResearchItem, { kind: "tool_call" }>;
-  items: ResearchItem[];
-  itemIndex: number;
+  tool: Tool;
 };
 
-export function FetchUrl({
-  item,
-  items,
-  itemIndex,
-}: FetchUrlProps) {
-  // Use helper to collect related items
-  const { result: resultItem, progress: progressItems } = collectToolItems(
-    items,
-    itemIndex,
-    "fetch_url"
-  );
+export function FetchUrl({ tool }: FetchUrlProps) {
+  const { progress, result } = getToolLifecycle(tool);
+  const url =
+    typeof tool.call.args.url === "string" ? tool.call.args.url : "Unknown URL";
+  const latestProgress = progress[progress.length - 1];
 
-  const url = typeof item.args.url === "string" ? item.args.url : "Unknown URL";
-  const latestProgress = progressItems[progressItems.length - 1];
-
-  const status: "pending" | "complete" | "error" = resultItem
-    ? resultItem.result.startsWith("Error")
+  const status: FetchStatus = result
+    ? result.result.startsWith("Error")
       ? "error"
       : "complete"
     : latestProgress?.stage === "error"
@@ -245,16 +227,7 @@ export function FetchUrl({
 
   return (
     <div className="animate-enter-down px-4">
-      <FetchTerminal
-        url={url}
-        status={status}
-        progress={progressItems.map((progress) => ({
-          stage: progress.stage,
-          message: progress.message,
-          receivedBytes: progress.receivedBytes,
-          totalBytes: progress.totalBytes,
-        }))}
-      />
+      <FetchTerminal url={url} status={status} progress={progress} />
     </div>
   );
 }

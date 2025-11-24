@@ -1,19 +1,28 @@
+export type ToolCall = {
+  tool: string;
+  args: Record<string, unknown>;
+};
+
+export type ToolProgress = {
+  stage: string;
+  message: string;
+  receivedBytes?: number;
+  totalBytes?: number;
+};
+
+export type ToolResult = {
+  result: string;
+};
+
+export type Tool = {
+  call: ToolCall;
+  progress?: ToolProgress[];
+  result?: ToolResult;
+};
+
 export type ResearchItem =
   | { kind: "thinking"; text: string }
-  | {
-      kind: "tool_call";
-      tool: string;
-      args: Record<string, unknown>;
-    }
-  | { kind: "tool_result"; tool: string; result: string }
-  | {
-      kind: "tool_progress";
-      tool: string;
-      stage: string;
-      message: string;
-      receivedBytes?: number;
-      totalBytes?: number;
-    };
+  | { kind: "tool"; data: Tool };
 
 export type Attachment = {
   id: string;
