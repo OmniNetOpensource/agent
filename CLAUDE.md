@@ -127,7 +127,7 @@ Research blocks auto-manage expansion state:
 ## when finishing development
 
 - 运行 `pnpm check` 检查报错
-- 进行 git commit
+- 完成之后 commit 这次修改
 
 # user preference
 

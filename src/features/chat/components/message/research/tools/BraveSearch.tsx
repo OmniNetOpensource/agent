@@ -2,6 +2,7 @@ import type { ResearchItem } from "@/src/features/chat/types/chat";
 import Markdown from "@/src/shared/components/Markdown";
 import { Search, Zap, ExternalLink, Globe, Lock } from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
+import { collectToolItems } from "../utils";
 
 // ============================================================================
 // Types & Utilities
@@ -180,11 +181,12 @@ export function BraveSearch({
   items,
   itemIndex,
 }: BraveSearchProps) {
-  const nextItem = items[itemIndex + 1];
-  const resultItem =
-    nextItem?.kind === "tool_result" && nextItem.tool === "brave_search"
-      ? nextItem
-      : null;
+  // Use helper to collect related items
+  const { result: resultItem } = collectToolItems(
+    items,
+    itemIndex,
+    "brave_search"
+  );
 
   const query =
     typeof item.args.query === "string" ? item.args.query : "Unknown query";

@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShieldCheck, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import type { ResearchItem } from "@/src/features/chat/types/chat";
+import { collectToolItems } from "../utils";
 
 // ============================================================================
 // Types & Utilities
@@ -65,21 +66,20 @@ function tryGetHostname(url: string) {
 interface FetchTerminalProps {
   url: string;
   status: FetchStatus;
-  result?: string;
   progress?: FetchProgress[];
-  isExpanded?: boolean;
-  onToggle?: () => void;
 }
 
 const FetchTerminal: React.FC<FetchTerminalProps> = ({
   url,
   status = "pending",
-  result,
   progress = [],
-  isExpanded = true,
-  onToggle,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const onToggle = () => {
+    setIsExpanded((prev) => !prev);
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -192,27 +192,6 @@ const FetchTerminal: React.FC<FetchTerminalProps> = ({
               </div>
             )}
 
-            {status === "complete" && result && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="mt-4 pt-3 border-t border-dashed border-(--border-subtle)"
-              >
-                <div className="text-(--color-success) mb-2 flex items-center gap-2 text-xs uppercase tracking-wider font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>内容预览</span>
-                  <div className="h-px flex-1 bg-linear-to-r from-(--color-success) to-transparent opacity-30" />
-                </div>
-                <div className="bg-background rounded p-3 border-l-2 border-(--color-success) text-(--text-secondary) font-mono text-[11px] leading-relaxed break-all">
-                  <div className="opacity-50 mb-1 text-[10px]">
-                    DATA_STREAM:
-                  </div>
-                  {result.slice(0, 300)}
-                  {result.length > 300 ? "..." : ""}
-                </div>
-              </motion.div>
-            )}
 
             {status === "error" && (
               <motion.div
@@ -239,37 +218,18 @@ type FetchUrlProps = {
   item: Extract<ResearchItem, { kind: "tool_call" }>;
   items: ResearchItem[];
   itemIndex: number;
-  isExpanded: boolean;
-  onToggle: () => void;
 };
 
 export function FetchUrl({
   item,
   items,
   itemIndex,
-  isExpanded,
-  onToggle,
 }: FetchUrlProps) {
-  // Find subsequent items until we hit the result
-  const subsequentItems = items.slice(itemIndex + 1);
-  const resultIndex = subsequentItems.findIndex(
-    (candidate) =>
-      candidate.kind === "tool_result" && candidate.tool === "fetch_url"
-  );
-
-  const itemsUntilResult =
-    resultIndex >= 0
-      ? subsequentItems.slice(0, resultIndex + 1)
-      : subsequentItems;
-
-  const resultItem = itemsUntilResult.find(
-    (candidate): candidate is Extract<ResearchItem, { kind: "tool_result" }> =>
-      candidate.kind === "tool_result" && candidate.tool === "fetch_url"
-  );
-
-  const progressItems = itemsUntilResult.filter(
-    (candidate): candidate is Extract<ResearchItem, { kind: "tool_progress" }> =>
-      candidate.kind === "tool_progress" && candidate.tool === "fetch_url"
+  // Use helper to collect related items
+  const { result: resultItem, progress: progressItems } = collectToolItems(
+    items,
+    itemIndex,
+    "fetch_url"
   );
 
   const url = typeof item.args.url === "string" ? item.args.url : "Unknown URL";
@@ -288,15 +248,12 @@ export function FetchUrl({
       <FetchTerminal
         url={url}
         status={status}
-        result={resultItem?.result}
         progress={progressItems.map((progress) => ({
           stage: progress.stage,
           message: progress.message,
           receivedBytes: progress.receivedBytes,
           totalBytes: progress.totalBytes,
         }))}
-        isExpanded={isExpanded}
-        onToggle={onToggle}
       />
     </div>
   );

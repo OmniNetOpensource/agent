@@ -418,7 +418,26 @@ export async function POST(req: Request) {
           closeStream();
         } catch (error) {
           console.error("[Chat-API] Error:", error);
-          controller.error(error);
+          // 向客户端发送错误消息而不是直接关闭流
+          if (!streamClosed) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            const errorData = {
+              type: "content",
+              content: `\n\n错误：${errorMessage}`,
+            };
+            try {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
+              );
+            } catch (enqueueError) {
+              console.error(
+                "[Chat-API] Failed to enqueue error message:",
+                enqueueError
+              );
+            }
+            closeStream();
+          }
         }
       },
     });

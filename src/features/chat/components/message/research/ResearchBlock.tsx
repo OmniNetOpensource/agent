@@ -1,19 +1,10 @@
 import { memo, useState } from "react";
-import Markdown from "@/src/shared/components/Markdown";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
 import { cx } from "@/src/shared/utils/cx";
 import { FetchUrl } from "./tools/FetchUrl";
 import { BraveSearch } from "./tools/BraveSearch";
-import {
-  Activity,
-  Brain,
-  Wrench,
-  FileText,
-  ChevronRight,
-  Loader2,
-  Terminal,
-  Cpu,
-} from "lucide-react";
+import { ThinkingItem } from "./tools/ThinkingItem";
+import { Activity, ChevronRight, Loader2, Wrench, Cpu } from "lucide-react";
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
@@ -35,145 +26,51 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   itemIndex,
   items,
 }: ResearchBlockItemProps) {
-  const contentId = `research-item-${itemKey}`;
-  const [isExpanded, setIsExpanded] = useState(false);
-  const toggleItem = () => setIsExpanded((prev) => !prev);
-
-  // Handle fetch_url tool visualization
-  if (item.kind === "tool_call" && item.tool === "fetch_url") {
-    return (
-      <FetchUrl
-        item={item}
-        items={items}
-        itemIndex={itemIndex}
-        isExpanded={isExpanded}
-        onToggle={toggleItem}
-      />
-    );
+  // Handle thinking
+  if (item.kind === "thinking") {
+    return <ThinkingItem item={item} itemKey={itemKey} />;
   }
 
-  // Hide fetch_url result as it's handled by the call item
-  if (item.kind === "tool_result" && item.tool === "fetch_url") {
-    const prevItem = items[itemIndex - 1];
-    if (prevItem?.kind === "tool_call" && prevItem.tool === "fetch_url") {
-      return null;
-    }
-  }
-
-  // Hide fetch_url progress since it's grouped with the call item
-  if (item.kind === "tool_progress" && item.tool === "fetch_url") {
-    const prevItem = items[itemIndex - 1];
-    if (prevItem?.kind === "tool_call" && prevItem.tool === "fetch_url") {
-      return null;
-    }
-  }
-
-  // Handle brave_search tool visualization
-  if (item.kind === "tool_call" && item.tool === "brave_search") {
-    return (
-      <BraveSearch item={item} items={items} itemIndex={itemIndex} />
-    );
-  }
-
-  // Hide brave_search result as it's handled by the call item
-  if (item.kind === "tool_result" && item.tool === "brave_search") {
-    const prevItem = items[itemIndex - 1];
-    if (prevItem?.kind === "tool_call" && prevItem.tool === "brave_search") {
-      return null;
-    }
-  }
-
-  const getIcon = () => {
-    switch (item.kind) {
-      case "thinking":
-        return <Brain className="h-3.5 w-3.5" />;
-      case "tool_call":
-        return <Wrench className="h-3.5 w-3.5" />;
-      case "tool_result":
-        return <FileText className="h-3.5 w-3.5" />;
-      case "tool_progress":
-        return <Activity className="h-3.5 w-3.5" />;
+  // Handle tool calls - each tool component handles its own result/progress
+  if (item.kind === "tool_call") {
+    switch (item.tool) {
+      case "fetch_url":
+        return <FetchUrl item={item} items={items} itemIndex={itemIndex} />;
+      case "brave_search":
+        return <BraveSearch item={item} items={items} itemIndex={itemIndex} />;
       default:
-        return <Terminal className="h-3.5 w-3.5" />;
+        // Development warning for missing tool UI
+        if (process.env.NODE_ENV === "development") {
+          console.error(
+            `[ResearchBlock] No UI component registered for tool: ${item.tool}`
+          );
+        }
+        return (
+          <div className="px-4 py-2 text-xs text-(--color-destructive) font-mono border-l-2 border-(--color-destructive) bg-(--surface-muted)">
+            ⚠️ Missing UI for tool: <strong>{item.tool}</strong>
+          </div>
+        );
     }
-  };
+  }
 
-  const getTitle = () => {
-    switch (item.kind) {
-      case "thinking":
-        return "THOUGHT_PROCESS";
-      case "tool_call":
-        return `EXEC_TOOL: ${item.tool}`;
-      case "tool_result":
-        return `RETURN_VAL: ${item.tool}`;
-      case "tool_progress":
-        return `PROGRESS: ${item.tool}`;
-      default:
-        return "UNKNOWN_OP";
+  // tool_result and tool_progress are handled by their respective tool_call components
+  // If we reach here, it means the item wasn't consumed by its tool component
+  if (item.kind === "tool_result" || item.kind === "tool_progress") {
+    const prevItem = items[itemIndex - 1];
+    // Only hide if the previous item is the matching tool_call
+    if (prevItem?.kind === "tool_call" && prevItem.tool === item.tool) {
+      return null;
     }
-  };
 
-  const content =
-    item.kind === "thinking"
-      ? item.text
-      : item.kind === "tool_call"
-      ? `\`\`\`json\n${JSON.stringify(item.args, null, 2)}\n\`\`\``
-      : item.kind === "tool_result"
-      ? item.result
-      : item.kind === "tool_progress"
-      ? `${item.stage}: ${item.message}`
-      : "";
+    // Orphaned result/progress - show warning in development
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        `[ResearchBlock] Orphaned ${item.kind} for tool: ${item.tool}`
+      );
+    }
+  }
 
-  const renderedContent = (
-    <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs font-mono text-(--text-secondary) border-t border-(--border-subtle)">
-      <Markdown content={content} />
-    </div>
-  );
-
-  return (
-    <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
-      <button
-        type="button"
-        onClick={toggleItem}
-        className={cx(
-          "flex w-full items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-(--surface-hover)",
-          isExpanded ? "bg-(--surface-hover)" : "bg-transparent"
-        )}
-        aria-expanded={isExpanded}
-        aria-controls={contentId}
-      >
-        <div className={cx(
-          "flex items-center justify-center rounded-md p-1 transition-colors border",
-          item.kind === "thinking" && "bg-(--surface-card) text-foreground border-(--border-strong)",
-          item.kind === "tool_call" && "bg-(--surface-card) text-(--text-secondary) border-(--border-subtle)",
-          item.kind === "tool_result" && "bg-(--surface-card) text-(--text-tertiary) border-(--border-subtle)"
-        )}>
-          {getIcon()}
-        </div>
-
-        <span className="flex-1 text-left font-mono font-medium text-(--text-secondary) tracking-tight">
-          {getTitle()}
-        </span>
-
-        <ChevronRight
-          className={cx(
-            "h-3.5 w-3.5 text-(--text-tertiary) transition-transform duration-200",
-            isExpanded && "rotate-90"
-          )}
-        />
-      </button>
-
-      <div
-        id={contentId}
-        className={cx(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-        )}
-      >
-        {renderedContent}
-      </div>
-    </div>
-  );
+  return null;
 });
 
 export const ResearchBlock = memo(function ResearchBlock({
@@ -192,11 +89,15 @@ export const ResearchBlock = memo(function ResearchBlock({
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-(--border-subtle) bg-background shadow-soft">
       {/* Top Decor Bar */}
-      <div className={cx(
-         "h-0.5 w-full transition-colors duration-500",
-         isActive ? "bg-linear-to-r from-(--color-brand) via-(--color-info) to-(--color-brand) bg-size-[200%_100%] animate-shimmer" : "bg-(--border-subtle)"
-      )} />
-      
+      <div
+        className={cx(
+          "h-0.5 w-full transition-colors duration-500",
+          isActive
+            ? "bg-linear-to-r from-(--color-brand) via-(--color-info) to-(--color-brand) bg-size-[200%_100%] animate-shimmer"
+            : "bg-(--border-subtle)"
+        )}
+      />
+
       <button
         type="button"
         onClick={toggleBlock}
@@ -207,12 +108,14 @@ export const ResearchBlock = memo(function ResearchBlock({
         aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-3">
-          <div className={cx(
-            "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm transition-all duration-300 border",
-            isActive
-              ? "bg-(--surface-card) text-(--color-brand) border-(--color-brand)"
-              : "bg-(--surface-muted) text-(--text-tertiary) border-(--border-subtle)"
-          )}>
+          <div
+            className={cx(
+              "flex h-7 w-7 items-center justify-center rounded-lg shadow-sm transition-all duration-300 border",
+              isActive
+                ? "bg-(--surface-card) text-(--color-brand) border-(--color-brand)"
+                : "bg-(--surface-muted) text-(--text-tertiary) border-(--border-subtle)"
+            )}
+          >
             {isActive ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -221,10 +124,12 @@ export const ResearchBlock = memo(function ResearchBlock({
           </div>
 
           <div className="flex flex-col items-start">
-            <span className={cx(
-              "text-xs font-bold uppercase tracking-widest font-mono",
-              isActive ? "text-(--color-brand)" : "text-(--text-tertiary)"
-            )}>
+            <span
+              className={cx(
+                "text-xs font-bold uppercase tracking-widest font-mono",
+                isActive ? "text-(--color-brand)" : "text-(--text-tertiary)"
+              )}
+            >
               {isActive ? "PROCESSING_TASK..." : "TASK_COMPLETED"}
             </span>
             {!isExpanded && items.length > 0 && (
@@ -241,10 +146,12 @@ export const ResearchBlock = memo(function ResearchBlock({
           </div>
         </div>
 
-        <div className={cx(
-          "flex h-6 w-6 items-center justify-center rounded bg-(--surface-muted) border border-(--border-subtle) transition-all duration-200 hover:bg-(--surface-hover)",
-          isExpanded && "rotate-90 bg-(--surface-hover) text-foreground"
-        )}>
+        <div
+          className={cx(
+            "flex h-6 w-6 items-center justify-center rounded bg-(--surface-muted) border border-(--border-subtle) transition-all duration-200 hover:bg-(--surface-hover)",
+            isExpanded && "rotate-90 bg-(--surface-hover) text-foreground"
+          )}
+        >
           <ChevronRight className="h-4 w-4 text-current" />
         </div>
       </button>
@@ -255,9 +162,7 @@ export const ResearchBlock = memo(function ResearchBlock({
           isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div
-          className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)"
-        >
+        <div className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)">
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
             return (
@@ -276,7 +181,9 @@ export const ResearchBlock = memo(function ResearchBlock({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-(--text-tertiary) opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-(--text-secondary)"></span>
               </span>
-              <span className="animate-pulse">AI_AGENT_ANALYZING_DATA_STREAM...</span>
+              <span className="animate-pulse">
+                AI_AGENT_ANALYZING_DATA_STREAM...
+              </span>
             </div>
           )}
         </div>

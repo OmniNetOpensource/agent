@@ -4,7 +4,10 @@ import {
   Message,
   ResearchItem,
 } from "@/src/features/chat/types/chat";
-import { ChatModelId, DEFAULT_CHAT_MODEL_ID } from "@/src/features/model/lib/models";
+import {
+  ChatModelId,
+  DEFAULT_CHAT_MODEL_ID,
+} from "@/src/features/model/lib/models";
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,
@@ -285,7 +288,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             if (line.startsWith("data: ")) {
               try {
                 const jsonStr = line.substring(6);
+                //console.log("从后端传来的原始数据:", line);
+                //console.log("解析后的 JSON 字符串:", jsonStr);
                 const data = JSON.parse(jsonStr);
+                //console.log("解析后的数据对象:", data);
 
                 console.log("Parsed data:", data);
 
