@@ -34,11 +34,110 @@ const extractCodeFromNode = (node: ReactNode): string => {
 
 export default function Markdown({ content }: Props) {
   return (
-    <div className="prose prose-md max-w-none">
+    <div className="markdown-body space-y-3 text-sm leading-relaxed text-(--text-secondary)">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeHighlight]}
         components={{
+          h1: ({ className, ...props }) => (
+            <h1
+              {...props}
+              className={cx(
+                "mt-6 mb-3 text-lg font-semibold leading-tight text-(--text-primary)",
+                className
+              )}
+            />
+          ),
+          h2: ({ className, ...props }) => (
+            <h2
+              {...props}
+              className={cx(
+                "mt-5 mb-3 text-base font-semibold leading-tight text-(--text-primary)",
+                className
+              )}
+            />
+          ),
+          h3: ({ className, ...props }) => (
+            <h3
+              {...props}
+              className={cx(
+                "mt-4 mb-2 text-sm font-semibold text-(--text-primary)",
+                className
+              )}
+            />
+          ),
+          h4: ({ className, ...props }) => (
+            <h4
+              {...props}
+              className={cx(
+                "mt-3 mb-2 text-sm font-medium text-(--text-primary)",
+                className
+              )}
+            />
+          ),
+          p: ({ className, ...props }) => (
+            <p
+              {...props}
+              className={cx(
+                "mb-3 leading-relaxed text-(--text-secondary)",
+                className
+              )}
+            />
+          ),
+          ul: ({ className, ...props }) => (
+            <ul
+              {...props}
+              className={cx(
+                "mb-3 ml-4 list-disc space-y-2 text-(--text-secondary)",
+                className
+              )}
+            />
+          ),
+          ol: ({ className, ...props }) => (
+            <ol
+              {...props}
+              className={cx(
+                "mb-3 ml-4 list-decimal space-y-2 text-(--text-secondary)",
+                className
+              )}
+            />
+          ),
+          li: ({ className, ...props }) => (
+            <li
+              {...props}
+              className={cx("leading-relaxed text-current", className)}
+            />
+          ),
+          blockquote: ({ className, ...props }) => (
+            <blockquote
+              {...props}
+              className={cx(
+                "my-3 border-l-2 border-(--border-subtle) pl-3 text-(--text-secondary) italic",
+                className
+              )}
+            />
+          ),
+          hr: ({ className, ...props }) => (
+            <hr
+              {...props}
+              className={cx("my-4 border-(--border-subtle)", className)}
+            />
+          ),
+          strong: ({ className, ...props }) => (
+            <strong
+              {...props}
+              className={cx(
+                "font-semibold text-(--text-primary)",
+                className
+              )}
+            />
+          ),
+          em: ({ className, ...props }) => (
+            <em
+              {...props}
+              className={cx("text-(--text-primary) italic", className)}
+            />
+          ),
           a: ({ className, ...props }) => (
             <a
               {...props}

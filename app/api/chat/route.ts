@@ -3,12 +3,10 @@ import { callToolByName, toolSpecs } from "@/src/shared/lib/tools";
 import type { OpenRouter } from "@openrouter/sdk";
 import {
   DEFAULT_CHAT_MODEL_ID,
-  isSupportedChatModel,
-  type ChatModelId,
-} from "@/src/features/model/lib/models";
-import {
   getOpenRouterClient,
   getOpenRouterHeaders,
+  isSupportedChatModel,
+  type ChatModelId,
 } from "@/src/features/model/lib/openrouter";
 import type { Message } from "@/src/features/chat/types/chat";
 import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";

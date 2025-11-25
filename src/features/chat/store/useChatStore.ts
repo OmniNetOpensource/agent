@@ -8,7 +8,7 @@ import {
 import {
   ChatModelId,
   DEFAULT_CHAT_MODEL_ID,
-} from "@/src/features/model/lib/models";
+} from "@/src/features/model/lib/openrouter";
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,

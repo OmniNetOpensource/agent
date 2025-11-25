@@ -1,5 +1,15 @@
 import { OpenRouter } from "@openrouter/sdk";
 
+export type ChatModelId = string;
+
+export const DEFAULT_CHAT_MODEL_ID: ChatModelId = "x-ai/grok-4.1-fast";
+
+export function isSupportedChatModel(
+  value: string | undefined | null
+): value is ChatModelId {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 export const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export function getOpenRouterHeaders() {

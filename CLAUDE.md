@@ -135,3 +135,5 @@ Research blocks auto-manage expansion state:
 - 尽可能使用完整详细的表述
 
 - 不要跳太快，慢慢来，我们有的是时间
+
+- 配色只能从global.css里选

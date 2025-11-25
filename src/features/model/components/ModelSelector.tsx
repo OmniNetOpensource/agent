@@ -2,13 +2,10 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, Check } from "lucide-react";
-import { ChatModelId } from "@/src/features/model/lib/models";
-
-interface ModelSelectorProps {
-  currentModel: ChatModelId;
-  onModelChange: (modelId: ChatModelId) => void;
-}
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { ChatModelId } from "@/src/features/model/lib/openrouter";
 
 type ModelOption = {
   id: ChatModelId;
@@ -35,9 +32,12 @@ const highlightLabel = (label: string, keyword: string): ReactNode => {
     }
 
     segments.push(
-      <span key={`highlight-${matchIndex}`} className="text-blue-500 font-medium">
+      <span
+        key={`highlight-${matchIndex}`}
+        className="text-blue-500 font-medium"
+      >
         {label.slice(matchIndex, matchIndex + kwLength)}
-      </span>,
+      </span>
     );
 
     searchIndex = matchIndex + kwLength;
@@ -51,31 +51,32 @@ const highlightLabel = (label: string, keyword: string): ReactNode => {
   return segments;
 };
 
-export function ModelSelector({
-  currentModel,
-  onModelChange,
-}: ModelSelectorProps) {
+export function ModelSelector() {
+  const currentModel = useChatStore((state) => state.currentModel);
+  const setCurrentModel = useChatStore((state) => state.setCurrentModel);
   const [isOpen, setIsOpen] = useState(false);
   const [models, setModels] = useState<ModelOption[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const measurementRef = useRef<HTMLButtonElement | null>(null);
-  const [itemHeight, setItemHeight] = useState<number | null>(null);
-  const [visibleCount, setVisibleCount] = useState<number>(20);
-  const [startIndex, setStartIndex] = useState<number>(0);
-  const OVERSCAN = 3;
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const visibleModels = useMemo(() => {
     const trimmed = search.trim();
     if (!trimmed) return models;
     const lowerKeyword = trimmed.toLowerCase();
     return models.filter((model) =>
-      model.label.toLowerCase().includes(lowerKeyword),
+      model.label.toLowerCase().includes(lowerKeyword)
     );
   }, [models, search]);
+
+  const virtualizer = useVirtualizer({
+    count: visibleModels.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 40,
+    overscan: 3,
+  });
 
   const currentModelLabel =
     models.find((m) => m.id === currentModel)?.label || currentModel;
@@ -86,7 +87,7 @@ export function ModelSelector({
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("/api/models", { cache: "no-store" });
+        const response = await fetch("/api/models", { cache: "no-cache" });
         if (!response.ok) {
           const text = await response.text();
           throw new Error(`Failed to load models: ${text}`);
@@ -104,7 +105,7 @@ export function ModelSelector({
         const hasCurrent =
           !!currentModel && incoming.some((model) => model.id === currentModel);
         if (!hasCurrent && defaultModelId) {
-          onModelChange(defaultModelId);
+          setCurrentModel(defaultModelId);
         }
       } catch (err) {
         if (!active) return;
@@ -122,57 +123,27 @@ export function ModelSelector({
     return () => {
       active = false;
     };
-  }, [currentModel, onModelChange]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
-    if (!isOpen || models.length === 0 || itemHeight) return;
-    if (!measurementRef.current) return;
-    const rect = measurementRef.current.getBoundingClientRect();
-    if (rect.height > 0) {
-      setItemHeight(rect.height);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
     }
-  }, [isOpen, models.length, itemHeight]);
-
-  useEffect(() => {
-    if (!isOpen || !scrollRef.current || !itemHeight) return;
-    const container = scrollRef.current;
-    const height = container.clientHeight;
-    if (height > 0 && itemHeight > 0) {
-      const baseCount = Math.ceil(height / itemHeight);
-      const totalCount = baseCount + OVERSCAN * 2;
-      setVisibleCount(Math.max(totalCount, baseCount));
-    }
-  }, [isOpen, itemHeight, OVERSCAN]);
-
-  useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTop = 0;
-    setStartIndex(0);
   }, [search]);
-
-  const handleScroll = () => {
-    if (!scrollRef.current || !itemHeight) return;
-    const container = scrollRef.current;
-    const scrollTop = container.scrollTop;
-    const rawIndex = Math.floor(scrollTop / itemHeight) - OVERSCAN;
-    const maxStart = Math.max(0, visibleModels.length - visibleCount);
-    const nextStart = Math.min(Math.max(rawIndex, 0), maxStart);
-    setStartIndex(nextStart);
-  };
-
-  const safeVisibleCount = Math.min(visibleCount, visibleModels.length);
-  const endIndex = Math.min(visibleModels.length, startIndex + safeVisibleCount);
-  const totalHeight = itemHeight ? itemHeight * visibleModels.length : 0;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -180,10 +151,14 @@ export function ModelSelector({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200
+          flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
           bg-background/50 hover:bg-accent/50 border border-border/50 backdrop-blur-sm
           text-foreground min-w-[180px] justify-between shadow-sm hover:shadow-md
-          ${isOpen ? "ring-2 ring-primary/20 border-primary/40 bg-accent/50" : ""}
+          ${
+            isOpen
+              ? "ring-2 ring-primary/20 border-primary/40 bg-accent/50"
+              : ""
+          }
         `}
       >
         <span className="truncate">
@@ -193,7 +168,11 @@ export function ModelSelector({
             ? "模型加载失败"
             : currentModelLabel || "未选择模型"}
         </span>
-        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {isOpen && (
@@ -226,89 +205,53 @@ export function ModelSelector({
                 ) : (
                   <div
                     ref={scrollRef}
-                    onScroll={handleScroll}
-                    className="max-h-[320px] overflow-y-auto px-1"
+                    className="max-h-[250px] overflow-y-auto px-1"
                   >
-                    <div className="relative">
-                      <button
-                        ref={measurementRef}
-                        type="button"
-                        className={`
-                          flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-colors
-                          text-muted-foreground
-                        `}
-                        style={{
-                          position: "absolute",
-                          visibility: "hidden",
-                          pointerEvents: "none",
-                        }}
-                        aria-hidden
-                        tabIndex={-1}
-                      >
-                        <span className="truncate">{models[0].label}</span>
-                      </button>
-                    </div>
-
-                    {itemHeight ? (
-                      <div style={{ position: "relative", height: totalHeight }}>
-                        {Array.from({ length: endIndex - startIndex }).map((_, idx) => {
-                          const modelIndex = startIndex + idx;
-                          const model = visibleModels[modelIndex];
-                          return (
-                            <div
-                              key={model.id}
-                              style={{
-                                position: "absolute",
-                                top: modelIndex * itemHeight,
-                                left: 0,
-                                right: 0,
+                    <div
+                      style={{
+                        height: `${virtualizer.getTotalSize()}px`,
+                        width: "100%",
+                        position: "relative",
+                      }}
+                    >
+                      {virtualizer.getVirtualItems().map((virtualItem) => {
+                        const model = visibleModels[virtualItem.index];
+                        return (
+                          <div
+                            key={model.id}
+                            ref={virtualizer.measureElement}
+                            data-index={virtualItem.index}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              transform: `translateY(${virtualItem.start}px)`,
+                            }}
+                          >
+                            <button
+                              onClick={() => {
+                                setCurrentModel(model.id);
                               }}
+                              className={`
+                                flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-all duration-200 cursor-pointer
+                                hover:bg-(--surface-hover)
+                                ${
+                                  currentModel === model.id
+                                    ? "font-semibold"
+                                    : ""
+                                }
+                              `}
                             >
-                              <button
-                                onClick={() => {
-                                  onModelChange(model.id);
-                                  setIsOpen(false);
-                                }}
-                                className={`
-                                  flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-all duration-200 group
-                                  ${currentModel === model.id 
-                                    ? "bg-primary/10 text-primary font-medium" 
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                  }
-                                `}
-                              >
-                                <span className="truncate">{highlightLabel(model.label, search)}</span>
-                                {currentModel === model.id && (
-                                  <Check className="w-3.5 h-3.5 text-primary animate-scale-in" />
-                                )}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      visibleModels.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => {
-                            onModelChange(model.id);
-                            setIsOpen(false);
-                          }}
-                          className={`
-                            flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-all duration-200
-                            ${currentModel === model.id 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            }
-                          `}
-                        >
-                          <span className="truncate">{highlightLabel(model.label, search)}</span>
-                          {currentModel === model.id && (
-                            <Check className="w-3.5 h-3.5 text-primary animate-scale-in" />
-                          )}
-                        </button>
-                      ))
-                    )}
+                              <span>{highlightLabel(model.label, search)}</span>
+                              {currentModel === model.id && (
+                                <Check className="w-3.5 h-3.5 text-primary animate-scale-in" />
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </>

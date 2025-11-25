@@ -11,9 +11,6 @@ export function Header() {
   const pending = useChatStore((state) => state.pending);
   const resetConversation = useChatStore((state) => state.resetConversation);
 
-  const currentModel = useChatStore((state) => state.currentModel);
-  const setCurrentModel = useChatStore((state) => state.setCurrentModel);
-
   const canClearConversation = !pending && messageCount > 0;
 
   const handleClearConversation = useCallback(() => {
@@ -30,10 +27,7 @@ export function Header() {
           <span className="text-sm font-medium text-(--text-secondary)">
             当前模型
           </span>
-          <ModelSelector
-            currentModel={currentModel}
-            onModelChange={setCurrentModel}
-          />
+          <ModelSelector />
         </label>
         <div className="ml-auto">
           <button
