@@ -1,17 +1,36 @@
 "use client";
 
+import { isValidElement, type ReactElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
+import CodeBlock from "@/src/shared/components/CodeBlock";
+import { cx } from "@/src/shared/utils/cx";
 
 type Props = {
   content: string;
 };
 
-const cx = (...classes: Array<string | undefined | false>) =>
-  classes.filter(Boolean).join(" ");
+const extractLanguage = (className?: string) => {
+  if (!className) return "";
+  const match = className.match(/language-([\w-]+)/);
+  if (match) return match[1];
+  return className.trim().split(/\s+/)[0];
+};
+
+const extractCodeFromNode = (node: ReactNode): string => {
+  if (typeof node === "string") return node;
+  if (Array.isArray(node)) {
+    return node.map(extractCodeFromNode).join("");
+  }
+  if (isValidElement(node)) {
+    const element = node as ReactElement<{ children?: ReactNode }>;
+    return extractCodeFromNode(element.props.children);
+  }
+  return "";
+};
 
 export default function Markdown({ content }: Props) {
   return (
@@ -31,15 +50,32 @@ export default function Markdown({ content }: Props) {
               rel="noopener noreferrer"
             />
           ),
-          pre: ({ className, ...props }) => (
-            <pre
-              {...props}
-              className={cx(
-                "not-prose overflow-x-auto rounded-md border border-(--code-block-border) bg-(--code-block-bg) p-4 text-sm text-(--code-block-text)",
-                className
-              )}
-            />
-          ),
+          pre: ({ className, children }) => {
+            const childArray = Array.isArray(children) ? children : [children];
+            const codeElement = childArray.find(
+              (child): child is ReactElement<{
+                className?: string;
+                children?: ReactNode;
+              }> => isValidElement(child)
+            );
+
+            const language = extractLanguage(
+              codeElement?.props.className || className
+            );
+            const rawCode = extractCodeFromNode(
+              codeElement?.props.children ?? children
+            );
+
+            return (
+              <CodeBlock
+                language={language}
+                code={rawCode}
+                className={className}
+              >
+                {children}
+              </CodeBlock>
+            );
+          },
           code: ({ className, ...props }) => {
             const isInline = !className || !className.includes("language-");
             if (isInline) {
