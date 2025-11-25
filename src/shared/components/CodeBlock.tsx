@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronRight, Copy, Download, Eye } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Download,
+  Eye,
+} from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
 import { usePreviewStore } from "@/src/shared/store/usePreviewStore";
 
@@ -62,7 +69,12 @@ export default function CodeBlock({
 
   const [isCopied, setIsCopied] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const openPreview = usePreviewStore((state) => state.openPreview);
+  const {
+    isOpen,
+    code: previewCode,
+    openPreview,
+    closePreview,
+  } = usePreviewStore();
 
   const handleCopy = async () => {
     if (!hasCode || typeof navigator === "undefined") return;
@@ -99,14 +111,19 @@ export default function CodeBlock({
 
   const handlePreview = () => {
     if (!canPreview || !hasCode) return;
-    openPreview(code, normalizedLanguage);
+    // Toggle: 如果当前预览的是同一段代码，则关闭；否则打开新预览
+    if (isOpen && previewCode === code) {
+      closePreview();
+    } else {
+      openPreview(code, normalizedLanguage);
+    }
   };
 
   const buttonClass =
     "inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
-    <div className="group overflow-hidden rounded-lg border border-(--code-block-border)">
+    <div className="group  rounded-lg border border-(--code-block-border)">
       {/* Header - 点击可收起/展开 */}
       <div
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -129,7 +146,10 @@ export default function CodeBlock({
         </div>
 
         {/* 右侧：操作按钮 */}
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="sticky top-0 z-10 flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           {canPreview && (
             <button
               type="button"
@@ -167,7 +187,9 @@ export default function CodeBlock({
             ) : (
               <Copy className="h-3.5 w-3.5" />
             )}
-            <span className="hidden sm:inline">{isCopied ? "已复制" : "复制"}</span>
+            <span className="hidden sm:inline">
+              {isCopied ? "已复制" : "复制"}
+            </span>
           </button>
         </div>
       </div>
