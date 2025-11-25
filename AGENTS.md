@@ -59,6 +59,8 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 
 # 用户偏好
 
+- 每次修改代码之前，都要提前说明这样改动会产生什么样的效果、后果，以及为什么要这么做。
+
 - 先看完项目相关代码再回答问题
 
 - 不要用行话、黑话或者复杂的名词，用自然朴素的语言

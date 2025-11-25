@@ -127,7 +127,7 @@ export default function CodeBlock({
       {/* Header - 点击可收起/展开 */}
       <div
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="sticky top-0 z-10 flex cursor-pointer items-center justify-between rounded-t-lg border-b border-(--code-block-border) bg-(--surface-muted) px-4 py-2 hover:bg-(--surface-hover) transition-colors"
+        className="sticky top-0 z-10 flex cursor-pointer items-center justify-between rounded-t-lg border-b border-(--code-block-border) bg-(--code-block-bg) px-4 py-2 hover:bg-(--surface-hover) transition-colors"
       >
         {/* 左侧：展开/收起图标 + 语言标签 */}
         <div className="flex items-center gap-1.5">
