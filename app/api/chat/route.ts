@@ -163,7 +163,7 @@ export async function POST(req: Request) {
                 } else {
                   contentParts.push({
                     type: "file",
-                    file: { filename: att.name, fileData: base64Data },
+                    file: { filename: att.name, fileData: att.dataUrl },
                   });
                 }
               }

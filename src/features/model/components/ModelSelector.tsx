@@ -74,7 +74,7 @@ export function ModelSelector() {
   const virtualizer = useVirtualizer({
     count: visibleModels.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => 48,
     overscan: 3,
   });
 
@@ -234,7 +234,7 @@ export function ModelSelector() {
                                 setCurrentModel(model.id);
                               }}
                               className={`
-                                flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm text-left transition-all duration-200 cursor-pointer
+                                flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-sm text-left transition-all duration-200 cursor-pointer
                                 hover:bg-(--surface-hover)
                                 ${
                                   currentModel === model.id

@@ -1,4 +1,10 @@
-import { ChangeEvent, FormEvent, KeyboardEvent, useCallback, useEffect, useRef } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useRef,
+} from "react";
 import Image from "next/image";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
@@ -18,78 +24,63 @@ export function Composer({ isInitial }: ComposerProps) {
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
-  const handleSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      await sendMessage();
-    },
-    [sendMessage]
-  );
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await sendMessage();
+  };
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        void sendMessage();
-      }
-    },
-    [sendMessage]
-  );
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const adjustTextareaHeight = useCallback(
-    (element?: HTMLTextAreaElement | null) => {
-      const textarea = element ?? textareaRef.current;
-      if (!textarea) {
-        return;
-      }
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendMessage();
+    }
+  };
 
-      textarea.style.height = "auto";
-      const computedStyle = window.getComputedStyle(textarea);
-      const lineHeightValue = parseFloat(computedStyle.lineHeight);
-      const paddingTopValue = parseFloat(computedStyle.paddingTop);
-      const paddingBottomValue = parseFloat(computedStyle.paddingBottom);
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      return;
+    }
 
-      const fallbackLineHeight = 20;
-      const lineHeight = Number.isFinite(lineHeightValue)
-        ? lineHeightValue
-        : fallbackLineHeight;
-      const paddingTop = Number.isFinite(paddingTopValue)
-        ? paddingTopValue
-        : 0;
-      const paddingBottom = Number.isFinite(paddingBottomValue)
-        ? paddingBottomValue
-        : 0;
-      const maxLines = 5;
-      const maxHeight = lineHeight * maxLines + paddingTop + paddingBottom;
-      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = "auto";
+    const computedStyle = window.getComputedStyle(textarea);
+    const lineHeightValue = parseFloat(computedStyle.lineHeight);
+    const paddingTopValue = parseFloat(computedStyle.paddingTop);
+    const paddingBottomValue = parseFloat(computedStyle.paddingBottom);
 
-      textarea.style.height = `${newHeight}px`;
-    },
-    []
-  );
+    const fallbackLineHeight = 20;
+    const lineHeight = Number.isFinite(lineHeightValue)
+      ? lineHeightValue
+      : fallbackLineHeight;
+    const paddingTop = Number.isFinite(paddingTopValue) ? paddingTopValue : 0;
+    const paddingBottom = Number.isFinite(paddingBottomValue)
+      ? paddingBottomValue
+      : 0;
+    const maxLines = 5;
+    const maxHeight = lineHeight * maxLines + paddingTop + paddingBottom;
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+
+    textarea.style.height = `${newHeight}px`;
+  };
 
   useEffect(() => {
     adjustTextareaHeight();
-  }, [adjustTextareaHeight, input]);
+  }, [input]);
 
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files || files.length === 0) {
-        return;
-      }
-      await addAttachments(Array.from(files));
-      // 允许重复选择同一文件
-      event.target.value = "";
-    },
-    [addAttachments]
-  );
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+    await addAttachments(Array.from(files));
+    // 允许重复选择同一文件
+    event.target.value = "";
+  };
 
-  const handlePickFiles = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+  const handlePickFiles = () => fileInputRef.current?.click();
 
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
@@ -163,7 +154,7 @@ export function Composer({ isInitial }: ComposerProps) {
               accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
               className="hidden"
             />
-            
+
             <button
               type="button"
               onClick={handlePickFiles}
@@ -180,13 +171,12 @@ export function Composer({ isInitial }: ComposerProps) {
               value={input}
               onChange={(event) => {
                 setInput(event.target.value);
-                adjustTextareaHeight(event.currentTarget);
               }}
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="输入您的消息..."
               className="min-h-[40px] max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
-              style={{ height: '44px' }}
+              style={{ height: "44px" }}
             />
 
             <button
@@ -204,7 +194,11 @@ export function Composer({ isInitial }: ComposerProps) {
                   : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-md"
               }`}
             >
-              {pending ? <Square className="h-4 w-4 fill-current" /> : <ArrowUp className="h-5 w-5" />}
+              {pending ? (
+                <Square className="h-4 w-4 fill-current" />
+              ) : (
+                <ArrowUp className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
