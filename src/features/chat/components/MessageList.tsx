@@ -13,7 +13,7 @@ export function MessageList() {
     <div
       role="log"
       aria-live="polite"
-      className="h-full w-full overflow-y-auto py-6 pr-2 pb-32"
+      className="w-full py-6 pr-2 pb-32"
     >
       <div className="mx-auto flex w-full max-w-3xl flex-col space-y-4">
         {messages.map((message, index) => {
