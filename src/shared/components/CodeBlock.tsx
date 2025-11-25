@@ -127,7 +127,10 @@ export default function CodeBlock({
       {/* Header - 点击可收起/展开 */}
       <div
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="sticky top-0 z-10 flex cursor-pointer items-center justify-between rounded-t-lg bg-transparent px-4 py-2 hover:bg-(--surface-hover) transition-colors"
+        className={cx(
+          "sticky top-0 z-10 flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-(--surface-hover) transition-all duration-200 ease-in-out",
+          isCollapsed ? "rounded-lg" : "rounded-t-lg"
+        )}
       >
         {/* 左侧：展开/收起图标 + 语言标签 */}
         <div className="flex items-center gap-1.5">
@@ -195,16 +198,22 @@ export default function CodeBlock({
       </div>
 
       {/* 代码区域 */}
-      {!isCollapsed && (
+      <div
+        className={cx(
+          "grid transition-[grid-template-rows] duration-200 ease-in-out",
+          isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
+        )}
+      >
         <pre
           className={cx(
             className,
-            "overflow-x-auto rounded-none bg-transparent p-4 text-sm text-(--code-block-text)"
+            "overflow-hidden overflow-x-auto rounded-none bg-transparent text-sm text-(--code-block-text) transition-[padding] duration-600 ease-in-out",
+            isCollapsed ? "py-0 px-4" : "p-4"
           )}
         >
           {children}
         </pre>
-      )}
+      </div>
     </div>
   );
 }

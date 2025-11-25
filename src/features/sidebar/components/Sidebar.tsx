@@ -7,7 +7,7 @@ import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 
 export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,

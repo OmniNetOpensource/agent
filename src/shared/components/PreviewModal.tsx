@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -60,12 +60,18 @@ const buildSrcDoc = (code: string, language?: string) => {
 </html>`;
 };
 
+const MIN_WIDTH = 400;
+const DEFAULT_WIDTH = 900;
+
 export default function PreviewModal({
   open,
   code,
   language,
   onClose,
 }: PreviewModalProps) {
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [isDragging, setIsDragging] = useState(false);
+
   useEffect(() => {
     if (!open) return;
 
@@ -78,6 +84,37 @@ export default function PreviewModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const maxWidth = window.innerWidth - 32;
+      const newWidth = window.innerWidth - e.clientX;
+      setWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "ew-resize";
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
 
   const srcDoc = useMemo(() => buildSrcDoc(code, language), [code, language]);
 
@@ -98,36 +135,45 @@ export default function PreviewModal({
             onClick={onClose}
           />
 
-          <div className="relative z-10 mx-auto flex h-full max-h-[90vh] w-full max-w-6xl items-center justify-center p-4">
+          <div className="relative z-10 flex h-full items-center justify-end p-4">
             <motion.div
-              className="w-full overflow-hidden rounded-2xl border border-(--border-subtle) bg-(--surface-card) shadow-float"
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              className="relative flex h-full max-h-[90vh] overflow-hidden rounded-2xl border border-(--border-subtle) bg-(--surface-card) shadow-float"
+              style={{ width }}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 24 }}
               transition={{ type: "spring", stiffness: 280, damping: 26 }}
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-3">
-                <div className="text-sm font-semibold text-(--text-secondary)">
-                  实时预览 {language ? `· ${language}` : ""}
-                </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="inline-flex items-center gap-2 rounded-md border border-(--border-subtle) bg-(--surface-card) px-3 py-1.5 text-xs font-medium text-(--text-secondary) shadow-sm transition-colors hover:border-(--border-hover) hover:text-(--text-primary)"
-                >
-                  <X className="h-4 w-4" />
-                  关闭
-                </button>
-              </div>
+              {/* 拖拽手柄 */}
+              <div
+                className="absolute left-0 top-0 z-20 h-full w-1.5 cursor-ew-resize transition-colors hover:bg-(--border-hover)"
+                onMouseDown={handleMouseDown}
+              />
 
-              <div className="bg-(--surface-base)">
-                <iframe
-                  title="代码预览"
-                  srcDoc={srcDoc}
-                  className="h-[70vh] w-full border-0"
-                  sandbox="allow-scripts"
-                />
+              <div className="flex flex-1 flex-col overflow-hidden">
+                <div className="flex items-center justify-between border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-3">
+                  <div className="text-sm font-semibold text-(--text-secondary)">
+                    实时预览 {language ? `· ${language}` : ""}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-2 rounded-md border border-(--border-subtle) bg-(--surface-card) px-3 py-1.5 text-xs font-medium text-(--text-secondary) shadow-sm transition-colors hover:border-(--border-hover) hover:text-(--text-primary)"
+                  >
+                    <X className="h-4 w-4" />
+                    关闭
+                  </button>
+                </div>
+
+                <div className="flex-1 bg-(--surface-base)">
+                  <iframe
+                    title="代码预览"
+                    srcDoc={srcDoc}
+                    className="h-full w-full border-0"
+                    sandbox="allow-scripts"
+                  />
+                </div>
               </div>
             </motion.div>
           </div>
