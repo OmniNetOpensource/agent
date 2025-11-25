@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronRight, Copy, Download, Eye } from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
-import PreviewModal from "./PreviewModal";
+import { usePreviewStore } from "@/src/shared/store/usePreviewStore";
 
 type CodeBlockProps = {
   language?: string;
@@ -61,8 +61,8 @@ export default function CodeBlock({
   const canPreview = previewableLanguages.has(normalizedLanguage);
 
   const [isCopied, setIsCopied] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const openPreview = usePreviewStore((state) => state.openPreview);
 
   const handleCopy = async () => {
     if (!hasCode || typeof navigator === "undefined") return;
@@ -99,7 +99,7 @@ export default function CodeBlock({
 
   const handlePreview = () => {
     if (!canPreview || !hasCode) return;
-    setIsPreviewOpen(true);
+    openPreview(code, normalizedLanguage);
   };
 
   const buttonClass =
@@ -183,13 +183,6 @@ export default function CodeBlock({
           {children}
         </pre>
       )}
-
-      <PreviewModal
-        open={isPreviewOpen}
-        language={normalizedLanguage}
-        code={code}
-        onClose={() => setIsPreviewOpen(false)}
-      />
     </div>
   );
 }
