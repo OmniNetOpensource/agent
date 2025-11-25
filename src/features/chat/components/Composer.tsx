@@ -1,25 +1,40 @@
-import { ChangeEvent, useCallback, useEffect, useRef } from "react";
+import { ChangeEvent, FormEvent, KeyboardEvent, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
-import { useChatComposer } from "@/src/features/chat/hooks/useChat";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
 type ComposerProps = {
   isInitial: boolean;
 };
 
 export function Composer({ isInitial }: ComposerProps) {
-  const {
-    input,
-    pending,
-    pendingAttachments,
-    setInput,
-    addAttachments,
-    removeAttachment,
-    handleSubmit,
-    handleKeyDown,
-    stop,
-  } = useChatComposer();
+  const input = useChatStore((state) => state.input);
+  const pending = useChatStore((state) => state.pending);
+  const pendingAttachments = useChatStore((state) => state.pendingAttachments);
+  const setInput = useChatStore((state) => state.setInput);
+  const addAttachments = useChatStore((state) => state.addAttachments);
+  const removeAttachment = useChatStore((state) => state.removeAttachment);
+  const sendMessage = useChatStore((state) => state.sendMessage);
+  const stop = useChatStore((state) => state.stop);
+
+  const handleSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      await sendMessage();
+    },
+    [sendMessage]
+  );
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        void sendMessage();
+      }
+    },
+    [sendMessage]
+  );
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 

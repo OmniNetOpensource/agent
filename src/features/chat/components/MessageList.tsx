@@ -1,9 +1,10 @@
 import { MessageItem } from "./message/MessageItem";
 import { PendingIndicator } from "./message/PendingIndicator";
-import { useChatMessages } from "@/src/features/chat/hooks/useChat";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
 export function MessageList() {
-  const { messages, pending } = useChatMessages();
+  const messages = useChatStore((state) => state.messages);
+  const pending = useChatStore((state) => state.pending);
 
   if (messages.length === 0) {
     return null;
