@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Check, Copy, Download, Eye } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Copy, Download, Eye } from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
 import PreviewModal from "./PreviewModal";
 
@@ -62,6 +62,7 @@ export default function CodeBlock({
 
   const [isCopied, setIsCopied] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const handleCopy = async () => {
     if (!hasCode || typeof navigator === "undefined") return;
@@ -102,17 +103,46 @@ export default function CodeBlock({
   };
 
   const buttonClass =
-    "inline-flex items-center gap-1.5 rounded-md border border-(--border-subtle) bg-(--surface-card) px-2.5 py-1 text-[11px] font-medium text-(--text-tertiary) shadow-soft transition-colors hover:border-(--border-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
-    <div className="group relative">
-      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5">
-        {normalizedLanguage && (
-          <span className="rounded-md border border-(--border-subtle) bg-(--surface-card) px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-(--text-tertiary)">
-            {normalizedLanguage}
-          </span>
-        )}
-        <div className="flex items-center gap-1.5 rounded-md border border-(--border-subtle) bg-(--surface-base)/80 px-2 py-1 shadow-soft backdrop-blur-md">
+    <div className="group overflow-hidden rounded-lg border border-(--code-block-border)">
+      {/* Header - 点击可收起/展开 */}
+      <div
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="flex cursor-pointer items-center justify-between border-b border-(--code-block-border) bg-(--surface-subtle) px-4 py-2 hover:bg-(--surface-hover) transition-colors"
+      >
+        {/* 左侧：展开/收起图标 + 语言标签 */}
+        <div className="flex items-center gap-1.5">
+          {isCollapsed ? (
+            <ChevronRight className="h-3.5 w-3.5 text-(--text-tertiary)" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-(--text-tertiary)" />
+          )}
+          {normalizedLanguage ? (
+            <span className="text-xs font-medium text-(--text-secondary)">
+              {normalizedLanguage.toUpperCase()}
+            </span>
+          ) : (
+            <span className="text-xs text-(--text-tertiary)">Code</span>
+          )}
+        </div>
+
+        {/* 右侧：操作按钮 */}
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {canPreview && (
+            <button
+              type="button"
+              onClick={handlePreview}
+              className={buttonClass}
+              title="预览代码"
+              aria-label="预览代码"
+              disabled={!hasCode}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">预览</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleDownload}
@@ -122,18 +152,7 @@ export default function CodeBlock({
             disabled={!hasCode}
           >
             <Download className="h-3.5 w-3.5" />
-            下载
-          </button>
-          <button
-            type="button"
-            onClick={handlePreview}
-            className={buttonClass}
-            title={canPreview ? "预览代码" : "只能预览 HTML / CSS / JavaScript"}
-            aria-label="预览代码"
-            disabled={!canPreview || !hasCode}
-          >
-            <Eye className="h-3.5 w-3.5" />
-            预览
+            <span className="hidden sm:inline">下载</span>
           </button>
           <button
             type="button"
@@ -148,19 +167,22 @@ export default function CodeBlock({
             ) : (
               <Copy className="h-3.5 w-3.5" />
             )}
-            {isCopied ? "已复制" : "复制"}
+            <span className="hidden sm:inline">{isCopied ? "已复制" : "复制"}</span>
           </button>
         </div>
       </div>
 
-      <pre
-        className={cx(
-          "not-prose overflow-x-auto rounded-md border border-(--code-block-border) bg-(--code-block-bg) px-4 pb-4 pr-20 pt-12 text-sm text-(--code-block-text)",
-          className
-        )}
-      >
-        {children}
-      </pre>
+      {/* 代码区域 */}
+      {!isCollapsed && (
+        <pre
+          className={cx(
+            className,
+            "not-prose overflow-x-auto rounded-none bg-(--code-block-bg) p-4 text-sm text-(--code-block-text)"
+          )}
+        >
+          {children}
+        </pre>
+      )}
 
       <PreviewModal
         open={isPreviewOpen}
