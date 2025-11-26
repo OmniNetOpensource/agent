@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { usePreviewStore } from "@/src/shared/store/usePreviewStore";
+import { usePreviewStore } from "../store/usePreviewStore";
 
 const buildSrcDoc = (code: string, language?: string) => {
   const normalized = (language || "").toLowerCase();
@@ -55,7 +55,10 @@ const buildSrcDoc = (code: string, language?: string) => {
 };
 
 export function PreviewPanel() {
-  const { isOpen, code, language, closePreview } = usePreviewStore();
+  const { isOpen, code, language, closePreview, panelWidth, setPanelWidth } =
+    usePreviewStore();
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -70,18 +73,58 @@ export function PreviewPanel() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closePreview]);
 
+  // 拖拽调整宽度
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!containerRef.current) return;
+      const containerRight =
+        containerRef.current.parentElement?.getBoundingClientRect().right ??
+        window.innerWidth;
+      const newWidth = containerRight - moveEvent.clientX;
+      const clampedWidth = Math.min(800, Math.max(280, newWidth));
+      setPanelWidth(clampedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
   const srcDoc = useMemo(() => buildSrcDoc(code, language), [code, language]);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="h-full border-l border-(--border-subtle) bg-(--surface-base) flex flex-col"
+          ref={containerRef}
+          className="h-full border-l border-(--border-subtle) bg-(--surface-base) flex flex-col relative"
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 480, opacity: 1 }}
+          animate={{ width: panelWidth, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
+          {/* 拖拽分隔线 */}
+          <div
+            onMouseDown={handleMouseDown}
+            className={`absolute left-0 top-0 h-full w-1.5 cursor-col-resize z-10 transition-colors ${
+              isDragging
+                ? "bg-(--border-hover)"
+                : "bg-transparent hover:bg-(--border-hover)"
+            }`}
+          />
+
           {/* Header */}
           <div className="flex items-center justify-between border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-3 shrink-0">
             <div className="text-sm font-semibold text-(--text-secondary)">

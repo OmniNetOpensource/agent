@@ -71,40 +71,39 @@ export const MessageItem = memo(function MessageItem({
               if (block.type === "attachments") {
                 return (
                   <div key={blockKey} className="flex flex-wrap gap-3">
-                    {block.attachments.map((attachment) => (
-                      <a
-                        key={attachment.id}
-                        href={attachment.dataUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-(--border-subtle) bg-background px-3 py-2 shadow-sm transition-colors hover:bg-(--surface-card)"
-                        title="点击查看附件"
-                        download={attachment.name}
-                      >
-                        <div className="relative h-12 w-12 overflow-hidden rounded-md border border-(--border-subtle) bg-(--surface-card)">
-                          {attachment.kind === "image" ? (
-                            <Image
-                              src={attachment.dataUrl}
-                              alt={attachment.name}
-                              fill
-                              className="object-cover transition-transform duration-200 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
-                              <Paperclip className="h-5 w-5" />
+                    {block.attachments.map((attachment) =>
+                      attachment.kind === "image" ? (
+                        <div
+                          key={attachment.id}
+                          className="relative max-w-full overflow-hidden rounded-xl"
+                        >
+                          <Image
+                            src={attachment.dataUrl}
+                            alt={attachment.name}
+                            width={400}
+                            height={300}
+                            className="max-h-[300px] w-auto rounded-xl object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          key={attachment.id}
+                          className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-(--border-subtle) bg-(--surface-card) px-3 py-2"
+                        >
+                          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-(--border-subtle) bg-background text-(--text-tertiary)">
+                            <Paperclip className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium text-foreground">
+                              {attachment.name}
                             </div>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-foreground">
-                            {attachment.name}
-                          </div>
-                          <div className="text-xs text-(--text-tertiary)">
-                            {formatFileSize(attachment.size)}
+                            <div className="text-xs text-(--text-tertiary)">
+                              {formatFileSize(attachment.size)}
+                            </div>
                           </div>
                         </div>
-                      </a>
-                    ))}
+                      )
+                    )}
                   </div>
                 );
               }

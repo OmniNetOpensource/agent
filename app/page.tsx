@@ -3,7 +3,7 @@
 import { Composer } from "@/src/features/chat/components/Composer";
 import { Header } from "@/src/features/chat/components/Header";
 import { MessageList } from "@/src/features/chat/components/MessageList";
-import { PreviewPanel } from "@/src/shared/components/PreviewPanel";
+import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
 export function ChatPage() {

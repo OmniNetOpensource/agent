@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import { Plus } from "lucide-react";
 import { ModelSelector } from "@/src/features/model/components/ModelSelector";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
@@ -13,12 +12,12 @@ export function Header() {
 
   const canClearConversation = !pending && messageCount > 0;
 
-  const handleClearConversation = useCallback(() => {
+  const handleClearConversation = () => {
     if (!canClearConversation) {
       return;
     }
     resetConversation();
-  }, [canClearConversation, resetConversation]);
+  };
 
   return (
     <header className="flex flex-col gap-3 border-b border-(--border-subtle) bg-(--surface-card) px-4 sm:px-6 py-4">

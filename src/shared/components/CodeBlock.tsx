@@ -10,7 +10,7 @@ import {
   Eye,
 } from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
-import { usePreviewStore } from "@/src/shared/store/usePreviewStore";
+import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 
 type CodeBlockProps = {
   language?: string;

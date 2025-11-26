@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 type Theme = "light" | "dark";
 
@@ -38,7 +38,7 @@ const getInitialTheme = (): Theme => {
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
-  const setTheme = useCallback((next: Theme) => {
+  const setTheme = (next: Theme) => {
     setThemeState(next);
 
     if (typeof window !== "undefined") {
@@ -46,12 +46,12 @@ export function useTheme() {
     }
 
     applyHtmlClass(next);
-  }, []);
+  };
 
-  const toggleTheme = useCallback(() => {
+  const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
-  }, [theme, setTheme]);
+  };
 
   return { theme, toggleTheme, setTheme } as const;
 }

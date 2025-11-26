@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { Moon, PanelLeft, Plus, Sun } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
@@ -19,60 +19,57 @@ export default function Sidebar() {
   const resetConversation = useChatStore((state) => state.resetConversation);
   const canClearConversation = !pending && messages.length > 0;
 
-  const handleThemeToggle = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (
-        !(document as Document).startViewTransition ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
+  const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (
+      !(document as Document).startViewTransition ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      toggleTheme();
+      return;
+    }
+
+    const x = e.clientX;
+    const y = e.clientY;
+    const endRadius = Math.hypot(
+      Math.max(x, innerWidth - x),
+      Math.max(y, innerHeight - y)
+    );
+
+    const transition = (document as Document).startViewTransition(() => {
+      flushSync(() => {
         toggleTheme();
-        return;
-      }
+      });
+    });
 
-      const x = e.clientX;
-      const y = e.clientY;
-      const endRadius = Math.hypot(
-        Math.max(x, innerWidth - x),
-        Math.max(y, innerHeight - y)
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`,
+      ];
+
+      document.documentElement.animate(
+        {
+          clipPath: clipPath,
+        },
+        {
+          duration: 300,
+          easing: "ease-in",
+          pseudoElement: "::view-transition-new(root)",
+        }
       );
+    });
+  };
 
-      const transition = (document as Document).startViewTransition(() => {
-        flushSync(() => {
-          toggleTheme();
-        });
-      });
-
-      transition.ready.then(() => {
-        const clipPath = [
-          `circle(0px at ${x}px ${y}px)`,
-          `circle(${endRadius}px at ${x}px ${y}px)`,
-        ];
-
-        document.documentElement.animate(
-          {
-            clipPath: clipPath,
-          },
-          {
-            duration: 300,
-            easing: "ease-in",
-            pseudoElement: "::view-transition-new(root)",
-          }
-        );
-      });
-    },
-    [toggleTheme]
-  );
-
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = () => {
     if (!canClearConversation) {
       return;
     }
     resetConversation();
-  }, [canClearConversation, resetConversation]);
+  };
 
-  const toggleCollapsed = useCallback(() => {
+  const toggleCollapsed = () => {
     setIsCollapsed((prev) => !prev);
-  }, []);
+  };
 
   return (
     <aside
