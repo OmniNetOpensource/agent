@@ -6,15 +6,14 @@ import {
   useRef,
 } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
-type ComposerProps = {
-  isInitial: boolean;
-};
-
-export function Composer({ isInitial }: ComposerProps) {
+export function Composer() {
+  const router = useRouter();
+  const messages = useChatStore((state) => state.messages);
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
   const pendingAttachments = useChatStore((state) => state.pendingAttachments);
@@ -24,9 +23,11 @@ export function Composer({ isInitial }: ComposerProps) {
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
+  const isInitial = messages.length === 0;
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await sendMessage();
+    await sendMessage(undefined, (id) => router.push(`/c/${id}`));
   };
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -35,7 +36,7 @@ export function Composer({ isInitial }: ComposerProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      void sendMessage();
+      void sendMessage(undefined, (id) => router.push(`/c/${id}`));
     }
   };
 

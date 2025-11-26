@@ -48,8 +48,7 @@ export type ContentBlock =
 export type Message = { role: "user" | "assistant"; blocks: ContentBlock[] };
 
 export type ChatRequest = {
-  userMessage: Message;
+  conversationHistory: Message[];
   conversationId?: string | null;
   model?: string;
-  isNewConversation?: boolean;
 };

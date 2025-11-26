@@ -68,3 +68,5 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 - 尽可能使用完整详细的表述
 
 - 不要跳太快，慢慢来，我们有的是时间
+
+- no need to pnpm

@@ -22,6 +22,19 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { data: conversation, error: convError } = await supabase
+    .from("conversations")
+    .select("user_id")
+    .eq("id", id)
+    .single();
+
+  if (convError || !conversation || conversation.user_id !== user.id) {
+    return NextResponse.json(
+      { error: "Conversation not found" },
+      { status: 404 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("messages")
     .select("id, conversation_id, role, blocks, created_at")

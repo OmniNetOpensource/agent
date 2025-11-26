@@ -8,7 +8,7 @@ export function Header() {
   const messages = useChatStore((state) => state.messages);
   const messageCount = messages.length;
   const pending = useChatStore((state) => state.pending);
-  const resetConversation = useChatStore((state) => state.resetConversation);
+  const clear = useChatStore((state) => state.clear);
 
   const canClearConversation = !pending && messageCount > 0;
 
@@ -16,7 +16,7 @@ export function Header() {
     if (!canClearConversation) {
       return;
     }
-    resetConversation();
+    clear();
   };
 
   return (

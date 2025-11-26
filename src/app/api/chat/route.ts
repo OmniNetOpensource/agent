@@ -18,9 +18,6 @@ import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";
 import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
 import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { ChatRequest } from "@/src/features/chat/types/chat";
-import type { DbMessage } from "@/types/conversation";
-
-let guestConversationHistory: Message[] = [];
 
 type StreamToolCall = {
   index?: number;
@@ -148,12 +145,6 @@ const toChatMessages = (history: Message[]): ChatMessage[] =>
       return Array.isArray(msg.content) && msg.content.length > 0;
     });
 
-const normalizeDbMessages = (dbMessages: DbMessage[]): Message[] =>
-  dbMessages.map((message) => ({
-    role: message.role,
-    blocks: Array.isArray(message.blocks) ? message.blocks : [],
-  }));
-
 const buildAssistantBlocks = (
   items: ResearchItem[],
   content: string | null
@@ -237,23 +228,29 @@ const saveMessages = async (
 
 export async function POST(req: Request) {
   try {
-    const {
-      userMessage,
-      conversationId,
-      isNewConversation,
-      model,
-    } = (await req.json()) as ChatRequest & {
-      isNewConversation?: boolean;
-      conversationId?: string | null;
-    };
+    const { conversationHistory, conversationId, model } =
+      (await req.json()) as ChatRequest;
+
+    if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+      return NextResponse.json(
+        { reply: "Invalid conversation history" },
+        { status: 400 }
+      );
+    }
+
+    const latestUserMessage = [...conversationHistory]
+      .reverse()
+      .find((msg) => msg.role === "user");
 
     if (
-      !userMessage ||
-      userMessage.role !== "user" ||
-      !Array.isArray(userMessage.blocks) ||
-      userMessage.blocks.length === 0
+      !latestUserMessage ||
+      !Array.isArray(latestUserMessage.blocks) ||
+      latestUserMessage.blocks.length === 0
     ) {
-      return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
+      return NextResponse.json(
+        { reply: "Missing user message" },
+        { status: 400 }
+      );
     }
 
     const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
@@ -298,63 +295,34 @@ export async function POST(req: Request) {
 
     let activeConversationId = conversationId ?? null;
     let conversationTitle: string | null = null;
-    let history: Message[] = [];
+    const history: Message[] = conversationHistory.map((message) => ({
+      ...message,
+      blocks: Array.isArray(message.blocks) ? message.blocks : [],
+    }));
 
-    if (supabaseUser && supabase) {
-      if (activeConversationId) {
-        const { data, error } = await supabase
-          .from("messages")
-          .select("id, conversation_id, role, blocks, created_at")
-          .eq("conversation_id", activeConversationId)
-          .order("created_at", { ascending: true });
+    if (supabaseUser && supabase && !activeConversationId) {
+      const title = buildConversationTitle(latestUserMessage);
+      const { data, error } = await supabase
+        .from("conversations")
+        .insert({ user_id: supabaseUser.id, title })
+        .select("id, title")
+        .single();
 
-        if (error) {
-          console.error(
-            "[Chat-API] Failed to load conversation history:",
-            error.message
-          );
-          return NextResponse.json(
-            { reply: "Failed to load conversation history" },
-            { status: 500 }
-          );
-        }
-
-        history = normalizeDbMessages((data ?? []) as DbMessage[]);
-      } else {
-        const title = buildConversationTitle(userMessage);
-        const { data, error } = await supabase
-          .from("conversations")
-          .insert({ user_id: supabaseUser.id, title })
-          .select("id, title")
-          .single();
-
-        if (error || !data) {
-          console.error(
-            "[Chat-API] Failed to create conversation:",
-            error?.message
-          );
-          return NextResponse.json(
-            { reply: "Failed to create conversation" },
-            { status: 500 }
-          );
-        }
-
-        activeConversationId = data.id;
-        conversationTitle = data.title ?? title;
-        history = [];
+      if (error || !data) {
+        console.error("[Chat-API] Failed to create conversation:", error?.message);
+        return NextResponse.json(
+          { reply: "Failed to create conversation" },
+          { status: 500 }
+        );
       }
-    } else {
-      if (isNewConversation) {
-        guestConversationHistory = [];
-      }
-      history = [...guestConversationHistory];
-      guestConversationHistory.push(userMessage);
+
+      activeConversationId = data.id;
+      conversationTitle = data.title ?? title;
     }
 
     const messages: ChatMessage[] = [
       { role: "system", content: buildSystemPrompt() },
       ...toChatMessages(history),
-      ...toChatMessages([userMessage]),
     ];
 
     console.log(`[Chat-API] Using model: ${requestedModel}`);
@@ -365,7 +333,9 @@ export async function POST(req: Request) {
           const createdPayload = {
             type: "conversation_created",
             conversationId: activeConversationId,
-            title: conversationTitle ?? buildConversationTitle(userMessage),
+            title:
+              conversationTitle ??
+              buildConversationTitle(latestUserMessage),
           };
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify(createdPayload)}\n\n`)
@@ -594,7 +564,7 @@ export async function POST(req: Request) {
               await saveMessages(
                 supabase,
                 activeConversationId,
-                userMessage,
+                latestUserMessage,
                 partialAssistantBlocks,
                 messageIds
               );
@@ -700,15 +670,10 @@ export async function POST(req: Request) {
             await saveMessages(
               supabase,
               activeConversationId,
-              userMessage,
+              latestUserMessage,
               assistantBlocks,
               messageIds
             );
-          } else if (assistantBlocks.length > 0) {
-            guestConversationHistory.push({
-              role: "assistant",
-              blocks: assistantBlocks,
-            });
           }
 
           closeStream();

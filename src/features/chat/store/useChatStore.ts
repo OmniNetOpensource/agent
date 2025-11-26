@@ -38,12 +38,14 @@ type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
-  resetConversation: () => void;
-  clearConversation: () => void;
+  clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
-  sendMessage: (value?: string) => Promise<void>;
+  sendMessage: (
+    value?: string,
+    onConversationCreated?: (id: string) => void
+  ) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
   fetchConversations: () => Promise<void>;
@@ -64,7 +66,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   conversationsLoading: false,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
-  resetConversation: () =>
+  clear: () =>
     set({
       messages: [],
       input: "",
@@ -73,10 +75,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       conversationId: null,
       abortController: null,
     }),
-  clearConversation: () => {
-    const { resetConversation } = get();
-    resetConversation();
-  },
   addAttachments: async (files) => {
     const items = Array.from(files || []);
     if (items.length === 0) {
@@ -458,7 +456,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return false;
     }
   },
-  sendMessage: async (value) => {
+  sendMessage: async (value, onConversationCreated) => {
     const trimmed = (value ?? get().input).trim();
     const attachments = get().pendingAttachments;
     if (get().pending) {
@@ -485,10 +483,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       blocks: userBlocks,
     };
 
+    const nextMessages = [...existingMessages, userMessage];
     const controller = new AbortController();
 
     set((state) => ({
-      messages: [...state.messages, userMessage],
+      messages: nextMessages,
       input: "",
       pending: true,
       abortController: controller,
@@ -501,10 +500,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          userMessage,
+          conversationHistory: nextMessages,
           conversationId: currentConversationId,
-          isNewConversation:
-            !currentConversationId && existingMessages.length === 0,
           model: selectedModel,
         }),
       });
@@ -546,7 +543,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                   if (id) {
                     const title =
                       typeof data.title === "string" ? data.title : "新会话";
-                    set({ conversationId: id });
                     get().addConversation({
                       id,
                       title,
@@ -554,6 +550,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                       created_at: new Date().toISOString(),
                       updated_at: new Date().toISOString(),
                     });
+                    if (onConversationCreated) {
+                      onConversationCreated(id);
+                    }
                   }
                   continue;
                 }

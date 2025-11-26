@@ -26,7 +26,7 @@ export default function Sidebar() {
     signOut,
     supabaseReady,
   } = useAuth();
-  const resetConversation = useChatStore((state) => state.resetConversation);
+  const clear = useChatStore((state) => state.clear);
   const fetchConversations = useChatStore((state) => state.fetchConversations);
   const pending = useChatStore((state) => state.pending);
   const previousUserId = useRef<string | null>(null);
@@ -104,9 +104,9 @@ export default function Sidebar() {
         conversations: [],
         conversationId: null,
       });
-      resetConversation();
+      clear();
     }
-  }, [user]);
+  }, [user, supabaseReady, fetchConversations, clear]);
 
   return (
     <aside
