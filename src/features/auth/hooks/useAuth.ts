@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/shared/lib/supabase/client";
-import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
+import {
+  hasSupabaseConfig,
+  getSupabaseConfig,
+} from "@/shared/lib/supabase/config";
 
 type UseAuthResult = {
   user: User | null;
@@ -35,11 +38,8 @@ export function useAuth(): UseAuthResult {
 
     const loadUser = async () => {
       setLoading(true);
-      const { data, error } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
       if (mounted) {
-        if (error) {
-          console.error("[Auth] Failed to load user", error.message);
-        }
         setUser(data.user ?? null);
         setLoading(false);
       }

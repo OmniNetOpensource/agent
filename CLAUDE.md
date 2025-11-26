@@ -24,7 +24,7 @@ Required environment variables in `.env.local`:
 
 **Supabase (optional, enables auth & persistence)**:
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`: Supabase anonymous key
 
 Without Supabase configured, the app works in guest mode with in-memory storage.
 
