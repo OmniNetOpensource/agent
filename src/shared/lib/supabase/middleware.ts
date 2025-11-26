@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig } from "./config";
 
@@ -6,44 +6,37 @@ export async function updateSession(request: NextRequest) {
   try {
     const { supabaseUrl, supabaseKey } = getSupabaseConfig();
 
-    const response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
+    let response = NextResponse.next({
+      request,
     });
 
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options?: CookieOptions) {
-          response.cookies.set({
-            name,
-            value,
-            ...(options ?? {}),
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({
+            request,
           });
-        },
-        remove(name: string, options?: CookieOptions) {
-          response.cookies.set({
-            name,
-            value: "",
-            ...(options ?? {}),
-            maxAge: 0,
-          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     });
 
-    await supabase.auth.getSession();
+    // 用 getUser 而非 getSession，因为 getUser 会实际向服务器验证 token
+    await supabase.auth.getUser();
 
     return response;
   } catch (error) {
     console.error("[Supabase] Middleware failed", error);
     return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
+      request,
     });
   }
 }

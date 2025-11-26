@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseConfig } from "./config";
 
@@ -8,26 +8,17 @@ export async function createSupabaseServerClient() {
 
   return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll();
       },
-      set(name: string, value: string, options?: CookieOptions) {
+      setAll(cookiesToSet) {
         try {
-          cookieStore.set({ name, value, ...(options ?? {}) });
-        } catch (error) {
-          console.error("[Supabase] Failed to set cookie", error);
-        }
-      },
-      remove(name: string, options?: CookieOptions) {
-        try {
-          cookieStore.set({
-            name,
-            value: "",
-            ...(options ?? {}),
-            maxAge: 0,
-          });
-        } catch (error) {
-          console.error("[Supabase] Failed to remove cookie", error);
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        } catch {
+          // setAll 被从 Server Component 调用时会失败，
+          // 如果有 middleware 刷新 session 则可以忽略此错误
         }
       },
     },

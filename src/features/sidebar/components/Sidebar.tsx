@@ -104,7 +104,7 @@ export default function Sidebar() {
       });
       resetConversation();
     }
-  }, [user, supabaseReady, fetchConversations, resetConversation]);
+  }, [user]);
 
   return (
     <aside
