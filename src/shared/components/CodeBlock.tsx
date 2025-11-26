@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Check,
   ChevronDown,
@@ -59,10 +59,7 @@ export default function CodeBlock({
   className,
   children,
 }: CodeBlockProps) {
-  const normalizedLanguage = useMemo(
-    () => normalizeLanguage(language),
-    [language]
-  );
+  const normalizedLanguage = normalizeLanguage(language);
   const hasCode = code.trim().length > 0;
   const extension = languageToExtension[normalizedLanguage] ?? "txt";
   const canPreview = previewableLanguages.has(normalizedLanguage);

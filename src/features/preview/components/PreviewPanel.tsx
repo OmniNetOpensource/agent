@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { usePreviewStore } from "../store/usePreviewStore";
@@ -116,7 +116,7 @@ export function PreviewPanel() {
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const srcDoc = useMemo(() => buildSrcDoc(code, language), [code, language]);
+  const srcDoc = buildSrcDoc(code, language);
 
   return (
     <AnimatePresence>

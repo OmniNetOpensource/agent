@@ -7,17 +7,17 @@ export const getSupabaseConfig = () => {
   const supabaseUrl = getEnv("NEXT_PUBLIC_SUPABASE_URL");
   const supabaseKey = getEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY");
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseKey) {
     throw new Error("Missing Supabase environment variables");
   }
 
-  return { supabaseUrl, supabaseAnonKey };
+  return { supabaseUrl, supabaseKey };
 };
 
 export const hasSupabaseConfig = () => {
   try {
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
-    return Boolean(supabaseUrl && supabaseAnonKey);
+    const { supabaseUrl, supabaseKey } = getSupabaseConfig();
+    return Boolean(supabaseUrl && supabaseKey);
   } catch {
     return false;
   }

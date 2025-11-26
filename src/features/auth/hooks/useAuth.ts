@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
@@ -14,7 +14,7 @@ type UseAuthResult = {
 };
 
 export function useAuth(): UseAuthResult {
-  const supabaseReady = useMemo(() => hasSupabaseConfig(), []);
+  const supabaseReady = hasSupabaseConfig();
   const clientRef = useRef<ReturnType<
     typeof createSupabaseBrowserClient
   > | null>(null);

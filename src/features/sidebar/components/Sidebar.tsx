@@ -26,7 +26,6 @@ export default function Sidebar() {
   const {
     user,
     loading: authLoading,
-    signIn,
     signOut,
     supabaseReady,
   } = useAuth();
@@ -216,12 +215,7 @@ export default function Sidebar() {
             }}
           />
         ) : (
-          <LoginButton
-            onClick={signIn}
-            loading={authLoading}
-            supabaseReady={supabaseReady}
-            isCollapsed={isCollapsed}
-          />
+          <LoginButton isCollapsed={isCollapsed} />
         )}
       </div>
     </aside>

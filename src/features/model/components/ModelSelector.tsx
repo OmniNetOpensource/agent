@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, Check } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
@@ -62,14 +62,13 @@ export function ModelSelector() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const visibleModels = useMemo(() => {
-    const trimmed = search.trim();
-    if (!trimmed) return models;
-    const lowerKeyword = trimmed.toLowerCase();
-    return models.filter((model) =>
-      model.label.toLowerCase().includes(lowerKeyword)
-    );
-  }, [models, search]);
+  const trimmedSearch = search.trim();
+  const visibleModels =
+    trimmedSearch === ""
+      ? models
+      : models.filter((model) =>
+          model.label.toLowerCase().includes(trimmedSearch.toLowerCase())
+        );
 
   const virtualizer = useVirtualizer({
     count: visibleModels.length,

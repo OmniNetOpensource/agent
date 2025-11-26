@@ -1,32 +1,24 @@
 "use client";
 
 import { Loader2, LogIn } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 type LoginButtonProps = {
-  onClick: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-  supabaseReady?: boolean;
+  isCollapsed?: boolean;
 };
 
-export function LoginButton({
-  onClick,
-  disabled,
-  loading,
-  supabaseReady = true,
-  isCollapsed,
-}: LoginButtonProps & { isCollapsed?: boolean }) {
-  const buttonDisabled = disabled || loading || !supabaseReady;
+export function LoginButton({ isCollapsed }: LoginButtonProps) {
+  const { signIn, loading, supabaseReady } = useAuth();
+  const buttonDisabled = loading || !supabaseReady;
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={signIn}
       disabled={buttonDisabled}
       className={`group inline-flex items-center justify-center gap-2 rounded-xl border border-(--border-subtle) bg-(--surface-card) text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${
         isCollapsed ? "h-10 w-10 p-0" : "w-full px-4 py-3"
       }`}
-      title={supabaseReady ? "使用 Google 登录以保存会话" : "请先配置 Supabase 环境变量"}
     >
       <span
         className={`relative flex items-center justify-center rounded-lg bg-(--surface-muted) text-foreground ring-1 ring-(--border-subtle) transition-transform group-hover:scale-105 ${

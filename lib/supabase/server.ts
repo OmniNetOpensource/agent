@@ -3,10 +3,10 @@ import { cookies } from "next/headers";
 import { getSupabaseConfig } from "./config";
 
 export async function createSupabaseServerClient() {
-  const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
   const cookieStore = await cookies();
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value;

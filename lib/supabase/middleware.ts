@@ -4,7 +4,7 @@ import { getSupabaseConfig } from "./config";
 
 export async function updateSession(request: NextRequest) {
   try {
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+    const { supabaseUrl, supabaseKey } = getSupabaseConfig();
 
     const response = NextResponse.next({
       request: {
@@ -12,7 +12,7 @@ export async function updateSession(request: NextRequest) {
       },
     });
 
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value;
