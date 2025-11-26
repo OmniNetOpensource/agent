@@ -107,8 +107,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    set((state) => ({
-      pendingAttachments: [...state.pendingAttachments, ...attachments],
+    // 只保留最新的一个附件（替换现有的）
+    set(() => ({
+      pendingAttachments: attachments.slice(0, 1),
     }));
   },
   removeAttachment: (id) =>

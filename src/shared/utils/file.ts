@@ -1,6 +1,6 @@
 import { Attachment } from "@/src/features/chat/types/chat";
 
-export const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_ATTACHMENT_SIZE = 1 * 1024 * 1024; // 1MB
 
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
