@@ -8,7 +8,7 @@ import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useParams } from "next/navigation";
 
 export function ChatPage() {
-  const [isNotFound, setIsNotFound] = useState(false);
+  const [notFoundRouteId, setNotFoundRouteId] = useState<string | null>(null);
   const messages = useChatStore((state) => state.messages);
   const currentConversationId = useChatStore(
     (state) => state.conversationId
@@ -27,26 +27,45 @@ export function ChatPage() {
   const isInitial = messageCount === 0;
 
   useEffect(() => {
-    if (!routeConversationId) {
-      resetConversation();
-      setIsNotFound(false);
-      return;
-    }
-    if (routeConversationId === currentConversationId) {
-      return;
-    }
-    setIsNotFound(false);
-    selectConversation(routeConversationId).then((success) => {
-      if (!success) {
-        setIsNotFound(true);
+    let canceled = false;
+
+    const loadConversation = async () => {
+      if (!routeConversationId) {
+        resetConversation();
+        return;
       }
-    });
+
+      if (routeConversationId === currentConversationId) {
+        return;
+      }
+
+      const success = await selectConversation(routeConversationId);
+      if (canceled) {
+        return;
+      }
+
+      if (!success) {
+        setNotFoundRouteId(routeConversationId);
+        return;
+      }
+
+      setNotFoundRouteId(null);
+    };
+
+    void loadConversation();
+
+    return () => {
+      canceled = true;
+    };
   }, [
     routeConversationId,
     currentConversationId,
     selectConversation,
     resetConversation,
   ]);
+
+  const isNotFound =
+    routeConversationId !== null && notFoundRouteId === routeConversationId;
 
   if (isNotFound) {
     return (

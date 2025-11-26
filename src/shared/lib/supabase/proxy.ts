@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("[Supabase] Middleware failed", error);
+    console.error("[Supabase] Proxy failed", error);
     return NextResponse.next({
       request,
     });

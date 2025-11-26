@@ -86,7 +86,7 @@ lib/supabase/                     # Server-side Supabase utilities
 ├── config.ts
 ├── server.ts
 ├── client.ts
-└── middleware.ts
+└── proxy.ts
 
 types/conversation.ts             # Global DB types
 ```
@@ -180,7 +180,7 @@ When Supabase is configured:
 
 1. User clicks Login → `useAuth.signIn()` triggers Google OAuth
 2. Callback at [app/auth/callback/route.ts](app/auth/callback/route.ts) validates session
-3. Middleware ([lib/supabase/middleware.ts](lib/supabase/middleware.ts)) refreshes auth cookies
+3. Proxy ([src/shared/lib/supabase/proxy.ts](src/shared/lib/supabase/proxy.ts)) refreshes auth cookies
 4. Chat API automatically creates conversations and saves messages
 5. Sidebar shows conversation list with click-to-navigate
 
