@@ -4,16 +4,92 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-An AI chat interface built with Next.js 16 that talks to OpenRouter via the official @openrouter/sdk (OpenAI-compatible schema). The UI is research-focused, streaming the AI's thinking process, tool calls, and search results in real-time.
+An AI chat interface built with Next.js 16 (React 19) that talks to OpenRouter via the official @openrouter/sdk (OpenAI-compatible schema). Features include:
+
+- Research-focused UI streaming AI's thinking process, tool calls, and search results in real-time
+- Optional Supabase integration for authentication (Google OAuth) and conversation persistence
+- Feature-based architecture with Zustand for state management
 
 ## Environment Configuration
 
 Required environment variables in `.env.local`:
 
-- **OPENROUTER_API_KEY**: OpenRouter API key
-- **OPENROUTER_DEFAULT_MODEL**: Optional default model id (e.g. `openrouter/auto`)
-- **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: Optional but recommended headers for OpenRouter
-- **BRAVE_API_KEY**: Optional. Enables web search tool
+**OpenRouter (required)**:
+- `OPENROUTER_API_KEY`: OpenRouter API key
+- `OPENROUTER_DEFAULT_MODEL`: Optional default model id (e.g. `openrouter/auto`)
+- `OPENROUTER_HTTP_REFERER` / `OPENROUTER_X_TITLE`: Optional but recommended headers
+
+**Tools (optional)**:
+- `BRAVE_API_KEY`: Enables web search tool
+
+**Supabase (optional, enables auth & persistence)**:
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+
+Without Supabase configured, the app works in guest mode with in-memory storage.
+
+## Project Structure
+
+The project uses a feature-based architecture:
+
+```
+app/                              # Next.js app directory
+├── api/
+│   ├── chat/route.ts             # Main chat streaming endpoint
+│   ├── conversations/            # Conversation management API
+│   │   ├── route.ts              # GET: List conversations
+│   │   └── [id]/
+│   │       ├── route.ts          # DELETE: Remove conversation
+│   │       └── messages/route.ts # GET: Load conversation messages
+│   └── models/route.ts           # GET: Fetch available OpenRouter models
+├── auth/callback/route.ts        # OAuth callback handler
+├── c/[conversationId]/page.tsx   # Dynamic conversation route
+├── layout.tsx                    # Root layout with Sidebar
+└── page.tsx                      # Home/chat page
+
+src/features/                     # Feature-based modules
+├── auth/                         # Authentication feature
+│   ├── components/
+│   │   ├── LoginButton.tsx
+│   │   └── UserMenu.tsx
+│   └── hooks/useAuth.ts
+├── chat/                         # Main chat feature
+│   ├── components/
+│   │   ├── Composer.tsx
+│   │   ├── Header.tsx
+│   │   ├── MessageList.tsx
+│   │   └── message/
+│   │       ├── MessageItem.tsx
+│   │       ├── PendingIndicator.tsx
+│   │       └── research/
+│   ├── store/useChatStore.ts     # Zustand store for chat state
+│   └── types/chat.ts             # Message types
+├── model/                        # Model selection
+│   ├── components/ModelSelector.tsx
+│   └── lib/openrouter.ts
+├── preview/                      # Code preview panel
+│   ├── components/PreviewPanel.tsx
+│   └── store/usePreviewStore.ts
+├── sidebar/                      # Navigation sidebar
+│   └── components/
+│       ├── Sidebar.tsx
+│       ├── ConversationList.tsx
+│       └── ConversationItem.tsx
+├── theme/hooks/useTheme.ts
+└── shared/                       # Shared utilities
+    ├── components/
+    │   ├── CodeBlock.tsx
+    │   └── Markdown.tsx
+    └── lib/tools/                # Tool implementations
+
+lib/supabase/                     # Server-side Supabase utilities
+├── config.ts
+├── server.ts
+├── client.ts
+└── middleware.ts
+
+types/conversation.ts             # Global DB types
+```
 
 ## Architecture
 
@@ -21,44 +97,60 @@ Required environment variables in `.env.local`:
 
 The chat API ([app/api/chat/route.ts](app/api/chat/route.ts)) talks to OpenRouter through @openrouter/sdk chat.send (OpenAI-compatible payload):
 
-- **Client initialization**: Uses `OPENROUTER_API_KEY` plus `lib/openrouter.ts` helper (base URL and headers)
+- **Client initialization**: Uses `OPENROUTER_API_KEY` plus [src/features/model/lib/openrouter.ts](src/features/model/lib/openrouter.ts) helper
 - **Reasoning stream**: Reads the provider-specific `reasoning` field (exposed by some OpenRouter models) and forwards it to the UI as "thinking" events
 
 ### Streaming Architecture
 
 The system uses Server-Sent Events (SSE) to stream multiple types of data:
 
-1. **thinking**: Reasoning content from the LLM (some OpenRouter models expose `reasoning`)
+1. **thinking**: Reasoning content from the LLM
 2. **content**: Regular assistant message content
 3. **tool_call**: When the LLM decides to use a tool
-4. **tool_result**: Results returned from tool execution
+4. **tool_progress**: Progress updates during tool execution
+5. **tool_result**: Results returned from tool execution
+6. **conversation_created**: When a new conversation is created (authenticated users)
 
 All streaming happens in [app/api/chat/route.ts](app/api/chat/route.ts) with up to 20 iterations for multi-step tool usage.
 
 ### Tools System
 
-Modular tool system in [lib/tools.ts](lib/tools.ts):
+Modular tool system in [src/shared/lib/tools/](src/shared/lib/tools/):
 
-- **Tool registration**: Each tool has a `spec` (OpenAI-style tool schema via OpenRouter SDK), `handler`, and availability check
+- **Tool registration**: Each tool has a `spec` (OpenAI-style tool schema), `handler`, and availability check
 - **Dynamic enabling**: Tools auto-disable if missing API keys
 - **Result truncation**: All tool results are truncated to 10,000 characters
+- **Progress callbacks**: Tools can report progress during execution
 - **Built-in tools**:
   - `fetch_url`: Fetches and strips HTML/JS/CSS from URLs
   - `brave_search`: Web search with freshness filters (pd/pw/pm/py)
 
 To add a new tool:
 
-1. Add tool spec to `toolMap` in [lib/tools.ts](lib/tools.ts)
-2. Implement handler function with `ToolHandler` type
-3. Add availability logic (check for required env vars)
+1. Create tool file in `src/shared/lib/tools/`
+2. Define spec with OpenAI-style tool schema
+3. Implement handler function with `ToolHandler` type
+4. Register in tools index with availability check
 
 ### Message Structure
 
-Messages use a nested block structure ([types/chat.ts](types/chat.ts)):
+Messages use a nested block structure ([src/features/chat/types/chat.ts](src/features/chat/types/chat.ts)):
 
-- **Message**: Has `role` ("user" | "assistant") and array of `ContentBlock`s
-- **ContentBlock**: Either `content` (text) or `research` (thinking/tools)
-- **ResearchItem**: Can be `thinking`, `tool_call`, or `tool_result`, each with an `isExpanded` state
+```typescript
+Message = {
+  role: "user" | "assistant"
+  blocks: ContentBlock[]
+}
+
+ContentBlock =
+  | { type: "content"; content: string }
+  | { type: "attachments"; attachments: Attachment[] }
+  | { type: "research"; items: ResearchItem[] }
+
+ResearchItem =
+  | { kind: "thinking"; text: string }
+  | { kind: "tool"; data: { call, progress, result } }
+```
 
 This structure allows the UI to:
 
@@ -68,28 +160,38 @@ This structure allows the UI to:
 
 ### State Management
 
-The [useChat hook](hooks/useChat.ts) manages all chat state:
+The project uses Zustand stores for state management:
 
-- **appendToAssistant**: Complex reducer-like function that handles streaming updates:
-  - Accumulates thinking text incrementally
-  - Auto-collapses previous research blocks
-  - Ensures only one assistant message exists at end of conversation
-- **Message history for API**: Filters out research blocks, sends only content to backend
-- **Toggle functions**: Expand/collapse individual research blocks or items
+**Chat Store** ([src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)):
+- `messages`: Current conversation messages
+- `conversations`: List of saved conversations (from Supabase)
+- `conversationId`: Active conversation ID
+- `pending`: Whether AI is generating
+- `currentModel`: Selected OpenRouter model
+- `pendingAttachments`: Files waiting to be sent
+- Key actions: `sendMessage()`, `appendToAssistant()`, `fetchConversations()`, `selectConversation()`, `deleteConversation()`
 
-## Component Architecture
+**Preview Store** ([src/features/preview/store/usePreviewStore.ts](src/features/preview/store/usePreviewStore.ts)):
+- Manages code preview panel state
 
-The UI is organized into:
+### Authentication & Persistence
 
-- **Page component** ([app/page.tsx](app/page.tsx)): Main layout with sidebar and chat area
-- **Chat components** (`components/chat/`):
-  - `MessageList`: Renders all messages with research blocks
-  - `MessageItem`: Individual message with role-based styling
-  - `Composer`: Input area with submit handling
-  - `ResearchBlock`: Collapsible section showing thinking/tool calls
-  - `ResearchItem`: Individual tool call or result
-  - `PendingIndicator`: Shows when AI is generating
-- **Markdown component** ([components/Markdown.tsx](components/Markdown.tsx)): Renders markdown with syntax highlighting (highlight.js), math (KaTeX), and GitHub-flavored markdown
+When Supabase is configured:
+
+1. User clicks Login → `useAuth.signIn()` triggers Google OAuth
+2. Callback at [app/auth/callback/route.ts](app/auth/callback/route.ts) validates session
+3. Middleware ([lib/supabase/middleware.ts](lib/supabase/middleware.ts)) refreshes auth cookies
+4. Chat API automatically creates conversations and saves messages
+5. Sidebar shows conversation list with click-to-navigate
+
+Without Supabase:
+- App works in guest mode with in-memory storage
+- No login required, conversations not persisted
+
+### Routing
+
+- `/` - Home page (new chat)
+- `/c/[conversationId]` - Load specific conversation from URL
 
 ## Key Patterns
 
@@ -98,9 +200,10 @@ The UI is organized into:
 The chat API maintains conversation context by:
 
 1. Frontend sends `conversationHistory` array with each request
-2. Backend prepends a system prompt with today's date and search guidelines (in Chinese)
-3. Messages are accumulated in [useChat.ts](hooks/useChat.ts) `messages` state
+2. Backend prepends a system prompt with today's date and search guidelines
+3. Messages are accumulated in `useChatStore` `messages` state
 4. Only `content` blocks are sent to API (research blocks are UI-only)
+5. For authenticated users, conversations are automatically saved to Supabase
 
 ### Tool Execution Loop
 
@@ -110,7 +213,7 @@ In [app/api/chat/route.ts](app/api/chat/route.ts):
 2. Stream response chunks
 3. If `finish_reason === "tool_calls"`:
    - Execute tools via `callToolByName`
-   - Stream tool call and result to client
+   - Stream tool call, progress, and result to client
    - Append tool results to conversation
    - Loop back to step 1 (max 20 iterations)
 4. If `finish_reason === "stop"`: End stream

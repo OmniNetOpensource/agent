@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { flushSync } from "react-dom";
 import { Moon, PanelLeft, Plus, Sun } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
+import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { LoginButton } from "@/src/features/auth/components/LoginButton";
+import { UserMenu } from "@/src/features/auth/components/UserMenu";
+import { ConversationList } from "./ConversationList";
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -14,10 +23,19 @@ export default function Sidebar() {
     () => false
   );
   const { theme, toggleTheme } = useTheme();
+  const {
+    user,
+    loading: authLoading,
+    signIn,
+    signOut,
+    supabaseReady,
+  } = useAuth();
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
   const resetConversation = useChatStore((state) => state.resetConversation);
+  const fetchConversations = useChatStore((state) => state.fetchConversations);
   const canClearConversation = !pending && messages.length > 0;
+  const previousUserId = useRef<string | null>(null);
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (
@@ -71,6 +89,24 @@ export default function Sidebar() {
     setIsCollapsed((prev) => !prev);
   };
 
+  useEffect(() => {
+    if (!supabaseReady) {
+      return;
+    }
+
+    if (user) {
+      previousUserId.current = user.id;
+      void fetchConversations();
+    } else if (previousUserId.current) {
+      previousUserId.current = null;
+      useChatStore.setState({
+        conversations: [],
+        conversationId: null,
+      });
+      resetConversation();
+    }
+  }, [user, supabaseReady, fetchConversations, resetConversation]);
+
   return (
     <aside
       className={`flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
@@ -105,8 +141,14 @@ export default function Sidebar() {
           }`}
           aria-label="新对话"
         >
-          <Plus className={`h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90 ${isCollapsed ? "" : "mr-2"}`} />
-          {!isCollapsed && <span className="text-sm font-medium text-foreground">新对话</span>}
+          <Plus
+            className={`h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90 ${
+              isCollapsed ? "" : "mr-2"
+            }`}
+          />
+          {!isCollapsed && (
+            <span className="text-sm font-medium text-foreground">新对话</span>
+          )}
         </button>
         {mounted && !isCollapsed && (
           <button
@@ -124,10 +166,10 @@ export default function Sidebar() {
           </button>
         )}
       </div>
-      
+
       {mounted && isCollapsed && (
         <div className="flex justify-center pb-4">
-           <button
+          <button
             type="button"
             onClick={handleThemeToggle}
             title="切换深色模式"
@@ -145,14 +187,41 @@ export default function Sidebar() {
 
       <div className="flex-1 overflow-y-auto px-4 py-2">
         {!isCollapsed && (
-          <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-6 text-center">
-            <p className="text-xs text-(--text-tertiary) font-medium tracking-wide">
-              历史记录
-            </p>
-            <p className="mt-1 text-xs text-(--text-tertiary)/60">
-              暂未启用
-            </p>
+          <div className="flex h-full flex-col gap-3">
+            <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
+              <span>历史记录</span>
+              {user && (
+                <span className="text-[11px] text-(--text-tertiary)">
+                  {authLoading ? "同步中..." : "已登录"}
+                </span>
+              )}
+            </div>
+            {user ? (
+              <ConversationList />
+            ) : (
+              <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
+                登录后可保存并查看历史记录，未登录仅在当前页临时存储。
+              </div>
+            )}
           </div>
+        )}
+      </div>
+
+      <div className="border-t border-(--border-subtle) px-4 py-4">
+        {user ? (
+          <UserMenu
+            user={user}
+            onSignOut={async () => {
+              await signOut();
+            }}
+          />
+        ) : (
+          <LoginButton
+            onClick={signIn}
+            loading={authLoading}
+            supabaseReady={supabaseReady}
+            isCollapsed={isCollapsed}
+          />
         )}
       </div>
     </aside>

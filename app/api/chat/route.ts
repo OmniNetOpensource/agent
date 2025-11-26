@@ -6,19 +6,20 @@ import {
   getOpenRouterClient,
   getOpenRouterHeaders,
   isSupportedChatModel,
-  type ChatModelId,
 } from "@/src/features/model/lib/openrouter";
-import type { Message } from "@/src/features/chat/types/chat";
+import type {
+  ContentBlock,
+  Message,
+  ResearchItem,
+  ToolProgress,
+} from "@/src/features/chat/types/chat";
 import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { hasSupabaseConfig } from "@/lib/supabase/config";
+import type { ChatRequest } from "@/src/features/chat/types/chat";
+import type { DbMessage } from "@/types/conversation";
 
-// 内存中的会话历史存储（服务器重启后会丢失）
-let serverConversationHistory: Message[] = [];
-
-type RequestBody = {
-  userMessage: Message;
-  isNewConversation?: boolean;
-  model?: ChatModelId;
-};
+let guestConversationHistory: Message[] = [];
 
 type StreamToolCall = {
   index?: number;
@@ -60,13 +61,123 @@ type ChatSendMethod = {
 };
 
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
-
 const encoder = new TextEncoder();
+
+const buildSystemPrompt = () => `
+今天的日期是：${new Date().toISOString().slice(0, 10)}
+
+# 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
+
+# 什么时候不需要搜索：已知的知识
+
+- 搜索工具使用技法：多次组合不同关键词进行多次搜索
+- 获取更详细的信息：fetch 特定网页
+`;
+
+const buildConversationTitle = (message: Message) => {
+  const text = message.blocks
+    .filter((b) => b.type === "content")
+    .map((b) => b.content)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) {
+    return "新会话";
+  }
+
+  const normalized = text.replace(/\r?\n/g, " ").trim();
+  return normalized.length > 50 ? `${normalized.slice(0, 50)}...` : normalized;
+};
+
+const toChatMessages = (history: Message[]): ChatMessage[] =>
+  history
+    .map((msg) => {
+      const relevantBlocks = msg.blocks.filter(
+        (block) => block.type === "content" || block.type === "attachments"
+      );
+
+      const contentParts: unknown[] = [];
+
+      for (const block of relevantBlocks) {
+        if (block.type === "content") {
+          contentParts.push({
+            type: "text",
+            text: block.content,
+          });
+        } else if (block.type === "attachments") {
+          for (const att of block.attachments) {
+            const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
+
+            if (att.kind === "image") {
+              contentParts.push({
+                type: "image_url",
+                imageUrl: { url: att.dataUrl },
+              });
+            } else if (att.kind === "video") {
+              contentParts.push({
+                type: "video_url",
+                videoUrl: { url: att.dataUrl },
+              });
+            } else if (att.kind === "audio") {
+              const format = att.mimeType.split("/")[1]?.split(";")[0] || "wav";
+              contentParts.push({
+                type: "input_audio",
+                inputAudio: { data: base64Data, format },
+              });
+            } else {
+              contentParts.push({
+                type: "file",
+                file: { filename: att.name, fileData: att.dataUrl },
+              });
+            }
+          }
+        }
+      }
+
+      return {
+        role: msg.role,
+        content: contentParts,
+      };
+    })
+    .filter((msg) => {
+      if (msg.role !== "assistant") {
+        return true;
+      }
+      return Array.isArray(msg.content) && msg.content.length > 0;
+    });
+
+const normalizeDbMessages = (dbMessages: DbMessage[]): Message[] =>
+  dbMessages.map((message) => ({
+    role: message.role,
+    blocks: Array.isArray(message.blocks) ? message.blocks : [],
+  }));
+
+const buildAssistantBlocks = (
+  items: ResearchItem[],
+  content: string | null
+): ContentBlock[] => {
+  const blocks: ContentBlock[] = [];
+  if (items.length > 0) {
+    blocks.push({ type: "research", items });
+  }
+  if (content) {
+    blocks.push({ type: "content", content });
+  }
+  return blocks;
+};
 
 export async function POST(req: Request) {
   try {
-    const { userMessage, isNewConversation, model } =
-      (await req.json()) as RequestBody;
+    const {
+      userMessage,
+      conversationId,
+      isNewConversation,
+      model,
+    } = (await req.json()) as ChatRequest & {
+      isNewConversation?: boolean;
+      conversationId?: string | null;
+    };
 
     if (
       !userMessage ||
@@ -77,24 +188,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ reply: "Invalid message" }, { status: 400 });
     }
 
-    if (isNewConversation) {
-      serverConversationHistory = [];
-    }
-
-    serverConversationHistory.push(userMessage);
-
     const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
-
-    let openRouterClient: OpenRouter;
-    try {
-      openRouterClient = getOpenRouterClient();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Missing OPENROUTER_API_KEY";
-      return NextResponse.json({ reply: message }, { status: 500 });
-    }
-
-    console.log(`[Chat-API] Using model: ${requestedModel}`);
 
     const tools = toolSpecs;
     console.log(
@@ -109,85 +203,110 @@ export async function POST(req: Request) {
         .join(", ")
     );
 
-    const messages: ChatMessage[] = [
-      {
-        role: "system",
-        content: `
-今天的日期是：${new Date().toISOString().slice(0, 10)}
+    let openRouterClient: OpenRouter;
+    try {
+      openRouterClient = getOpenRouterClient();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Missing OPENROUTER_API_KEY";
+      return NextResponse.json({ reply: message }, { status: 500 });
+    }
 
-# 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
+    const supabase = hasSupabaseConfig()
+      ? await createSupabaseServerClient()
+      : null;
 
-# 什么时候不需要搜索：已知的知识
+    let supabaseUser: { id: string } | null = null;
+    if (supabase) {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError) {
+        console.error("[Chat-API] Supabase auth error:", authError.message);
+      }
+      supabaseUser = user ?? null;
+    }
 
-- 搜索工具使用技法：多次组合不同关键词进行多次搜索
-- 获取更详细的信息：fetch 特定网页
-`,
-      },
-      ...serverConversationHistory
-        .map((msg) => {
-          // 只保留 content 和 attachments blocks，过滤掉 research blocks
-          const relevantBlocks = msg.blocks.filter(
-            (block) => block.type === "content" || block.type === "attachments"
+    let activeConversationId = conversationId ?? null;
+    let conversationTitle: string | null = null;
+    let history: Message[] = [];
+
+    if (supabaseUser && supabase) {
+      if (activeConversationId) {
+        const { data, error } = await supabase
+          .from("messages")
+          .select("id, conversation_id, role, blocks, created_at")
+          .eq("conversation_id", activeConversationId)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          console.error(
+            "[Chat-API] Failed to load conversation history:",
+            error.message
           );
+          return NextResponse.json(
+            { reply: "Failed to load conversation history" },
+            { status: 500 }
+          );
+        }
 
-          const contentParts: unknown[] = [];
+        history = normalizeDbMessages((data ?? []) as DbMessage[]);
+      } else {
+        const title = buildConversationTitle(userMessage);
+        const { data, error } = await supabase
+          .from("conversations")
+          .insert({ user_id: supabaseUser.id, title })
+          .select("id, title")
+          .single();
 
-          for (const block of relevantBlocks) {
-            if (block.type === "content") {
-              contentParts.push({
-                type: "text",
-                text: block.content,
-              });
-            } else if (block.type === "attachments") {
-              // 将 attachments 转换为多模态内容格式
-              for (const att of block.attachments) {
-                const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
+        if (error || !data) {
+          console.error(
+            "[Chat-API] Failed to create conversation:",
+            error?.message
+          );
+          return NextResponse.json(
+            { reply: "Failed to create conversation" },
+            { status: 500 }
+          );
+        }
 
-                if (att.kind === "image") {
-                  contentParts.push({
-                    type: "image_url",
-                    imageUrl: { url: att.dataUrl },
-                  });
-                } else if (att.kind === "video") {
-                  contentParts.push({
-                    type: "video_url",
-                    videoUrl: { url: att.dataUrl },
-                  });
-                } else if (att.kind === "audio") {
-                  const format =
-                    att.mimeType.split("/")[1]?.split(";")[0] || "wav";
-                  contentParts.push({
-                    type: "input_audio",
-                    inputAudio: { data: base64Data, format },
-                  });
-                } else {
-                  contentParts.push({
-                    type: "file",
-                    file: { filename: att.name, fileData: att.dataUrl },
-                  });
-                }
-              }
-            }
-          }
+        activeConversationId = data.id;
+        conversationTitle = data.title ?? title;
+        history = [];
+      }
+    } else {
+      if (isNewConversation) {
+        guestConversationHistory = [];
+      }
+      history = [...guestConversationHistory];
+      guestConversationHistory.push(userMessage);
+    }
 
-          return {
-            role: msg.role,
-            content: contentParts,
-          };
-        })
-        .filter((msg) => {
-          // 过滤掉空的 assistant 消息
-          if (msg.role !== "assistant") {
-            return true;
-          }
-          return Array.isArray(msg.content) && msg.content.length > 0;
-        }),
+    const messages: ChatMessage[] = [
+      { role: "system", content: buildSystemPrompt() },
+      ...toChatMessages(history),
+      ...toChatMessages([userMessage]),
     ];
+
+    console.log(`[Chat-API] Using model: ${requestedModel}`);
 
     const stream = new ReadableStream({
       async start(controller) {
+        if (supabaseUser && !conversationId && activeConversationId) {
+          const createdPayload = {
+            type: "conversation_created",
+            conversationId: activeConversationId,
+            title: conversationTitle ?? buildConversationTitle(userMessage),
+          };
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(createdPayload)}\n\n`)
+          );
+        }
+
         const currentMessages: ChatMessage[] = [...messages];
-        const maxIterations = 20; // 防止无限循环
+        const researchItems: ResearchItem[] = [];
+        const maxIterations = 20;
         let iteration = 0;
         let finalAssistantMessage: string | null = null;
         let streamClosed = false;
@@ -196,6 +315,79 @@ export async function POST(req: Request) {
           if (!streamClosed) {
             controller.close();
             streamClosed = true;
+          }
+        };
+
+        const appendThinking = (chunk: string) => {
+          if (!chunk) return;
+          const last = researchItems[researchItems.length - 1];
+          if (last?.kind === "thinking") {
+            researchItems[researchItems.length - 1] = {
+              ...last,
+              text: `${last.text}${chunk}`,
+            };
+          } else {
+            researchItems.push({ kind: "thinking", text: chunk });
+          }
+        };
+
+        const findToolIndex = (toolName: string) => {
+          let fallback = -1;
+          for (let i = researchItems.length - 1; i >= 0; i--) {
+            const item = researchItems[i];
+            if (item.kind === "tool" && item.data.call.tool === toolName) {
+              if (!item.data.result) {
+                return i;
+              }
+              if (fallback === -1) {
+                fallback = i;
+              }
+            }
+          }
+          return fallback;
+        };
+
+        const ensureToolItem = (
+          toolName: string,
+          args: Record<string, unknown>
+        ) => {
+          const idx = findToolIndex(toolName);
+          if (idx === -1) {
+            researchItems.push({
+              kind: "tool",
+              data: {
+                call: { tool: toolName, args },
+                progress: [],
+              },
+            });
+            return researchItems.length - 1;
+          }
+          return idx;
+        };
+
+        const appendToolProgress = (
+          toolName: string,
+          progress: ToolProgress
+        ) => {
+          const idx = ensureToolItem(toolName, {});
+          const item = researchItems[idx];
+          if (item.kind === "tool") {
+            const existing = item.data.progress ?? [];
+            researchItems[idx] = {
+              ...item,
+              data: { ...item.data, progress: [...existing, progress] },
+            };
+          }
+        };
+
+        const appendToolResult = (toolName: string, result: string) => {
+          const idx = ensureToolItem(toolName, {});
+          const item = researchItems[idx];
+          if (item.kind === "tool") {
+            researchItems[idx] = {
+              ...item,
+              data: { ...item.data, result: { result } },
+            };
           }
         };
 
@@ -235,8 +427,8 @@ export async function POST(req: Request) {
                 | string
                 | undefined;
 
-              // 处理思考过程（OpenRouter SDK 使用 reasoning 字段）
               if (delta?.reasoning) {
+                appendThinking(delta.reasoning);
                 const data = {
                   type: "thinking",
                   content: delta.reasoning,
@@ -246,7 +438,6 @@ export async function POST(req: Request) {
                 );
               }
 
-              // 处理普通内容
               if (delta?.content) {
                 assistantMessage += delta.content;
                 const data = {
@@ -258,7 +449,6 @@ export async function POST(req: Request) {
                 );
               }
 
-              // 处理工具调用
               if (delta?.toolCalls) {
                 for (const toolCall of delta.toolCalls as StreamToolCall[]) {
                   if (
@@ -278,7 +468,6 @@ export async function POST(req: Request) {
                     currentToolCallIndex >= 0 &&
                     toolCall.function?.arguments
                   ) {
-                    // 追加参数
                     const currentToolCall = toolCalls[currentToolCallIndex];
                     if (
                       currentToolCall &&
@@ -291,7 +480,6 @@ export async function POST(req: Request) {
                 }
               }
 
-              // 检查是否完结
               if (finishReason === "stop") {
                 console.log("[Chat-API] Stream finished with stop");
                 finishedWithStop = true;
@@ -313,7 +501,6 @@ export async function POST(req: Request) {
               break;
             }
 
-            // 如果没有工具调用，结束循环
             if (toolCalls.length === 0) {
               console.log("[Chat-API] No tool calls, ending");
               finalAssistantMessage = assistantMessage;
@@ -321,14 +508,12 @@ export async function POST(req: Request) {
               break;
             }
 
-            // 添加助手消息（包含工具调用）
             currentMessages.push({
               role: "assistant",
               content: assistantMessage || null,
               toolCalls,
             });
 
-            // 执行工具调用并添加工具结果
             console.log("[Chat-API] Executing", toolCalls.length, "tool calls");
             for (const toolCall of toolCalls) {
               if (toolCall.type !== "function") continue;
@@ -343,7 +528,6 @@ export async function POST(req: Request) {
                 toolArgs
               );
 
-              // 向客户端发送工具调用信息
               const toolCallData = {
                 type: "tool_call",
                 tool: toolName,
@@ -352,8 +536,8 @@ export async function POST(req: Request) {
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify(toolCallData)}\n\n`)
               );
+              ensureToolItem(toolName, toolArgs);
 
-              // 调用工具
               const result = await callToolByName(
                 toolName,
                 toolArgs,
@@ -368,10 +552,15 @@ export async function POST(req: Request) {
                       `data: ${JSON.stringify(toolProgressData)}\n\n`
                     )
                   );
+                  appendToolProgress(toolName, {
+                    stage: progress.stage,
+                    message: String(progress.message ?? ""),
+                    receivedBytes: progress.receivedBytes,
+                    totalBytes: progress.totalBytes,
+                  });
                 }
               );
 
-              // 向客户端发送工具结果
               const toolResultData = {
                 type: "tool_result",
                 tool: toolName,
@@ -381,15 +570,25 @@ export async function POST(req: Request) {
                 encoder.encode(`data: ${JSON.stringify(toolResultData)}\n\n`)
               );
 
-              // 添加工具结果到消息历史
+              const normalizedResult =
+                typeof result === "string"
+                  ? result
+                  : (() => {
+                      try {
+                        return JSON.stringify(result);
+                      } catch {
+                        return String(result);
+                      }
+                    })();
+
+              appendToolResult(toolName, normalizedResult);
+
               currentMessages.push({
                 role: "tool",
                 toolCallId: toolCall.id,
                 content: result,
               });
             }
-
-            // 继续下一轮对话（让模型基于工具结果生成回答）
           }
 
           if (iteration >= maxIterations && !streamClosed) {
@@ -406,17 +605,60 @@ export async function POST(req: Request) {
             closeStream();
           }
 
-          if (finalAssistantMessage !== null) {
-            serverConversationHistory.push({
+          const assistantBlocks = buildAssistantBlocks(
+            researchItems,
+            finalAssistantMessage
+          );
+
+          if (supabaseUser && supabase && activeConversationId) {
+            const rows = [
+              {
+                conversation_id: activeConversationId,
+                role: "user",
+                blocks: userMessage.blocks,
+              },
+            ];
+
+            if (assistantBlocks.length > 0) {
+              rows.push({
+                conversation_id: activeConversationId,
+                role: "assistant",
+                blocks: assistantBlocks,
+              });
+            }
+
+            const { error: insertError } = await supabase
+              .from("messages")
+              .insert(rows);
+
+            if (insertError) {
+              console.error(
+                "[Chat-API] Failed to save messages:",
+                insertError.message
+              );
+            }
+
+            const { error: updateError } = await supabase
+              .from("conversations")
+              .update({ updated_at: new Date().toISOString() })
+              .eq("id", activeConversationId);
+
+            if (updateError) {
+              console.error(
+                "[Chat-API] Failed to update conversation timestamp:",
+                updateError.message
+              );
+            }
+          } else if (assistantBlocks.length > 0) {
+            guestConversationHistory.push({
               role: "assistant",
-              blocks: [{ type: "content", content: finalAssistantMessage }],
+              blocks: assistantBlocks,
             });
           }
 
           closeStream();
         } catch (error) {
           console.error("[Chat-API] Error:", error);
-          // 向客户端发送错误消息而不是直接关闭流
           if (!streamClosed) {
             const errorMessage =
               error instanceof Error ? error.message : String(error);

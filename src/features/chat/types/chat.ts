@@ -46,3 +46,10 @@ export type ContentBlock =
   | { type: "research"; items: ResearchItem[] };
 
 export type Message = { role: "user" | "assistant"; blocks: ContentBlock[] };
+
+export type ChatRequest = {
+  userMessage: Message;
+  conversationId?: string | null;
+  model?: string;
+  isNewConversation?: boolean;
+};

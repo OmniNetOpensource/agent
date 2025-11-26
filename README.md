@@ -12,10 +12,13 @@ OPENROUTER_DEFAULT_MODEL=openrouter/auto           # optional, server-side defau
 OPENROUTER_HTTP_REFERER=https://your-site.example  # optional, recommended by OpenRouter
 OPENROUTER_X_TITLE=Your App Name                   # optional, recommended by OpenRouter
 BRAVE_API_KEY=your_brave_api_key_here   # optional, enables web search
+NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-url.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 - **OPENROUTER_API_KEY**: Get your API key from [OpenRouter](https://openrouter.ai/)
 - **OPENROUTER_DEFAULT_MODEL**: Optional default model id used when客户端未指定模型（例�?`openrouter/auto`）�?- **OPENROUTER_HTTP_REFERER / OPENROUTER_X_TITLE**: 推荐配置，帮�?OpenRouter 了解调用来源�?- **BRAVE_API_KEY**: Get your API key from [Brave Search](https://api.search.brave.com/app/dashboard) to enable real-time web search.
+- **NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY**: Supabase 项目 URL 与匿名密钥，用于登录和会话存储（存放在 `.env.local`，不要提交到仓库）。
 
 
 ### Running the Development Server

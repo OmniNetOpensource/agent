@@ -15,6 +15,7 @@ import {
   readFileAsDataUrl,
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
+import type { Conversation, DbMessage } from "@/types/conversation";
 
 export type ChatState = {
   messages: Message[];
@@ -23,6 +24,9 @@ export type ChatState = {
   abortController: AbortController | null;
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
+  conversations: Conversation[];
+  conversationId: string | null;
+  conversationsLoading: boolean;
 };
 
 type ToolLifecycleUpdate =
@@ -42,6 +46,10 @@ export type ChatActions = {
   sendMessage: (value?: string) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
+  fetchConversations: () => Promise<void>;
+  deleteConversation: (id: string) => Promise<void>;
+  selectConversation: (id: string) => Promise<void>;
+  addConversation: (conversation: Conversation) => void;
 };
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
@@ -51,6 +59,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   abortController: null,
   currentModel: DEFAULT_CHAT_MODEL_ID,
   pendingAttachments: [],
+  conversations: [],
+  conversationId: null,
+  conversationsLoading: false,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   resetConversation: () =>
@@ -59,6 +70,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       input: "",
       pending: false,
       pendingAttachments: [],
+      conversationId: null,
+      abortController: null,
     }),
   clearConversation: () => {
     const { resetConversation } = get();
@@ -343,6 +356,109 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   setCurrentModel: (model) => {
     set({ currentModel: model });
   },
+  fetchConversations: async () => {
+    set({ conversationsLoading: true });
+    try {
+      const response = await fetch("/api/conversations", {
+        cache: "no-cache",
+      });
+      if (!response.ok) {
+        set({ conversations: [], conversationsLoading: false });
+        return;
+      }
+      const data = (await response.json()) as {
+        conversations?: Conversation[];
+      };
+      const conversations = Array.isArray(data.conversations)
+        ? data.conversations
+        : [];
+      set({ conversations, conversationsLoading: false });
+    } catch (error) {
+      console.error("[Conversations] Failed to load", error);
+      set({ conversationsLoading: false });
+    }
+  },
+  addConversation: (conversation) =>
+    set((state) => {
+      const filtered = state.conversations.filter(
+        (item) => item.id !== conversation.id
+      );
+      return { conversations: [conversation, ...filtered] };
+    }),
+  deleteConversation: async (id) => {
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("删除会话失败");
+      }
+
+      set((state) => {
+        const remaining = state.conversations.filter(
+          (item) => item.id !== id
+        );
+        if (state.conversationId === id) {
+          return {
+            conversations: remaining,
+            conversationId: null,
+            messages: [],
+            input: "",
+            pending: false,
+            abortController: null,
+            pendingAttachments: [],
+          };
+        }
+        return { conversations: remaining };
+      });
+    } catch (error) {
+      console.error("[Conversations] Failed to delete", error);
+      alert("删除会话失败，请稍后重试。");
+    }
+  },
+  selectConversation: async (id) => {
+    const { abortController } = get();
+    if (abortController) {
+      abortController.abort();
+    }
+
+    set({
+      pending: false,
+      abortController: null,
+      pendingAttachments: [],
+      input: "",
+      conversationId: id,
+    });
+
+    try {
+      const response = await fetch(`/api/conversations/${id}/messages`, {
+        cache: "no-cache",
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          alert("请先登录以查看会话。");
+        }
+        throw new Error("加载会话失败");
+      }
+
+      const data = (await response.json()) as { messages?: DbMessage[] };
+      const normalized: Message[] = (data.messages ?? []).map((msg) => ({
+        role: msg.role,
+        blocks: Array.isArray(msg.blocks)
+          ? msg.blocks.map((block) =>
+              block.type === "research"
+                ? { ...block, items: block.items.map((item) => ({ ...item })) }
+                : { ...block }
+            )
+          : [],
+      }));
+
+      set({ messages: normalized, conversationId: id, pending: false });
+    } catch (error) {
+      console.error("[Conversations] Failed to load messages", error);
+      set({ pending: false });
+    }
+  },
   sendMessage: async (value) => {
     const trimmed = (value ?? get().input).trim();
     const attachments = get().pendingAttachments;
@@ -354,6 +470,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const selectedModel = get().currentModel;
+    const currentConversationId = get().conversationId;
+    const existingMessages = get().messages;
 
     const userBlocks: ContentBlock[] = [];
     if (trimmed) {
@@ -379,15 +497,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }));
 
     try {
-      const conversationHistory = get().messages;
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           userMessage,
-          isNewConversation: conversationHistory.length === 1,
+          conversationId: currentConversationId,
+          isNewConversation:
+            !currentConversationId && existingMessages.length === 0,
           model: selectedModel,
         }),
       });
@@ -419,12 +537,27 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             if (line.startsWith("data: ")) {
               try {
                 const jsonStr = line.substring(6);
-                //console.log("从后端传来的原始数据:", line);
-                //console.log("解析后的 JSON 字符串:", jsonStr);
                 const data = JSON.parse(jsonStr);
-                //console.log("解析后的数据对象:", data);
 
-                console.log("Parsed data:", data);
+                if (data.type === "conversation_created") {
+                  const id =
+                    typeof data.conversationId === "string"
+                      ? data.conversationId
+                      : null;
+                  if (id) {
+                    const title =
+                      typeof data.title === "string" ? data.title : "新会话";
+                    set({ conversationId: id });
+                    get().addConversation({
+                      id,
+                      title,
+                      user_id: "",
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                    });
+                  }
+                  continue;
+                }
 
                 if (data.type === "thinking") {
                   get().appendToAssistant({
@@ -518,7 +651,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         (error instanceof DOMException && error.name === "AbortError") ||
         (error instanceof Error && error.name === "AbortError");
       if (isAbortError) {
-        // Abort is user initiated; nothing to append.
         return;
       }
       const message =
@@ -530,7 +662,31 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         content: `Error: ${message}`,
       });
     } finally {
-      set({ pending: false, abortController: null });
+      const activeConversationId = get().conversationId;
+      if (activeConversationId) {
+        set((state) => {
+          const existing = state.conversations.find(
+            (item) => item.id === activeConversationId
+          );
+          if (!existing) {
+            return { pending: false, abortController: null };
+          }
+          const updated = {
+            ...existing,
+            updated_at: new Date().toISOString(),
+          };
+          const remaining = state.conversations.filter(
+            (item) => item.id !== activeConversationId
+          );
+          return {
+            conversations: [updated, ...remaining],
+            pending: false,
+            abortController: null,
+          };
+        });
+      } else {
+        set({ pending: false, abortController: null });
+      }
     }
   },
 }));

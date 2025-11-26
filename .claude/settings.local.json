@@ -3,7 +3,9 @@
     "allow": [
       "Bash(pnpm add:*)",
       "Bash(pnpm build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(dir /b /s)",
+      "Bash(findstr \"^d:\"\")"
     ],
     "deny": [],
     "ask": []
