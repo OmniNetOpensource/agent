@@ -1,11 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm add:*)",
-      "Bash(pnpm build:*)",
-      "Bash(find:*)",
-      "Bash(dir /b /s)",
-      "Bash(findstr \"^d:\"\")"
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

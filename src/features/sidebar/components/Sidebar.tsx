@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { Moon, PanelLeft, Plus, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
@@ -16,6 +12,7 @@ import { UserMenu } from "@/src/features/auth/components/UserMenu";
 import { ConversationList } from "./ConversationList";
 
 export default function Sidebar() {
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -29,11 +26,8 @@ export default function Sidebar() {
     signOut,
     supabaseReady,
   } = useAuth();
-  const messages = useChatStore((state) => state.messages);
-  const pending = useChatStore((state) => state.pending);
   const resetConversation = useChatStore((state) => state.resetConversation);
   const fetchConversations = useChatStore((state) => state.fetchConversations);
-  const canClearConversation = !pending && messages.length > 0;
   const previousUserId = useRef<string | null>(null);
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -78,10 +72,7 @@ export default function Sidebar() {
   };
 
   const handleNewChat = () => {
-    if (!canClearConversation) {
-      return;
-    }
-    resetConversation();
+    router.push("/");
   };
 
   const toggleCollapsed = () => {
@@ -94,8 +85,10 @@ export default function Sidebar() {
     }
 
     if (user) {
-      previousUserId.current = user.id;
-      void fetchConversations();
+      if (previousUserId.current !== user.id) {
+        previousUserId.current = user.id;
+        void fetchConversations();
+      }
     } else if (previousUserId.current) {
       previousUserId.current = null;
       useChatStore.setState({
@@ -134,7 +127,6 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={handleNewChat}
-          disabled={!canClearConversation}
           className={`group relative inline-flex items-center justify-center overflow-hidden rounded-lg bg-background shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-sm disabled:hover:translate-y-0 ${
             isCollapsed ? "h-10 w-10 rounded-xl" : "h-9 flex-1 px-3"
           }`}

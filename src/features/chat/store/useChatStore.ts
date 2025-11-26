@@ -48,7 +48,7 @@ export type ChatActions = {
   setCurrentModel: (model: ChatModelId) => void;
   fetchConversations: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
-  selectConversation: (id: string) => Promise<void>;
+  selectConversation: (id: string) => Promise<boolean>;
   addConversation: (conversation: Conversation) => void;
 };
 
@@ -435,10 +435,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         cache: "no-cache",
       });
       if (!response.ok) {
-        if (response.status === 401) {
-          alert("请先登录以查看会话。");
-        }
-        throw new Error("加载会话失败");
+        return false;
       }
 
       const data = (await response.json()) as { messages?: DbMessage[] };
@@ -454,9 +451,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       }));
 
       set({ messages: normalized, conversationId: id, pending: false });
+      return true;
     } catch (error) {
       console.error("[Conversations] Failed to load messages", error);
       set({ pending: false });
+      return false;
     }
   },
   sendMessage: async (value) => {

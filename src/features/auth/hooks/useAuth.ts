@@ -54,7 +54,7 @@ export function useAuth(): UseAuthResult {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, [supabaseReady]);
+  }, []);
 
   const signIn = async () => {
     if (!supabaseReady || !clientRef.current) {

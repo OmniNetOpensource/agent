@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Nunito, Geist_Mono } from "next/font/google";
+import { Header } from "@/src/features/chat/components/Header";
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
 import "./globals.css";
 import "katex/dist/katex.min.css";
@@ -42,7 +43,10 @@ export default function RootLayout({
           <div className="h-full shrink-0">
             <Sidebar />
           </div>
-          <div className="relative flex-1 overflow-hidden">{children}</div>
+          <div className="relative flex-1 overflow-hidden flex flex-col">
+            <Header />
+            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+          </div>
         </div>
       </body>
     </html>

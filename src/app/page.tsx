@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Composer } from "@/src/features/chat/components/Composer";
-import { Header } from "@/src/features/chat/components/Header";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useParams } from "next/navigation";
 
 export function ChatPage() {
+  const [isNotFound, setIsNotFound] = useState(false);
   const messages = useChatStore((state) => state.messages);
   const currentConversationId = useChatStore(
     (state) => state.conversationId
@@ -16,6 +16,7 @@ export function ChatPage() {
   const selectConversation = useChatStore(
     (state) => state.selectConversation
   );
+  const resetConversation = useChatStore((state) => state.resetConversation);
   const params = useParams();
   const routeConversationId =
     params && typeof params.conversationId === "string"
@@ -27,17 +28,39 @@ export function ChatPage() {
 
   useEffect(() => {
     if (!routeConversationId) {
+      resetConversation();
+      setIsNotFound(false);
       return;
     }
     if (routeConversationId === currentConversationId) {
       return;
     }
-    void selectConversation(routeConversationId);
-  }, [routeConversationId, currentConversationId, selectConversation]);
+    setIsNotFound(false);
+    selectConversation(routeConversationId).then((success) => {
+      if (!success) {
+        setIsNotFound(true);
+      }
+    });
+  }, [
+    routeConversationId,
+    currentConversationId,
+    selectConversation,
+    resetConversation,
+  ]);
+
+  if (isNotFound) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-6xl font-bold text-(--text-primary)">404</h1>
+          <p className="mt-4 text-(--text-secondary)">对话不存在</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full flex-col">
-      <Header />
       <main className="relative flex-1 min-h-0 flex">
         <div className="flex-1 min-w-0 flex flex-col relative">
           {!isInitial && (
