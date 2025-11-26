@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { usePreviewStore } from "../store/usePreviewStore";
@@ -60,36 +60,50 @@ export function PreviewPanel() {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closePreview();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, closePreview]);
-
   // 拖拽调整宽度
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
 
+    // 禁用 iframe 鼠标事件，避免拖拽被 iframe 捕获
+    const iframe = containerRef.current?.querySelector("iframe");
+    if (iframe) {
+      iframe.style.pointerEvents = "none";
+    }
+
+    const containerRight = window.innerWidth;
+
+    // 用于记录最终宽度
+    let finalWidth = panelWidth;
+    let rafId: number | null = null;
+
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!containerRef.current) return;
-      const containerRight =
-        containerRef.current.parentElement?.getBoundingClientRect().right ??
-        window.innerWidth;
-      const newWidth = containerRight - moveEvent.clientX;
-      const clampedWidth = Math.min(800, Math.max(280, newWidth));
-      setPanelWidth(clampedWidth);
+      if (rafId) return;
+
+      rafId = requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const newWidth = containerRight - moveEvent.clientX;
+        finalWidth = Math.min(900, Math.max(200, newWidth));
+        containerRef.current.style.width = `${finalWidth}px`;
+        rafId = null;
+      });
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      // 拖拽结束后同步到 state
+      setPanelWidth(finalWidth);
+      // 清除内联样式，让 framer-motion 接管
+      if (containerRef.current) {
+        containerRef.current.style.width = "";
+      }
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      if (iframe) {
+        iframe.style.pointerEvents = "";
+      }
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
       document.body.style.userSelect = "";
@@ -113,14 +127,19 @@ export function PreviewPanel() {
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: panelWidth, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          style={{ willChange: isDragging ? "width" : undefined }}
+          transition={
+            isDragging
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 300, damping: 30 }
+          }
         >
           {/* 拖拽分隔线 */}
           <div
             onMouseDown={handleMouseDown}
             className={`absolute left-0 top-0 h-full w-1.5 cursor-col-resize z-10 transition-colors ${
               isDragging
-                ? "bg-(--border-hover)"
+                ? "bg-(--text-tertiary)"
                 : "bg-transparent hover:bg-(--border-hover)"
             }`}
           />
