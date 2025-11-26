@@ -16,6 +16,7 @@ export function ConversationList() {
     (state) => state.deleteConversation
   );
   const selectConversation = useChatStore((state) => state.selectConversation);
+  const pending = useChatStore((state) => state.pending);
 
   if (conversationsLoading) {
     return (
@@ -42,6 +43,14 @@ export function ConversationList() {
           conversation={conversation}
           isActive={conversation.id === activeConversationId}
           onClick={async () => {
+            if (pending) {
+              const confirmed = window.confirm(
+                "AI正在生成内容，离开当前对话可能会丢失正在生成的内容，确定要离开吗？"
+              );
+              if (!confirmed) {
+                return;
+              }
+            }
             await selectConversation(conversation.id);
             router.push(`/c/${conversation.id}`);
           }}

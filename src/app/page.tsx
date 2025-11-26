@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Composer } from "@/src/features/chat/components/Composer";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
@@ -18,6 +19,7 @@ export function ChatPage() {
   );
   const resetConversation = useChatStore((state) => state.resetConversation);
   const params = useParams();
+  const router = useRouter();
   const routeConversationId =
     params && typeof params.conversationId === "string"
       ? params.conversationId
@@ -25,6 +27,12 @@ export function ChatPage() {
   const messageCount = messages.length;
 
   const isInitial = messageCount === 0;
+
+  useEffect(() => {
+    if (currentConversationId && !routeConversationId) {
+      router.push(`/c/${currentConversationId}`);
+    }
+  }, [currentConversationId, routeConversationId, router]);
 
   useEffect(() => {
     let canceled = false;

@@ -7,6 +7,7 @@ import {
   getOpenRouterHeaders,
   isSupportedChatModel,
 } from "@/src/features/model/lib/openrouter";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ContentBlock,
   Message,
@@ -167,6 +168,73 @@ const buildAssistantBlocks = (
   return blocks;
 };
 
+type SavedMessageIds = {
+  userMessageId: string | null;
+  assistantMessageId: string | null;
+};
+
+const generateMessageId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const saveMessages = async (
+  supabase: SupabaseClient,
+  conversationId: string,
+  userMessage: Message,
+  assistantBlocks: ContentBlock[],
+  messageIds: SavedMessageIds
+) => {
+  const nextIds: SavedMessageIds = {
+    userMessageId: messageIds.userMessageId ?? generateMessageId(),
+    assistantMessageId:
+      assistantBlocks.length > 0
+        ? messageIds.assistantMessageId ?? generateMessageId()
+        : messageIds.assistantMessageId,
+  };
+
+  const rows = [
+    {
+      id: nextIds.userMessageId,
+      conversation_id: conversationId,
+      role: "user",
+      blocks: userMessage.blocks,
+    },
+  ];
+
+  if (assistantBlocks.length > 0) {
+    rows.push({
+      id: nextIds.assistantMessageId,
+      conversation_id: conversationId,
+      role: "assistant",
+      blocks: assistantBlocks,
+    });
+  }
+
+  const { error: upsertError } = await supabase
+    .from("messages")
+    .upsert(rows, { onConflict: "id" });
+
+  if (upsertError) {
+    console.error("[Chat-API] Failed to save messages:", upsertError.message);
+  }
+
+  const { error: updateError } = await supabase
+    .from("conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+
+  if (updateError) {
+    console.error(
+      "[Chat-API] Failed to update conversation timestamp:",
+      updateError.message
+    );
+  }
+
+  messageIds.userMessageId = nextIds.userMessageId;
+  messageIds.assistantMessageId = nextIds.assistantMessageId ?? null;
+};
+
 export async function POST(req: Request) {
   try {
     const {
@@ -310,6 +378,10 @@ export async function POST(req: Request) {
         let iteration = 0;
         let finalAssistantMessage: string | null = null;
         let streamClosed = false;
+        const messageIds: SavedMessageIds = {
+          userMessageId: null,
+          assistantMessageId: null,
+        };
 
         const closeStream = () => {
           if (!streamClosed) {
@@ -514,6 +586,20 @@ export async function POST(req: Request) {
               toolCalls,
             });
 
+            if (supabaseUser && supabase && activeConversationId) {
+              const partialAssistantBlocks = buildAssistantBlocks(
+                researchItems,
+                assistantMessage || null
+              );
+              await saveMessages(
+                supabase,
+                activeConversationId,
+                userMessage,
+                partialAssistantBlocks,
+                messageIds
+              );
+            }
+
             console.log("[Chat-API] Executing", toolCalls.length, "tool calls");
             for (const toolCall of toolCalls) {
               if (toolCall.type !== "function") continue;
@@ -611,44 +697,13 @@ export async function POST(req: Request) {
           );
 
           if (supabaseUser && supabase && activeConversationId) {
-            const rows = [
-              {
-                conversation_id: activeConversationId,
-                role: "user",
-                blocks: userMessage.blocks,
-              },
-            ];
-
-            if (assistantBlocks.length > 0) {
-              rows.push({
-                conversation_id: activeConversationId,
-                role: "assistant",
-                blocks: assistantBlocks,
-              });
-            }
-
-            const { error: insertError } = await supabase
-              .from("messages")
-              .insert(rows);
-
-            if (insertError) {
-              console.error(
-                "[Chat-API] Failed to save messages:",
-                insertError.message
-              );
-            }
-
-            const { error: updateError } = await supabase
-              .from("conversations")
-              .update({ updated_at: new Date().toISOString() })
-              .eq("id", activeConversationId);
-
-            if (updateError) {
-              console.error(
-                "[Chat-API] Failed to update conversation timestamp:",
-                updateError.message
-              );
-            }
+            await saveMessages(
+              supabase,
+              activeConversationId,
+              userMessage,
+              assistantBlocks,
+              messageIds
+            );
           } else if (assistantBlocks.length > 0) {
             guestConversationHistory.push({
               role: "assistant",

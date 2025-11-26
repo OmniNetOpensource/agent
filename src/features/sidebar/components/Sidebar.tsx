@@ -28,6 +28,7 @@ export default function Sidebar() {
   } = useAuth();
   const resetConversation = useChatStore((state) => state.resetConversation);
   const fetchConversations = useChatStore((state) => state.fetchConversations);
+  const pending = useChatStore((state) => state.pending);
   const previousUserId = useRef<string | null>(null);
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -72,6 +73,14 @@ export default function Sidebar() {
   };
 
   const handleNewChat = () => {
+    if (pending) {
+      const confirmed = window.confirm(
+        "AI正在生成内容，离开当前对话可能会丢失正在生成的内容，确定要离开吗？"
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
     router.push("/");
   };
 
