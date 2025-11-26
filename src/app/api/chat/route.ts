@@ -14,8 +14,8 @@ import type {
   ToolProgress,
 } from "@/src/features/chat/types/chat";
 import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
+import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { ChatRequest } from "@/src/features/chat/types/chat";
 import type { DbMessage } from "@/types/conversation";
 

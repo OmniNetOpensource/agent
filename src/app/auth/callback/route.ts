@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
+import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 
 export async function GET(request: NextRequest) {
   if (!hasSupabaseConfig()) {

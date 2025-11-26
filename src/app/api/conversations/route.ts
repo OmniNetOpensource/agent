@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
+import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { Conversation } from "@/types/conversation";
 
 export async function GET() {

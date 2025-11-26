@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseBrowserClient } from "@/shared/lib/supabase/client";
+import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 
 type UseAuthResult = {
   user: User | null;

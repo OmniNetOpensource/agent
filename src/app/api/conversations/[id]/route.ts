@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { hasSupabaseConfig } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
+import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 
 export async function DELETE(
   _request: NextRequest,
