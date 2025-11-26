@@ -126,7 +126,7 @@ export function Composer({ isInitial }: ComposerProps) {
                 ) : (
                   <div
                     key={attachment.id}
-                    className="flex min-w-[200px] max-w-[240px] items-center gap-3 rounded-xl border border-(--border-subtle) bg-background p-2 pr-3 shadow-sm"
+                    className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-xl border border-(--border-subtle) bg-background p-2 pr-3 shadow-sm"
                   >
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-(--border-subtle) bg-(--surface-muted)">
                       <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
@@ -155,7 +155,7 @@ export function Composer({ isInitial }: ComposerProps) {
             </div>
           )}
 
-          <div className="relative flex w-full items-end gap-2 rounded-[24px] border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg transition-all focus-within:border-(--border-hover) focus-within:shadow-xl">
+          <div className="relative flex w-full items-end gap-2 rounded-3xl border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg transition-all focus-within:border-(--border-hover) focus-within:shadow-xl">
             <input
               type="file"
               ref={fileInputRef}
@@ -184,7 +184,7 @@ export function Composer({ isInitial }: ComposerProps) {
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="输入您的消息..."
-              className="min-h-[40px] max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
+              className="min-h-10 max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
               style={{ height: "44px" }}
             />
 

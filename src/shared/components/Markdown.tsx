@@ -43,7 +43,7 @@ export default function Markdown({ content }: Props) {
             <h1
               {...props}
               className={cx(
-                "mt-6 mb-3 text-lg font-semibold leading-tight text-(--text-primary)",
+                "mt-6 mb-3 text-lg font-semibold leading-tight text-foreground",
                 className
               )}
             />
@@ -52,7 +52,7 @@ export default function Markdown({ content }: Props) {
             <h2
               {...props}
               className={cx(
-                "mt-5 mb-3 text-base font-semibold leading-tight text-(--text-primary)",
+                "mt-5 mb-3 text-base font-semibold leading-tight text-foreground",
                 className
               )}
             />
@@ -61,7 +61,7 @@ export default function Markdown({ content }: Props) {
             <h3
               {...props}
               className={cx(
-                "mt-4 mb-2 text-sm font-semibold text-(--text-primary)",
+                "mt-4 mb-2 text-sm font-semibold text-foreground",
                 className
               )}
             />
@@ -70,7 +70,7 @@ export default function Markdown({ content }: Props) {
             <h4
               {...props}
               className={cx(
-                "mt-3 mb-2 text-sm font-medium text-(--text-primary)",
+                "mt-3 mb-2 text-sm font-medium text-foreground",
                 className
               )}
             />
@@ -127,7 +127,7 @@ export default function Markdown({ content }: Props) {
             <strong
               {...props}
               className={cx(
-                "font-semibold text-(--text-primary)",
+                "font-semibold text-foreground",
                 className
               )}
             />
@@ -135,7 +135,7 @@ export default function Markdown({ content }: Props) {
           em: ({ className, ...props }) => (
             <em
               {...props}
-              className={cx("text-(--text-primary) italic", className)}
+              className={cx("text-foreground italic", className)}
             />
           ),
           a: ({ className, ...props }) => (

@@ -123,7 +123,7 @@ export function PreviewPanel() {
       {isOpen && (
         <motion.div
           ref={containerRef}
-          className="h-full border-l border-(--border-subtle) bg-(--surface-base) flex flex-col relative"
+          className="h-full border-l border-(--border-subtle) bg-background flex flex-col relative"
           initial={{ width: 0, opacity: 0 }}
           animate={{ width: panelWidth, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
@@ -152,7 +152,7 @@ export function PreviewPanel() {
             <button
               type="button"
               onClick={closePreview}
-              className="inline-flex items-center gap-2 rounded-md border border-(--border-subtle) bg-(--surface-card) px-3 py-1.5 text-xs font-medium text-(--text-secondary) shadow-sm transition-colors hover:border-(--border-hover) hover:text-(--text-primary)"
+              className="inline-flex items-center gap-2 rounded-md border border-(--border-subtle) bg-(--surface-card) px-3 py-1.5 text-xs font-medium text-(--text-secondary) shadow-sm transition-colors hover:border-(--border-hover) hover:text-foreground"
             >
               <X className="h-4 w-4" />
               关闭
@@ -160,7 +160,7 @@ export function PreviewPanel() {
           </div>
 
           {/* Preview iframe */}
-          <div className="flex-1 min-h-0 bg-(--surface-base)">
+          <div className="flex-1 min-h-0 bg-background">
             <iframe
               title="代码预览"
               srcDoc={srcDoc}
