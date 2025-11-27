@@ -15,7 +15,8 @@ import {
   readFileAsDataUrl,
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
-import type { Conversation, DbMessage } from "@/types/conversation";
+import type { DbMessage } from "@/types/conversation";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 
 export type ChatState = {
   messages: Message[];
@@ -24,10 +25,8 @@ export type ChatState = {
   abortController: AbortController | null;
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
-  conversations: Conversation[];
   conversationId: string | null;
   latestSelectRequestId: number;
-  conversationsLoading: boolean;
 };
 
 type ToolLifecycleUpdate =
@@ -47,10 +46,7 @@ export type ChatActions = {
   sendMessage: (value?: string) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
-  fetchConversations: () => Promise<void>;
-  deleteConversation: (id: string) => Promise<void>;
   selectConversation: (id: string, onFail?: () => void) => Promise<boolean>;
-  addConversation: (conversation: Conversation) => void;
 };
 
 export const generateConversationId = () =>
@@ -65,10 +61,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   abortController: null,
   currentModel: DEFAULT_CHAT_MODEL_ID,
   pendingAttachments: [],
-  conversations: [],
   conversationId: null,
   latestSelectRequestId: 0,
-  conversationsLoading: false,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   setConversationId: (conversationId) => set({ conversationId }),
@@ -256,7 +250,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                 ...targetItem,
                 data: {
                   ...targetItem.data,
-                  progress: [...(targetItem.data.progress ?? []), progressEntry],
+                  progress: [
+                    ...(targetItem.data.progress ?? []),
+                    progressEntry,
+                  ],
                 },
               };
             }
@@ -359,66 +356,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   },
   setCurrentModel: (model) => {
     set({ currentModel: model });
-  },
-  fetchConversations: async () => {
-    set({ conversationsLoading: true });
-    try {
-      const response = await fetch("/api/conversations", {
-        cache: "no-cache",
-      });
-      if (!response.ok) {
-        set({ conversations: [], conversationsLoading: false });
-        return;
-      }
-      const data = (await response.json()) as {
-        conversations?: Conversation[];
-      };
-      const conversations = Array.isArray(data.conversations)
-        ? data.conversations
-        : [];
-      set({ conversations, conversationsLoading: false });
-    } catch (error) {
-      console.error("[Conversations] Failed to load", error);
-      set({ conversationsLoading: false });
-    }
-  },
-  addConversation: (conversation) =>
-    set((state) => {
-      const filtered = state.conversations.filter(
-        (item) => item.id !== conversation.id
-      );
-      return { conversations: [conversation, ...filtered] };
-    }),
-  deleteConversation: async (id) => {
-    try {
-      const response = await fetch(`/api/conversations/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error("删除会话失败");
-      }
-
-      set((state) => {
-        const remaining = state.conversations.filter(
-          (item) => item.id !== id
-        );
-        if (state.conversationId === id) {
-          return {
-            conversations: remaining,
-            conversationId: null,
-            messages: [],
-            input: "",
-            pending: false,
-            abortController: null,
-            pendingAttachments: [],
-          };
-        }
-        return { conversations: remaining };
-      });
-    } catch (error) {
-      console.error("[Conversations] Failed to delete", error);
-      alert("删除会话失败，请稍后重试。");
-    }
   },
   selectConversation: async (id, onFail) => {
     const { abortController } = get();
@@ -556,7 +493,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                     set({ conversationId: id });
                     const title =
                       typeof data.title === "string" ? data.title : "新会话";
-                    get().addConversation({
+                    const { addConversation } =
+                      useConversationsStore.getState();
+                    addConversation({
                       id,
                       title,
                       user_id: "",
@@ -672,26 +611,22 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     } finally {
       const activeConversationId = get().conversationId;
       if (activeConversationId) {
-        set((state) => {
-          const existing = state.conversations.find(
-            (item) => item.id === activeConversationId
-          );
-          if (!existing) {
-            return { pending: false, abortController: null };
-          }
+        const { conversations, setConversations } =
+          useConversationsStore.getState();
+        const existing = conversations.find(
+          (item) => item.id === activeConversationId
+        );
+        if (existing) {
           const updated = {
             ...existing,
             updated_at: new Date().toISOString(),
           };
-          const remaining = state.conversations.filter(
+          const remaining = conversations.filter(
             (item) => item.id !== activeConversationId
           );
-          return {
-            conversations: [updated, ...remaining],
-            pending: false,
-            abortController: null,
-          };
-        });
+          setConversations([updated, ...remaining]);
+        }
+        set({ pending: false, abortController: null });
       } else {
         set({ pending: false, abortController: null });
       }

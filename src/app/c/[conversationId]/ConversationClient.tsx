@@ -5,6 +5,7 @@ import { Composer } from "@/src/features/chat/components/Composer";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import type { Message } from "@/src/features/chat/types/chat";
 import type { Conversation } from "@/types/conversation";
 
@@ -21,7 +22,9 @@ export default function ConversationClient({
 }: Props) {
   const setMessages = useChatStore((state) => state.setMessages);
   const setConversationId = useChatStore((state) => state.setConversationId);
-  const addConversation = useChatStore((state) => state.addConversation);
+  const addConversation = useConversationsStore(
+    (state) => state.addConversation
+  );
   const messages = useChatStore((state) => state.messages);
   const clear = useChatStore((state) => state.clear);
   const initializedRef = useRef(false);

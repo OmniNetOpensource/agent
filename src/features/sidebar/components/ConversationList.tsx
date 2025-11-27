@@ -3,16 +3,16 @@
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { ConversationItem } from "./ConversationItem";
 
 export function ConversationList() {
   const router = useRouter();
-  const conversations = useChatStore((state) => state.conversations);
-  const conversationsLoading = useChatStore(
+  const conversations = useConversationsStore((state) => state.conversations);
+  const conversationsLoading = useConversationsStore(
     (state) => state.conversationsLoading
   );
   const activeConversationId = useChatStore((state) => state.conversationId);
-
   const pending = useChatStore((state) => state.pending);
 
   if (conversationsLoading) {

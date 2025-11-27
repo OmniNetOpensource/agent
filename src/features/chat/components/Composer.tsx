@@ -13,6 +13,7 @@ import {
   useChatStore,
 } from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 
 type ComposerProps = {
   isNewchat: boolean;
@@ -27,7 +28,9 @@ export function Composer({ isNewchat }: ComposerProps) {
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
   const setConversationId = useChatStore((state) => state.setConversationId);
-  const addConversation = useChatStore((state) => state.addConversation);
+  const addConversation = useConversationsStore(
+    (state) => state.addConversation
+  );
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
