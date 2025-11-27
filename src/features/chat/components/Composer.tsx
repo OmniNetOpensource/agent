@@ -6,25 +6,28 @@ import {
   useRef,
 } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  generateConversationId,
+  useChatStore,
+} from "@/src/features/chat/store/useChatStore";
+import { useAuth } from "@/src/features/auth/hooks/useAuth";
 
 type ComposerProps = {
   isNewchat: boolean;
 };
 
 export function Composer({ isNewchat }: ComposerProps) {
-  const router = useRouter();
-  const conversationId = useChatStore((state) => state.conversationId);
+  const { user } = useAuth();
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
   const pendingAttachments = useChatStore((state) => state.pendingAttachments);
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
-  const createConversation = useChatStore((state) => state.createConversation);
+  const setConversationId = useChatStore((state) => state.setConversationId);
+  const addConversation = useChatStore((state) => state.addConversation);
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
@@ -38,20 +41,23 @@ export function Composer({ isNewchat }: ComposerProps) {
     }
 
     if (isNewchat) {
-      const title =
-        trimmed.length > 50
-          ? `${trimmed.slice(0, 50)}...`
-          : trimmed || "新会话";
-      const newConversationId = await createConversation(title);
+      if (user) {
+        const newId = generateConversationId();
+        setConversationId(newId);
+        window.history.replaceState(null, "", `/c/${newId}`);
 
-      if (!newConversationId) {
-        await sendMessage();
-        return;
+        const title =
+          trimmed.length > 50
+            ? `${trimmed.slice(0, 50)}...`
+            : trimmed || "新会话";
+        addConversation({
+          id: newId,
+          title,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
       }
-
-      router.push(`/c/${newConversationId}`);
-      await sendMessage();
-      return;
     }
 
     await sendMessage();

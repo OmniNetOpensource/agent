@@ -81,7 +81,7 @@ export default function Sidebar() {
         return;
       }
     }
-    router.push("/");
+    router.push("/c/new");
   };
 
   const toggleCollapsed = () => {

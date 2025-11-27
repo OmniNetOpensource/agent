@@ -1,47 +1,77 @@
-"use client";
+import { notFound, redirect } from "next/navigation";
+import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
+import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
+import ConversationClient from "./ConversationClient";
+import type {
+  Message,
+  ResearchItem,
+} from "@/src/features/chat/types/chat";
+import type { Conversation } from "@/types/conversation";
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Composer } from "@/src/features/chat/components/Composer";
-import { MessageList } from "@/src/features/chat/components/MessageList";
-import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+type Props = {
+  params: Promise<{ conversationId: string }>;
+};
 
-export default function ConversationPage() {
-  const router = useRouter();
-  const selectConversation = useChatStore((state) => state.selectConversation);
-  const clear = useChatStore((state) => state.clear);
-  const params = useParams();
-  const routeConversationId =
-    params && typeof params.conversationId === "string"
-      ? params.conversationId
-      : null;
+export default async function ConversationPage({ params }: Props) {
+  const { conversationId } = await params;
 
-  useEffect(() => {
-    const loadConversation = async () => {
-      if (!routeConversationId) {
-        return;
-      }
-      await selectConversation(routeConversationId, () => {
-        clear();
-        router.replace("/404");
-      });
-    };
+  if (conversationId === "new") {
+    return <ConversationClient conversationId={null} initialMessages={[]} />;
+  }
 
-    void loadConversation();
-  }, [routeConversationId]);
+  if (!hasSupabaseConfig()) {
+    notFound();
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/c/new");
+  }
+
+  const { data: conversation, error: convError } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (convError || !conversation) {
+    notFound();
+  }
+
+  const { data: messages, error: msgError } = await supabase
+    .from("messages")
+    .select("id, conversation_id, role, blocks, created_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+
+  if (msgError) {
+    notFound();
+  }
+
+  const normalizedMessages: Message[] = (messages ?? []).map((message) => ({
+    role: message.role,
+    blocks: Array.isArray(message.blocks)
+      ? message.blocks.map((block) =>
+          block.type === "research"
+            ? {
+                ...block,
+                items: block.items.map((item: ResearchItem) => ({ ...item })),
+              }
+            : { ...block }
+        )
+      : [],
+  }));
 
   return (
-    <div className="flex h-full w-full flex-col">
-      <main className="relative flex-1 min-h-0 flex">
-        <div className="flex-1 min-w-0 flex flex-col relative">
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <MessageList />
-          </div>
-          <Composer isNewchat={false} />
-        </div>
-        <PreviewPanel />
-      </main>
-    </div>
+    <ConversationClient
+      conversationId={conversationId}
+      initialMessages={normalizedMessages}
+      conversation={conversation as Conversation}
+    />
   );
 }

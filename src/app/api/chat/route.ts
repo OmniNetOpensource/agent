@@ -294,30 +294,44 @@ export async function POST(req: Request) {
     }
 
     let activeConversationId = conversationId ?? null;
-    let conversationTitle: string | null = null;
     const history: Message[] = conversationHistory.map((message) => ({
       ...message,
       blocks: Array.isArray(message.blocks) ? message.blocks : [],
     }));
 
-    if (supabaseUser && supabase && !activeConversationId) {
-      const title = buildConversationTitle(latestUserMessage);
-      const { data, error } = await supabase
-        .from("conversations")
-        .insert({ user_id: supabaseUser.id, title })
-        .select("id, title")
-        .single();
+    if (supabaseUser && supabase && activeConversationId) {
+      const { data: existingConversation, error: existingConversationError } =
+        await supabase
+          .from("conversations")
+          .select("id")
+          .eq("id", activeConversationId)
+          .eq("user_id", supabaseUser.id)
+          .maybeSingle();
 
-      if (error || !data) {
-        console.error("[Chat-API] Failed to create conversation:", error?.message);
-        return NextResponse.json(
-          { reply: "Failed to create conversation" },
-          { status: 500 }
+      if (existingConversationError) {
+        console.error(
+          "[Chat-API] Failed to verify conversation:",
+          existingConversationError.message
         );
-      }
+        activeConversationId = null;
+      } else if (!existingConversation) {
+        const title = buildConversationTitle(latestUserMessage);
+        const { error: createConversationError } = await supabase
+          .from("conversations")
+          .insert({
+            id: activeConversationId,
+            user_id: supabaseUser.id,
+            title,
+          });
 
-      activeConversationId = data.id;
-      conversationTitle = data.title ?? title;
+          if (createConversationError) {
+            console.error(
+              "[Chat-API] Failed to create conversation:",
+              createConversationError.message
+            );
+            activeConversationId = null;
+          }
+      }
     }
 
     const messages: ChatMessage[] = [
@@ -329,19 +343,6 @@ export async function POST(req: Request) {
 
     const stream = new ReadableStream({
       async start(controller) {
-        if (supabaseUser && !conversationId && activeConversationId) {
-          const createdPayload = {
-            type: "conversation_created",
-            conversationId: activeConversationId,
-            title:
-              conversationTitle ??
-              buildConversationTitle(latestUserMessage),
-          };
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(createdPayload)}\n\n`)
-          );
-        }
-
         const currentMessages: ChatMessage[] = [...messages];
         const researchItems: ResearchItem[] = [];
         const maxIterations = 20;

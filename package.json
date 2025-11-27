@@ -11,7 +11,7 @@
     "check": "pnpm type-check && pnpm lint && pnpm build"
   },
   "dependencies": {
-    "@openrouter/sdk": "^0.1.17",
+    "@openrouter/sdk": "^0.1.27",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.80.0",
     "@tanstack/react-virtual": "^3.13.12",

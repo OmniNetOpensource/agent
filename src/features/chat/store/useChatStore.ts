@@ -39,8 +39,8 @@ type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
+  setConversationId: (id: string | null) => void;
   clear: () => void;
-  createConversation: (title?: string) => Promise<string | null>;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
@@ -52,6 +52,11 @@ export type ChatActions = {
   selectConversation: (id: string, onFail?: () => void) => Promise<boolean>;
   addConversation: (conversation: Conversation) => void;
 };
+
+export const generateConversationId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
@@ -66,6 +71,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   conversationsLoading: false,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
+  setConversationId: (conversationId) => set({ conversationId }),
   clear: () =>
     set({
       messages: [],
@@ -75,40 +81,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       conversationId: null,
       abortController: null,
     }),
-  createConversation: async (title) => {
-    try {
-      const response = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = (await response.json()) as { id: string; title?: string };
-      const conversationTitle =
-        typeof data.title === "string" && data.title.trim()
-          ? data.title
-          : "新会话";
-
-      set({ conversationId: data.id });
-
-      get().addConversation({
-        id: data.id,
-        title: conversationTitle,
-        user_id: "",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-
-      return data.id;
-    } catch (error) {
-      console.error("[Conversations] Failed to create", error);
-      return null;
-    }
-  },
   addAttachments: async (files) => {
     const items = Array.from(files || []);
     if (items.length === 0) {
