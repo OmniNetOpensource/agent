@@ -73,12 +73,12 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex h-full shrink-0 overflow-x-hidden flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
+      className={`flex h-full  flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
         isCollapsed ? "w-20" : "w-[280px]"
       }`}
     >
       <div
-        className={`px-4 py-5 shrink-0 overflow-x-hidden ${
+        className={`px-4 py-5  ${
           isCollapsed
             ? "flex flex-col items-center gap-4"
             : "flex items-center justify-between gap-2"
@@ -156,9 +156,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="overflow-x-hidden">
-        <ProfileSection isCollapsed={isCollapsed} />
-      </div>
+      <ProfileSection isCollapsed={isCollapsed} />
     </aside>
   );
 }

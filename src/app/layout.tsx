@@ -40,7 +40,7 @@ export default function RootLayout({
   } catch (e) {}
 })();`}</Script>
         <div className="flex h-screen bg-background text-foreground">
-          <div className="h-full shrink-0">
+          <div className="h-full overflow-visible z-10">
             <Sidebar />
           </div>
           <div className="relative flex-1 overflow-hidden flex flex-col">

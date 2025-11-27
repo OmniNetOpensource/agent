@@ -12,11 +12,7 @@ export function ProfileSection({ isCollapsed }: ProfileSectionProps) {
   const { user, signOut } = useAuth();
 
   return (
-    <div
-      className={`border-t border-(--border-subtle) ${
-        isCollapsed ? "px-3 py-3" : "px-4 py-4"
-      }`}
-    >
+    <div className={`px-4 py-4`}>
       <div className={isCollapsed ? "flex justify-center" : undefined}>
         {user ? (
           <UserMenu

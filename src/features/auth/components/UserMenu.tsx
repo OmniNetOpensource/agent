@@ -68,11 +68,11 @@ export function UserMenu({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={`flex items-center gap-3 rounded-xl border border-(--border-subtle) bg-(--surface-card) text-sm shadow-sm transition-colors hover:bg-(--surface-hover) cursor-pointer 
-        w-full justify-between px-3 py-2
+        w-full justify-between px-1.5 py-1
           `}
       >
         <span className="flex min-w-0 items-center gap-3 shrink-0">
-          <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-(--surface-muted) text-sm font-semibold text-foreground ring-1 ring-(--border-subtle)">
+          <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-(--surface-muted) text-sm font-semibold text-foreground ring-1 ring-(--border-subtle)">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -103,18 +103,50 @@ export function UserMenu({
 
       {open && (
         <div
-          className={`absolute z-20 min-w-[220px] rounded-xl border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg ${
-            isCollapsed
-              ? "left-1/2 bottom-[110%] w-max -translate-x-1/2"
-              : "right-0 bottom-[110%] w-full"
-          }`}
+          className={`absolute bottom-full left-0 mb-2 z-50 min-w-[220px] rounded-xl border border-(--border-subtle) bg-(--surface-card) p-1.5 shadow-lg`}
         >
+          {/* User Profile Section */}
+          <div className="flex items-center gap-1.5 px-1 py-1.5">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-(--surface-muted) ring-1 ring-(--border-subtle)">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="h-5 w-5 shrink-0 object-cover"
+                />
+              ) : (
+                <span className="text-xs font-semibold">
+                  {displayName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="truncate text-sm font-medium text-foreground">
+                  {displayName}
+                </span>
+              </div>
+              {user.email && (
+                <div className="text-xs leading-tight text-(--text-tertiary) mb-0.5">
+                  {user.email}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Separator */}
+          <div className="h-px bg-(--border-subtle) mx-4 my-1" />
+
+          {/* Settings Button */}
           <button
             type="button"
             onClick={handleOpenSettings}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+            className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
           >
-            <Settings className="h-4 w-4" />
+            <div className="flex h-5 w-5 items-center justify-center">
+              <Settings className="h-5 w-5" />
+            </div>
             设置
           </button>
         </div>
