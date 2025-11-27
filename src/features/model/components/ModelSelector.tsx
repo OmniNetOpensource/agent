@@ -144,6 +144,10 @@ export function ModelSelector() {
     }
   }, [search]);
 
+  if (loading) {
+    return null;
+  }
+
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -151,21 +155,13 @@ export function ModelSelector() {
         onClick={() => setIsOpen(!isOpen)}
         className={`
           flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
-          bg-background/50 hover:bg-accent/50 border border-border/50 backdrop-blur-sm
-          text-foreground min-w-[180px] justify-between shadow-sm hover:shadow-md
-          ${
-            isOpen
-              ? "ring-2 ring-primary/20 border-primary/40 bg-accent/50"
-              : ""
-          }
+          bg-transparent hover:bg-(--surface-hover) backdrop-blur-sm
+          text-foreground min-w-[180px] justify-between
+          ${isOpen ? "bg-accent/50" : ""}
         `}
       >
         <span className="truncate">
-          {loading && models.length === 0
-            ? "加载模型中..."
-            : error
-            ? "模型加载失败"
-            : currentModelLabel || "未选择模型"}
+          {error ? "模型加载失败" : currentModelLabel || "未选择模型"}
         </span>
         <ChevronDown
           className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${
@@ -175,7 +171,7 @@ export function ModelSelector() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-full z-50 min-w-[240px] overflow-hidden rounded-2xl border border-border/50 bg-popover/80 backdrop-blur-xl shadow-float origin-top-left animate-enter-down">
+        <div className="absolute top-full mt-2 left-0 w-full z-50 min-w-[240px] overflow-hidden rounded-2xl bg-popover/80 backdrop-blur-xl shadow-float origin-top-left animate-enter-down">
           <div className="p-1.5">
             {error ? (
               <div className="px-3 py-2 text-xs text-muted-foreground">
@@ -189,7 +185,7 @@ export function ModelSelector() {
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="搜索模型..."
                     disabled={models.length === 0 || loading}
-                    className="w-full rounded-lg border border-border/50 bg-muted/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-60"
+                    className="w-full rounded-lg bg-muted/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-60"
                   />
                 </div>
 
