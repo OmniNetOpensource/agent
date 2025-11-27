@@ -12,9 +12,6 @@ export function ConversationList() {
     (state) => state.conversationsLoading
   );
   const activeConversationId = useChatStore((state) => state.conversationId);
-  const deleteConversation = useChatStore(
-    (state) => state.deleteConversation
-  );
   const selectConversation = useChatStore((state) => state.selectConversation);
   const pending = useChatStore((state) => state.pending);
 
@@ -51,14 +48,7 @@ export function ConversationList() {
                 return;
               }
             }
-            await selectConversation(conversation.id);
             router.push(`/c/${conversation.id}`);
-          }}
-          onDelete={async () => {
-            await deleteConversation(conversation.id);
-            if (conversation.id === activeConversationId) {
-              router.push("/");
-            }
           }}
         />
       ))}

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(dir \"d:\\develop\\projects\\agent\\app\")"
     ],
     "deny": [],
     "ask": []

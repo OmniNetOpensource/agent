@@ -24,7 +24,7 @@ export default function Home() {
               <MessageList />
             </div>
           )}
-          <Composer />
+          <Composer isNewchat />
         </div>
         <PreviewPanel />
       </main>

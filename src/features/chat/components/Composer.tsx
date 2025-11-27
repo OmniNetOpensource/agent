@@ -11,23 +11,55 @@ import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
-export function Composer() {
+type ComposerProps = {
+  isNewchat: boolean;
+};
+
+export function Composer({ isNewchat }: ComposerProps) {
   const router = useRouter();
-  const messages = useChatStore((state) => state.messages);
+  const conversationId = useChatStore((state) => state.conversationId);
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
   const pendingAttachments = useChatStore((state) => state.pendingAttachments);
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
+  const createConversation = useChatStore((state) => state.createConversation);
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
-  const isInitial = messages.length === 0;
+  const submitMessage = async () => {
+    const trimmed = input.trim();
+    const hasContent = trimmed.length > 0;
+    const hasAttachment = pendingAttachments.length > 0;
+
+    if (pending || (!hasContent && !hasAttachment)) {
+      return;
+    }
+
+    if (isNewchat) {
+      const title =
+        trimmed.length > 50
+          ? `${trimmed.slice(0, 50)}...`
+          : trimmed || "新会话";
+      const newConversationId = await createConversation(title);
+
+      if (!newConversationId) {
+        await sendMessage();
+        return;
+      }
+
+      router.push(`/c/${newConversationId}`);
+      await sendMessage();
+      return;
+    }
+
+    await sendMessage();
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await sendMessage(undefined, (id) => router.push(`/c/${id}`));
+    await submitMessage();
   };
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -36,7 +68,7 @@ export function Composer() {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      void sendMessage(undefined, (id) => router.push(`/c/${id}`));
+      void submitMessage();
     }
   };
 
@@ -87,16 +119,16 @@ export function Composer() {
   const hasAttachments = pendingAttachments.length > 0;
   const sendDisabled = pending ? false : !hasText && !hasAttachments;
 
-  const formClassName = isInitial
+  const formClassName = isNewchat
     ? "flex flex-1 items-center justify-center py-12"
     : "absolute inset-x-0 bottom-0 z-20";
-  const containerClassName = isInitial
+  const containerClassName = isNewchat
     ? "w-full max-w-3xl animate-enter-down px-6"
     : "w-full max-w-3xl mx-auto px-4 py-6 animate-enter-up";
 
   return (
     <form
-      key={isInitial ? "form-initial" : "form-bottom"}
+      key={isNewchat ? "form-initial" : "form-bottom"}
       onSubmit={handleSubmit}
       className={formClassName}
     >

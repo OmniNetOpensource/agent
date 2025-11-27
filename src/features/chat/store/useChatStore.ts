@@ -26,6 +26,7 @@ export type ChatState = {
   pendingAttachments: Attachment[];
   conversations: Conversation[];
   conversationId: string | null;
+  latestSelectRequestId: number;
   conversationsLoading: boolean;
 };
 
@@ -39,18 +40,16 @@ export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
   clear: () => void;
+  createConversation: (title?: string) => Promise<string | null>;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
-  sendMessage: (
-    value?: string,
-    onConversationCreated?: (id: string) => void
-  ) => Promise<void>;
+  sendMessage: (value?: string) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
   fetchConversations: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
-  selectConversation: (id: string) => Promise<boolean>;
+  selectConversation: (id: string, onFail?: () => void) => Promise<boolean>;
   addConversation: (conversation: Conversation) => void;
 };
 
@@ -63,6 +62,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   pendingAttachments: [],
   conversations: [],
   conversationId: null,
+  latestSelectRequestId: 0,
   conversationsLoading: false,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
@@ -75,6 +75,40 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       conversationId: null,
       abortController: null,
     }),
+  createConversation: async (title) => {
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = (await response.json()) as { id: string; title?: string };
+      const conversationTitle =
+        typeof data.title === "string" && data.title.trim()
+          ? data.title
+          : "新会话";
+
+      set({ conversationId: data.id });
+
+      get().addConversation({
+        id: data.id,
+        title: conversationTitle,
+        user_id: "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      return data.id;
+    } catch (error) {
+      console.error("[Conversations] Failed to create", error);
+      return null;
+    }
+  },
   addAttachments: async (files) => {
     const items = Array.from(files || []);
     if (items.length === 0) {
@@ -414,25 +448,24 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       alert("删除会话失败，请稍后重试。");
     }
   },
-  selectConversation: async (id) => {
+  selectConversation: async (id, onFail) => {
     const { abortController } = get();
     if (abortController) {
       abortController.abort();
     }
 
-    set({
-      pending: false,
-      abortController: null,
-      pendingAttachments: [],
-      input: "",
-      conversationId: id,
-    });
+    const requestId = get().latestSelectRequestId + 1;
+
+    set({ latestSelectRequestId: requestId });
 
     try {
       const response = await fetch(`/api/conversations/${id}/messages`, {
         cache: "no-cache",
       });
       if (!response.ok) {
+        if (get().latestSelectRequestId === requestId) {
+          onFail?.();
+        }
         return false;
       }
 
@@ -448,15 +481,22 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
           : [],
       }));
 
+      if (get().latestSelectRequestId !== requestId) {
+        return false;
+      }
+
       set({ messages: normalized, conversationId: id, pending: false });
       return true;
     } catch (error) {
       console.error("[Conversations] Failed to load messages", error);
       set({ pending: false });
+      if (get().latestSelectRequestId === requestId) {
+        onFail?.();
+      }
       return false;
     }
   },
-  sendMessage: async (value, onConversationCreated) => {
+  sendMessage: async (value) => {
     const trimmed = (value ?? get().input).trim();
     const attachments = get().pendingAttachments;
     if (get().pending) {
@@ -541,6 +581,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                       ? data.conversationId
                       : null;
                   if (id) {
+                    set({ conversationId: id });
                     const title =
                       typeof data.title === "string" ? data.title : "新会话";
                     get().addConversation({
@@ -550,9 +591,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                       created_at: new Date().toISOString(),
                       updated_at: new Date().toISOString(),
                     });
-                    if (onConversationCreated) {
-                      onConversationCreated(id);
-                    }
                   }
                   continue;
                 }
