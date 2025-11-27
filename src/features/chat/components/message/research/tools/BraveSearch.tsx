@@ -148,18 +148,17 @@ function SearchResultCard({
             {description}
           </p>
         ) : (
-          <p className="text-xs italic text-(--text-tertiary)">No metadata available</p>
+          <p className="text-xs italic text-(--text-tertiary)">
+            No metadata available
+          </p>
         )}
       </div>
 
       {/* Footer */}
       <div className="relative z-10 flex items-center justify-between border-t border-(--border-subtle) pt-3 mt-auto">
-        <span className="truncate text-[10px] font-mono font-medium text-(--text-tertiary) transition-colors group-hover:text-(--text-secondary)">
-          SOURCE_LINK_V1
-        </span>
         <div className="flex items-center gap-1 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-(--color-brand)">
-           <span className="text-[10px] font-bold">VISIT</span>
-           <ExternalLink className="h-3 w-3" />
+          <span className="text-[10px] font-bold">VISIT</span>
+          <ExternalLink className="h-3 w-3" />
         </div>
       </div>
     </a>

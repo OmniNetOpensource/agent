@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { Moon, PanelLeft, Plus, Sun } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { Moon, PanelLeft, Sun } from "lucide-react";
+
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { LoginButton } from "@/src/features/auth/components/LoginButton";
 import { UserMenu } from "@/src/features/auth/components/UserMenu";
 import { ConversationList } from "./ConversationList";
+import { NewChatButton } from "@/src/shared/components/NewChatButton";
 
 export default function Sidebar() {
-  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -20,16 +19,7 @@ export default function Sidebar() {
     () => false
   );
   const { theme, toggleTheme } = useTheme();
-  const {
-    user,
-    loading: authLoading,
-    signOut,
-    supabaseReady,
-  } = useAuth();
-  const clear = useChatStore((state) => state.clear);
-  const fetchConversations = useChatStore((state) => state.fetchConversations);
-  const pending = useChatStore((state) => state.pending);
-  const previousUserId = useRef<string | null>(null);
+  const { user, loading: authLoading, signOut, supabaseReady } = useAuth();
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (
@@ -72,18 +62,6 @@ export default function Sidebar() {
     });
   };
 
-  const handleNewChat = () => {
-    if (pending) {
-      const confirmed = window.confirm(
-        "AI正在生成内容，离开当前对话可能会丢失正在生成的内容，确定要离开吗？"
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-    router.push("/c/new");
-  };
-
   const toggleCollapsed = () => {
     setIsCollapsed((prev) => !prev);
   };
@@ -92,21 +70,7 @@ export default function Sidebar() {
     if (!supabaseReady) {
       return;
     }
-
-    if (user) {
-      if (previousUserId.current !== user.id) {
-        previousUserId.current = user.id;
-        void fetchConversations();
-      }
-    } else if (previousUserId.current) {
-      previousUserId.current = null;
-      useChatStore.setState({
-        conversations: [],
-        conversationId: null,
-      });
-      clear();
-    }
-  }, [user, supabaseReady, fetchConversations, clear]);
+  }, [supabaseReady]);
 
   return (
     <aside
@@ -133,23 +97,7 @@ export default function Sidebar() {
             }`}
           />
         </button>
-        <button
-          type="button"
-          onClick={handleNewChat}
-          className={`group relative inline-flex items-center justify-center overflow-hidden rounded-lg bg-background shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-sm disabled:hover:translate-y-0 ${
-            isCollapsed ? "h-10 w-10 rounded-xl" : "h-9 flex-1 px-3"
-          }`}
-          aria-label="新对话"
-        >
-          <Plus
-            className={`h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90 ${
-              isCollapsed ? "" : "mr-2"
-            }`}
-          />
-          {!isCollapsed && (
-            <span className="text-sm font-medium text-foreground">新对话</span>
-          )}
-        </button>
+        <NewChatButton isCollapsed={isCollapsed} />
         {mounted && !isCollapsed && (
           <button
             type="button"

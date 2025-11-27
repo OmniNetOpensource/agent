@@ -12,7 +12,7 @@ export function ConversationList() {
     (state) => state.conversationsLoading
   );
   const activeConversationId = useChatStore((state) => state.conversationId);
-  const selectConversation = useChatStore((state) => state.selectConversation);
+
   const pending = useChatStore((state) => state.pending);
 
   if (conversationsLoading) {
