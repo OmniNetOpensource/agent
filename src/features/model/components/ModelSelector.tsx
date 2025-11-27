@@ -157,7 +157,7 @@ export function ModelSelector() {
           flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
           bg-transparent hover:bg-(--surface-hover) backdrop-blur-sm
           text-foreground min-w-[180px] justify-between
-          ${isOpen ? "bg-accent/50" : ""}
+          ${isOpen ? "bg-(--surface-hover)" : ""}
         `}
       >
         <span className="truncate">
