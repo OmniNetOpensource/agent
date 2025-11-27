@@ -73,12 +73,12 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
+      className={`flex h-full shrink-0 overflow-x-hidden flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
         isCollapsed ? "w-20" : "w-[280px]"
       }`}
     >
       <div
-        className={`px-4 py-5 ${
+        className={`px-4 py-5 shrink-0 overflow-x-hidden ${
           isCollapsed
             ? "flex flex-col items-center gap-4"
             : "flex items-center justify-between gap-2"
@@ -115,7 +115,7 @@ export default function Sidebar() {
       </div>
 
       {mounted && isCollapsed && (
-        <div className="flex justify-center pb-4">
+        <div className="flex justify-center pb-4 shrink-0 overflow-x-hidden">
           <button
             type="button"
             onClick={handleThemeToggle}
@@ -132,29 +132,33 @@ export default function Sidebar() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-2">
-        {!isCollapsed && (
-          <div className="flex h-full flex-col gap-3">
-            <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
-              <span>历史记录</span>
-              {user && (
-                <span className="text-[11px] text-(--text-tertiary)">
-                  {authLoading ? "同步中..." : "已登录"}
-                </span>
-              )}
-            </div>
-            {user ? (
-              <ConversationList />
-            ) : (
-              <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
-                登录后可保存并查看历史记录，未登录仅在当前页临时存储。
-              </div>
+      <div className="flex-1 shrink-0 overflow-x-hidden overflow-y-auto px-4 py-2">
+        <div
+          className={`flex h-full flex-col gap-3 transition-opacity duration-300 ${
+            isCollapsed ? "opacity-0 invisible" : "opacity-100 visible"
+          }`}
+        >
+          <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
+            <span>历史记录</span>
+            {user && (
+              <span className="text-[11px] text-(--text-tertiary)">
+                {authLoading ? "同步中..." : "已登录"}
+              </span>
             )}
           </div>
-        )}
+          {user ? (
+            <ConversationList />
+          ) : (
+            <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
+              登录后可保存并查看历史记录，未登录仅在当前页临时存储。
+            </div>
+          )}
+        </div>
       </div>
 
-      <ProfileSection isCollapsed={isCollapsed} />
+      <div className="overflow-x-hidden">
+        <ProfileSection isCollapsed={isCollapsed} />
+      </div>
     </aside>
   );
 }

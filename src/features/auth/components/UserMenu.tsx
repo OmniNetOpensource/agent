@@ -63,20 +63,15 @@ export function UserMenu({
   };
 
   return (
-    <div
-      className={`relative ${isCollapsed ? "flex justify-center" : "w-full"}`}
-      ref={containerRef}
-    >
+    <div className={`relative w-full`} ref={containerRef}>
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`flex items-center gap-3 rounded-xl border border-(--border-subtle) bg-(--surface-card) text-sm shadow-sm transition-colors hover:bg-(--surface-hover) cursor-pointer ${
-          isCollapsed
-            ? "h-12 w-12 justify-center p-0"
-            : "w-full justify-between px-3 py-2"
-        }`}
+        className={`flex items-center gap-3 rounded-xl border border-(--border-subtle) bg-(--surface-card) text-sm shadow-sm transition-colors hover:bg-(--surface-hover) cursor-pointer 
+        w-full justify-between px-3 py-2
+          `}
       >
-        <span className="flex min-w-0 items-center gap-3">
+        <span className="flex min-w-0 items-center gap-3 shrink-0">
           <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-(--surface-muted) text-sm font-semibold text-foreground ring-1 ring-(--border-subtle)">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -89,26 +84,21 @@ export function UserMenu({
               displayName.slice(0, 1).toUpperCase()
             )}
           </span>
-          {!isCollapsed && (
-            <span className="flex min-w-0 flex-col text-left">
-              <span className="truncate font-semibold text-foreground">
-                {displayName}
-              </span>
-              {user.email && (
-                <span className="truncate text-xs text-(--text-tertiary)">
-                  {user.email}
-                </span>
-              )}
-            </span>
-          )}
-        </span>
-        {!isCollapsed && (
-          <ChevronDown
-            className={`h-4 w-4 text-(--text-tertiary) transition-transform ${
-              open ? "rotate-180" : ""
+          <span
+            className={`flex min-w-0 flex-col text-left transition-all duration-300 ${
+              isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
             }`}
-          />
-        )}
+          >
+            <span className="truncate font-semibold text-foreground">
+              {displayName}
+            </span>
+            {user.email && (
+              <span className="truncate text-xs text-(--text-tertiary)">
+                {user.email}
+              </span>
+            )}
+          </span>
+        </span>
       </button>
 
       {open && (
