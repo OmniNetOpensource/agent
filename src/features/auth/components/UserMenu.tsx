@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { ChevronDown, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { SettingsModal } from "./SettingsModal";
 
 type UserMenuProps = {

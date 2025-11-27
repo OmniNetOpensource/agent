@@ -435,13 +435,13 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     const nextMessages = [...existingMessages, userMessage];
     const controller = new AbortController();
 
-    set((state) => ({
+    set({
       messages: nextMessages,
       input: "",
       pending: true,
       abortController: controller,
       pendingAttachments: [],
-    }));
+    });
 
     try {
       const response = await fetch("/api/chat", {
