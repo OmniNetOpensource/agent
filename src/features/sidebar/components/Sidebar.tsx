@@ -6,9 +6,8 @@ import { Moon, PanelLeft, Sun } from "lucide-react";
 
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
-import { LoginButton } from "@/src/features/auth/components/LoginButton";
-import { UserMenu } from "@/src/features/auth/components/UserMenu";
 import { ConversationList } from "./ConversationList";
+import { ProfileSection } from "./ProfileSection";
 import { NewChatButton } from "@/src/shared/components/NewChatButton";
 
 export default function Sidebar() {
@@ -19,7 +18,7 @@ export default function Sidebar() {
     () => false
   );
   const { theme, toggleTheme } = useTheme();
-  const { user, loading: authLoading, signOut, supabaseReady } = useAuth();
+  const { user, loading: authLoading, supabaseReady } = useAuth();
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (
@@ -155,18 +154,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      <div className="border-t border-(--border-subtle) px-4 py-4">
-        {user ? (
-          <UserMenu
-            user={user}
-            onSignOut={async () => {
-              await signOut();
-            }}
-          />
-        ) : (
-          <LoginButton isCollapsed={isCollapsed} />
-        )}
-      </div>
+      <ProfileSection isCollapsed={isCollapsed} />
     </aside>
   );
 }

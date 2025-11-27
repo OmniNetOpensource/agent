@@ -9,6 +9,7 @@ type ConversationsState = {
 type ConversationsActions = {
   addConversation: (conversation: Conversation) => void;
   setConversations: (conversations: Conversation[]) => void;
+  fetchConversations: () => Promise<void>;
 };
 
 export const useConversationsStore = create<
@@ -24,5 +25,19 @@ export const useConversationsStore = create<
       return { conversations: [conversation, ...filtered] };
     }),
   setConversations: (conversations) => set({ conversations }),
-}));
+  fetchConversations: async () => {
+    set({ conversationsLoading: true });
+    try {
+      const res = await fetch("/api/conversations?limit=10");
+      const data = await res.json();
 
+      if (data?.conversations) {
+        set({ conversations: data.conversations });
+      }
+    } catch (error) {
+      console.error("Failed to fetch conversations:", error);
+    } finally {
+      set({ conversationsLoading: false });
+    }
+  },
+}));

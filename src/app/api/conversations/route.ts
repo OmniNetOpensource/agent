@@ -3,10 +3,14 @@ import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
 import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { Conversation } from "@/types/conversation";
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json({ conversations: [] as Conversation[] });
   }
+
+  const { searchParams } = new URL(request.url);
+  const parsedLimit = Number.parseInt(searchParams.get("limit") ?? "10", 10);
+  const limit = Number.isNaN(parsedLimit) ? 10 : parsedLimit;
 
   const supabase = await createSupabaseServerClient();
   const {
@@ -25,7 +29,8 @@ export async function GET() {
     .from("conversations")
     .select("*")
     .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .limit(limit);
 
   if (error) {
     console.error("[Conversations] Failed to fetch", error.message);

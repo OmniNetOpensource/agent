@@ -49,7 +49,7 @@ export function ConversationItem({
         isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
       }`}
     >
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-(--surface-muted) text-sm font-semibold text-foreground">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--surface-muted) text-sm font-semibold text-foreground">
         {title.slice(0, 1).toUpperCase()}
       </div>
       <div className="min-w-0 flex-1">

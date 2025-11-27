@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
@@ -12,8 +13,15 @@ export function ConversationList() {
   const conversationsLoading = useConversationsStore(
     (state) => state.conversationsLoading
   );
+  const fetchConversations = useConversationsStore(
+    (state) => state.fetchConversations
+  );
   const activeConversationId = useChatStore((state) => state.conversationId);
   const pending = useChatStore((state) => state.pending);
+
+  useEffect(() => {
+    void fetchConversations();
+  }, [fetchConversations]);
 
   if (conversationsLoading) {
     return (
