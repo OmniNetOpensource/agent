@@ -51,6 +51,22 @@
 
   --spacing-unit: 0.25rem;
 
+  /* Z-index Scale - Semantic Layering System */
+  --z-base: 0;
+  --z-sidebar: 10;
+  --z-sticky: 10;
+  --z-card-inner: 10;
+  --z-composer: 20;
+  --z-header: 20;
+  --z-dropdown: 30;
+  --z-popover: 30;
+  --z-tooltip: 30;
+  --z-draggable: 40;
+  --z-modal-backdrop: 50;
+  --z-modal-content: 51;
+  --z-notification: 60;
+  --z-toast: 60;
+
   /* Tailwind mappings */
   --color-background: var(--surface-base);
   --color-foreground: var(--text-primary);
@@ -151,6 +167,21 @@ html.dark {
   --transition-smooth: cubic-bezier(0.32, 0.72, 0, 1);
   --transition-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1); /* bouncy */
   --transition-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Z-index values - Enable z-[value] classes */
+  --z-sidebar: 10;
+  --z-sticky: 10;
+  --z-card-inner: 10;
+  --z-composer: 20;
+  --z-header: 20;
+  --z-dropdown: 30;
+  --z-popover: 30;
+  --z-tooltip: 30;
+  --z-draggable: 40;
+  --z-modal-backdrop: 50;
+  --z-modal-content: 51;
+  --z-notification: 60;
+  --z-toast: 60;
 }
 
 html {

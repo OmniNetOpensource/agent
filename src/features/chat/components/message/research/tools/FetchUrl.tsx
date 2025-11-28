@@ -113,7 +113,7 @@ const FetchTerminal: React.FC<FetchTerminalProps> = ({
 
   return (
     <div className="w-full font-mono text-xs sm:text-sm my-2 relative group">
-      <div className="bg-(--surface-muted) rounded-lg overflow-hidden border border-(--border-subtle) shadow-soft relative z-10 transition-colors duration-300">
+      <div className="bg-(--surface-muted) rounded-lg overflow-hidden border border-(--border-subtle) shadow-soft relative z-[var(--z-card-inner)] transition-colors duration-300">
         <div
           onClick={onToggle}
           className="bg-(--surface-card) px-4 py-2 flex items-center justify-between border-b border-(--border-subtle) cursor-pointer hover:bg-(--surface-hover) transition-colors"
@@ -140,7 +140,7 @@ const FetchTerminal: React.FC<FetchTerminalProps> = ({
             isExpanded ? "h-56 opacity-100" : "h-0 p-0 opacity-0 hidden"
           }`}
         >
-          <div className="relative z-10 space-y-1">
+          <div className="relative z-[var(--z-card-inner)] space-y-1">
             <AnimatePresence mode="popLayout">
               {logs.map((log) => (
                 <motion.div

@@ -108,7 +108,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
 
   const formClassName = isNewchat
     ? "flex flex-1 items-center justify-center py-12"
-    : "absolute inset-x-0 bottom-0 z-20";
+    : "absolute inset-x-0 bottom-0 z-[var(--z-composer)]";
   const containerClassName = isNewchat
     ? "w-full max-w-3xl animate-enter-down px-6"
     : "w-full max-w-3xl mx-auto px-4 py-6 animate-enter-up";

@@ -43,7 +43,7 @@ export default function RootLayout({
   } catch (e) {}
 })();`}</Script>
         <div className="flex h-screen bg-background text-foreground">
-          <div className="h-full overflow-visible z-10">
+          <div className="h-full overflow-visible z-[var(--z-sidebar)]">
             <Sidebar />
           </div>
           <div className="relative flex-1 overflow-hidden flex flex-col">

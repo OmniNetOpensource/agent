@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { usePreviewStore } from "../store/usePreviewStore";
 
@@ -41,7 +40,8 @@ const buildSrcDoc = (code: string, language?: string) => {
   ${htmlContent}
   ${
     safeScript
-      ? `<script>
+      ? `
+  <script>
   try {
     ${safeScript}
   } catch (error) {
@@ -55,15 +55,13 @@ const buildSrcDoc = (code: string, language?: string) => {
 };
 
 export function PreviewPanel() {
-  const { isOpen, code, language, closePreview, panelWidth, setPanelWidth } =
-    usePreviewStore();
-  const [isDragging, setIsDragging] = useState(false);
+  const { isOpen, code, language, closePreview } = usePreviewStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const DEFAULT_WIDTH = 480;
 
   // 拖拽调整宽度
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsDragging(true);
 
     // 禁用 iframe 鼠标事件，避免拖拽被 iframe 捕获
     const iframe = containerRef.current?.querySelector("iframe");
@@ -72,9 +70,6 @@ export function PreviewPanel() {
     }
 
     const containerRight = window.innerWidth;
-
-    // 用于记录最终宽度
-    let finalWidth = panelWidth;
     let rafId: number | null = null;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -83,20 +78,13 @@ export function PreviewPanel() {
       rafId = requestAnimationFrame(() => {
         if (!containerRef.current) return;
         const newWidth = containerRight - moveEvent.clientX;
-        finalWidth = Math.min(900, Math.max(200, newWidth));
-        containerRef.current.style.width = `${finalWidth}px`;
+        const clampedWidth = Math.min(900, Math.max(200, newWidth));
+        containerRef.current.style.width = `${clampedWidth}px`;
         rafId = null;
       });
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
-      // 拖拽结束后同步到 state
-      setPanelWidth(finalWidth);
-      // 清除内联样式，让 framer-motion 接管
-      if (containerRef.current) {
-        containerRef.current.style.width = "";
-      }
       if (rafId) {
         cancelAnimationFrame(rafId);
         rafId = null;
@@ -118,58 +106,53 @@ export function PreviewPanel() {
 
   const srcDoc = buildSrcDoc(code, language);
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          ref={containerRef}
-          className="h-full border-l border-(--border-subtle) bg-background flex flex-col relative"
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: panelWidth, opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          style={{ willChange: isDragging ? "width" : undefined }}
-          transition={
-            isDragging
-              ? { duration: 0 }
-              : { type: "spring", stiffness: 300, damping: 30 }
-          }
+    <div
+      ref={containerRef}
+      className="h-full border-l border-(--border-subtle) bg-background flex flex-col relative"
+      style={{ width: DEFAULT_WIDTH }}
+    >
+      {/* 拖拽分隔线 */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="absolute left-0 top-0 h-full w-4 -translate-x-1/2 cursor-col-resize z-[var(--z-draggable)] flex items-center justify-center group"
+      >
+        {/* 细线 */}
+        <div
+          className={`h-full w-[2px] transition-colors bg-(--text-tertiary) group-hover:bg-(--text-secondary)`}
+        />
+        {/* 椭圆手柄 */}
+        <div
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-1.5 rounded-full transition-colors bg-(--text-tertiary) group-hover:bg-(--text-secondary)`}
+        />
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-3 shrink-0">
+        <div className="text-sm font-semibold text-(--text-secondary)">
+          实时预览 {language ? `· ${language.toUpperCase()}` : ""}
+        </div>
+        <button
+          type="button"
+          onClick={closePreview}
+          className="inline-flex items-center gap-2 rounded-md border border-(--border-subtle) bg-(--surface-card) px-3 py-1.5 text-xs font-medium text-(--text-secondary) shadow-sm transition-colors hover:border-(--border-hover) hover:text-foreground"
         >
-          {/* 拖拽分隔线 */}
-          <div
-            onMouseDown={handleMouseDown}
-            className={`absolute left-0 top-0 h-full w-1.5 cursor-col-resize z-10 transition-colors ${
-              isDragging
-                ? "bg-(--text-tertiary)"
-                : "bg-transparent hover:bg-(--border-hover)"
-            }`}
-          />
+          <X className="h-4 w-4" />
+          关闭
+        </button>
+      </div>
 
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-3 shrink-0">
-            <div className="text-sm font-semibold text-(--text-secondary)">
-              实时预览 {language ? `· ${language.toUpperCase()}` : ""}
-            </div>
-            <button
-              type="button"
-              onClick={closePreview}
-              className="inline-flex items-center gap-2 rounded-md border border-(--border-subtle) bg-(--surface-card) px-3 py-1.5 text-xs font-medium text-(--text-secondary) shadow-sm transition-colors hover:border-(--border-hover) hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-              关闭
-            </button>
-          </div>
-
-          {/* Preview iframe */}
-          <div className="flex-1 min-h-0 bg-background">
-            <iframe
-              title="代码预览"
-              srcDoc={srcDoc}
-              className="h-full w-full border-0"
-              sandbox="allow-scripts"
-            />
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      {/* Preview iframe */}
+      <div className="flex-1 min-h-0 bg-background">
+        <iframe
+          title="代码预览"
+          srcDoc={srcDoc}
+          className="h-full w-full border-0"
+          sandbox="allow-scripts"
+        />
+      </div>
+    </div>
   );
 }

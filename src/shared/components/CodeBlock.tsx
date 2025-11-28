@@ -125,7 +125,7 @@ export default function CodeBlock({
       <div
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cx(
-          "sticky top-0 z-10 flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-(--surface-hover) transition-all duration-200 ease-in-out",
+          "sticky top-0 z-[var(--z-sticky)] flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-(--surface-hover) transition-all duration-200 ease-in-out",
           isCollapsed ? "rounded-lg" : "rounded-t-lg"
         )}
       >

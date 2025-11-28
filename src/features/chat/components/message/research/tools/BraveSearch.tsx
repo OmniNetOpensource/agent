@@ -110,7 +110,7 @@ function SearchResultCard({
       <div className="absolute -right-px bottom-6 h-6 w-[2px] bg-foreground opacity-0 transition-all duration-300 group-hover:opacity-100" />
 
       {/* Header */}
-      <div className="relative z-10 flex items-start gap-3">
+      <div className="relative z-[var(--z-card-inner)] flex items-start gap-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-(--surface-hover) text-foreground transition-all duration-300 group-hover:scale-105">
           <Globe className="h-4 w-4" />
         </div>
@@ -134,7 +134,7 @@ function SearchResultCard({
       </div>
 
       {/* Description */}
-      <div className="relative z-10 min-h-[40px]">
+      <div className="relative z-[var(--z-card-inner)] min-h-[40px]">
         {description ? (
           <p
             className="text-xs leading-relaxed text-(--text-secondary) font-medium"
@@ -155,7 +155,7 @@ function SearchResultCard({
       </div>
 
       {/* Footer */}
-      <div className="relative z-10 flex items-center justify-between border-t border-(--border-subtle) pt-3 mt-auto">
+      <div className="relative z-[var(--z-card-inner)] flex items-center justify-between border-t border-(--border-subtle) pt-3 mt-auto">
         <div className="flex items-center gap-1 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-(--color-brand)">
           <span className="text-[10px] font-bold">VISIT</span>
           <ExternalLink className="h-3 w-3" />
@@ -207,8 +207,8 @@ export function BraveSearch({ tool }: BraveSearchProps) {
           {braveResults.length > 0 ? (
             <div className="overflow-x-auto bg-(--surface-muted) rounded-xl border border-(--border-subtle) p-3 relative group/scroll">
               {/* Scroll indicators */}
-              <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-10 pointer-events-none" />
+              <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
 
               <div className="flex gap-3 w-max pb-2">
                 {braveResults.map((result, index) => (

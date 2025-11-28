@@ -87,7 +87,7 @@ export function SettingsModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-md"
+      className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-black/35 backdrop-blur-md"
       onClick={onClose}
     >
       <div
