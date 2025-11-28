@@ -6,9 +6,7 @@ export function MessageList() {
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
 
-  if (messages.length === 0) {
-    return null;
-  }
+
 
   return (
     <div

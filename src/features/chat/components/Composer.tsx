@@ -49,7 +49,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
     if (isNewRoute) {
       if (user) {
         const newId = generateConversationId();
-        setConversationId(newId, { skipFetch: true });
+        setConversationId(newId);
         window.history.replaceState(null, "", `/c/${newId}`);
 
         const title =

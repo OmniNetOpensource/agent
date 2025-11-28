@@ -67,11 +67,9 @@ export function UserMenu({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className={`flex items-center gap-3 rounded-xl border border-(--border-subtle) bg-(--surface-card) text-sm shadow-sm transition-colors hover:bg-(--surface-hover) cursor-pointer 
-        w-full justify-between px-1.5 py-1
-          `}
+        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm transition-colors hover:bg-(--surface-hover)"
       >
-        <span className="flex min-w-0 items-center gap-3 shrink-0">
+        <span className="flex min-w-0 items-center gap-2 shrink-0">
           <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-(--surface-muted) text-sm font-semibold text-foreground ring-1 ring-(--border-subtle)">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

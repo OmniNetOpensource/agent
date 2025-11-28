@@ -38,10 +38,7 @@ type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
-  setConversationId: (
-    id: string | null,
-    options?: { skipFetch?: boolean }
-  ) => Promise<boolean | void>;
+  setConversationId: (id: string | null) => Promise<boolean | void>;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
@@ -49,7 +46,6 @@ export type ChatActions = {
   sendMessage: (value?: string) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
-  selectConversation: (id: string, onFail?: () => void) => Promise<boolean>;
 };
 
 export const generateConversationId = () =>
@@ -68,9 +64,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   latestSelectRequestId: 0,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
-  setConversationId: async (nextConversationId, options) => {
+  setConversationId: async (nextConversationId) => {
     const previousId = get().conversationId;
-    const skipFetch = options?.skipFetch ?? false;
 
     if (previousId === nextConversationId) {
       return;
@@ -83,13 +78,67 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return { ...state, conversationId: nextConversationId, messages: [] };
     });
 
-    if (skipFetch || !nextConversationId || nextConversationId === "new") {
+    if (
+      previousId === "new" ||
+      !nextConversationId ||
+      nextConversationId === "new"
+    ) {
       return;
     }
 
-    return get().selectConversation(nextConversationId, () => {
-      set({ conversationId: "new", messages: [], pending: false });
-    });
+    const fetchConversationMessages = async (id: string): Promise<boolean> => {
+      const { abortController } = get();
+      if (abortController) {
+        abortController.abort();
+      }
+
+      const requestId = get().latestSelectRequestId + 1;
+      set({ latestSelectRequestId: requestId });
+
+      try {
+        const response = await fetch(`/api/conversations/${id}/messages`, {
+          cache: "no-cache",
+        });
+        if (!response.ok) {
+          if (get().latestSelectRequestId === requestId) {
+            set({ conversationId: "new", messages: [], pending: false });
+          }
+          return false;
+        }
+
+        const data = (await response.json()) as { messages?: DbMessage[] };
+        const normalized: Message[] = (data.messages ?? []).map((msg) => ({
+          role: msg.role,
+          blocks: Array.isArray(msg.blocks)
+            ? msg.blocks.map((block) =>
+                block.type === "research"
+                  ? {
+                      ...block,
+                      items: block.items.map((item) => ({ ...item })),
+                    }
+                  : { ...block }
+              )
+            : [],
+        }));
+
+        if (get().latestSelectRequestId !== requestId) {
+          return false;
+        }
+
+        set({ messages: normalized, conversationId: id, pending: false });
+        return true;
+      } catch (error) {
+        console.error("[Conversations] Failed to load messages", error);
+        set({ pending: false });
+        if (get().latestSelectRequestId === requestId) {
+          set({ conversationId: "new", messages: [], pending: false });
+        }
+        return false;
+      }
+    };
+
+    // Fetch the conversation's messages
+    return fetchConversationMessages(nextConversationId);
   },
   clear: () =>
     set({
@@ -381,58 +430,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   },
   setCurrentModel: (model) => {
     set({ currentModel: model });
-  },
-  selectConversation: async (id, onFail) => {
-    if (!id || id === "new") {
-      return false;
-    }
-
-    const { abortController } = get();
-    if (abortController) {
-      abortController.abort();
-    }
-
-    const requestId = get().latestSelectRequestId + 1;
-
-    set({ latestSelectRequestId: requestId });
-
-    try {
-      const response = await fetch(`/api/conversations/${id}/messages`, {
-        cache: "no-cache",
-      });
-      if (!response.ok) {
-        if (get().latestSelectRequestId === requestId) {
-          onFail?.();
-        }
-        return false;
-      }
-
-      const data = (await response.json()) as { messages?: DbMessage[] };
-      const normalized: Message[] = (data.messages ?? []).map((msg) => ({
-        role: msg.role,
-        blocks: Array.isArray(msg.blocks)
-          ? msg.blocks.map((block) =>
-              block.type === "research"
-                ? { ...block, items: block.items.map((item) => ({ ...item })) }
-                : { ...block }
-            )
-          : [],
-      }));
-
-      if (get().latestSelectRequestId !== requestId) {
-        return false;
-      }
-
-      set({ messages: normalized, conversationId: id, pending: false });
-      return true;
-    } catch (error) {
-      console.error("[Conversations] Failed to load messages", error);
-      set({ pending: false });
-      if (get().latestSelectRequestId === requestId) {
-        onFail?.();
-      }
-      return false;
-    }
   },
   sendMessage: async (value) => {
     const trimmed = (value ?? get().input).trim();

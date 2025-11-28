@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, LogIn } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "@/src/features/auth/hooks/useAuth";
 
 type LoginButtonProps = {
   isCollapsed?: boolean;

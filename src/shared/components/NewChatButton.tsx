@@ -29,19 +29,19 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
     <button
       type="button"
       onClick={handleNewChat}
-      className={`group relative inline-flex items-center justify-center overflow-hidden rounded-lg bg-background shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-sm disabled:hover:translate-y-0 ${
-        isCollapsed ? "h-10 w-10 rounded-xl" : "h-9 flex-1 px-3"
-      }`}
+      className="group relative inline-flex h-10 w-full items-center overflow-hidden rounded-xl cursor-pointer text-foreground transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-50"
       aria-label="新对话"
     >
-      <Plus
-        className={`h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90 ${
-          isCollapsed ? "" : "mr-2"
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center">
+        <Plus className="h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90" />
+      </span>
+      <span
+        className={`overflow-hidden whitespace-nowrap text-sm font-medium text-foreground transition-all duration-300 ${
+          isCollapsed ? "w-0 opacity-0" : "opacity-100"
         }`}
-      />
-      {!isCollapsed && (
-        <span className="text-sm font-medium text-foreground">新对话</span>
-      )}
+      >
+        新对话
+      </span>
     </button>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { LoginButton } from "@/src/features/auth/components/LoginButton";
-import { UserMenu } from "@/src/features/auth/components/UserMenu";
+import { LoginButton } from "./LoginButton";
+import { UserMenu } from "./UserMenu";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 
 type ProfileSectionProps = {
@@ -12,8 +12,8 @@ export function ProfileSection({ isCollapsed }: ProfileSectionProps) {
   const { user, signOut } = useAuth();
 
   return (
-    <div className={`px-4 py-4`}>
-      <div className={isCollapsed ? "flex justify-center" : undefined}>
+    <div className={`px-2 py-4`}>
+      <div className={"flex justify-center" }>
         {user ? (
           <UserMenu
             user={user}
