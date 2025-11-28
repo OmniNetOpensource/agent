@@ -1,40 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 
 type Props = {
-  conversationId: string | null;
+  conversationId: string;
 };
 
 export default function ConversationClient({ conversationId }: Props) {
-  const router = useRouter();
-  const clear = useChatStore((state) => state.clear);
-  const setMessages = useChatStore((state) => state.setMessages);
-  const selectConversation = useChatStore((state) => state.selectConversation);
+  const messages = useChatStore((state) => state.messages);
   const setConversationId = useChatStore((state) => state.setConversationId);
-  const [loading, setLoading] = useState(conversationId !== null);
+  const [loading, setLoading] = useState(conversationId !== "new");
 
-  const isNewChat = conversationId === null;
+  const isNewChat = conversationId === "new";
+  const hasMessages = messages.length > 0;
 
   useEffect(() => {
-    if (isNewChat) {
-      clear();
-      return;
-    }
+    let cancelled = false;
 
-    setConversationId(conversationId);
-    setMessages([]);
+    const load = async () => {
+      setLoading(true);
+      await setConversationId(conversationId);
+      if (!cancelled) {
+        setLoading(false);
+      }
+    };
 
-    selectConversation(conversationId, () => {
-      alert("加载对话失败，请重试");
-      router.push("/c/new");
-    }).finally(() => {
-      setLoading(false);
-    });
-  }, []);
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, setConversationId]);
 
   if (isNewChat) {
     return null;
@@ -42,14 +40,16 @@ export default function ConversationClient({ conversationId }: Props) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
-      {loading ? (
+      {loading && !hasMessages ? (
         <div className="flex-1 flex items-center justify-center text-(--text-tertiary) text-sm">
           加载中...
         </div>
-      ) : (
+      ) : hasMessages ? (
         <div className="flex-1 min-h-0 overflow-y-auto">
           <MessageList />
         </div>
+      ) : (
+        <div className="flex-1" />
       )}
     </div>
   );

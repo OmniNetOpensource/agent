@@ -38,7 +38,10 @@ type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
-  setConversationId: (id: string | null) => void;
+  setConversationId: (
+    id: string | null,
+    options?: { skipFetch?: boolean }
+  ) => Promise<boolean | void>;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
@@ -65,14 +68,36 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   latestSelectRequestId: 0,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
-  setConversationId: (conversationId) => set({ conversationId }),
+  setConversationId: async (nextConversationId, options) => {
+    const previousId = get().conversationId;
+    const skipFetch = options?.skipFetch ?? false;
+
+    if (previousId === nextConversationId) {
+      return;
+    }
+
+    set((state) => {
+      if (state.conversationId === nextConversationId) {
+        return state;
+      }
+      return { ...state, conversationId: nextConversationId, messages: [] };
+    });
+
+    if (skipFetch || !nextConversationId || nextConversationId === "new") {
+      return;
+    }
+
+    return get().selectConversation(nextConversationId, () => {
+      set({ conversationId: "new", messages: [], pending: false });
+    });
+  },
   clear: () =>
     set({
       messages: [],
       input: "",
       pending: false,
       pendingAttachments: [],
-      conversationId: null,
+      conversationId: "new",
       abortController: null,
     }),
   addAttachments: async (files) => {
@@ -358,6 +383,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     set({ currentModel: model });
   },
   selectConversation: async (id, onFail) => {
+    if (!id || id === "new") {
+      return false;
+    }
+
     const { abortController } = get();
     if (abortController) {
       abortController.abort();
@@ -450,7 +479,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         signal: controller.signal,
         body: JSON.stringify({
           conversationHistory: nextMessages,
-          conversationId: currentConversationId,
+          conversationId:
+            currentConversationId && currentConversationId !== "new"
+              ? currentConversationId
+              : null,
           model: selectedModel,
         }),
       });
