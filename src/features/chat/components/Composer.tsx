@@ -8,20 +8,18 @@ import {
   useRef,
 } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
-import {
-  generateConversationId,
-  useChatStore,
-} from "@/src/features/chat/store/useChatStore";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
-import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 
 type ComposerProps = {
   isNewRoute: boolean;
 };
 
 export function Composer({ isNewRoute }: ComposerProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
@@ -29,11 +27,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
-  const setConversationId = useChatStore((state) => state.setConversationId);
   const messages = useChatStore((state) => state.messages);
-  const addConversation = useConversationsStore(
-    (state) => state.addConversation
-  );
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
@@ -46,27 +40,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
       return;
     }
 
-    if (isNewRoute) {
-      if (user) {
-        const newId = generateConversationId();
-        setConversationId(newId);
-        window.history.replaceState(null, "", `/c/${newId}`);
-
-        const title =
-          trimmed.length > 50
-            ? `${trimmed.slice(0, 50)}...`
-            : trimmed || "新会话";
-        addConversation({
-          id: newId,
-          title,
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      }
-    }
-
-    await sendMessage();
+    await sendMessage(user ? router : undefined);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

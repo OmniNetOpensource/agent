@@ -17,6 +17,7 @@ import {
 import { create } from "zustand";
 import type { DbMessage } from "@/types/conversation";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 export type ChatState = {
   messages: Message[];
@@ -38,12 +39,12 @@ type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
-  setConversationId: (id: string | null) => Promise<boolean | void>;
+  setConversation: (id: string | null) => Promise<boolean | void>;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
-  sendMessage: (value?: string) => Promise<void>;
+  sendMessage: (router?: AppRouterInstance) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
 };
@@ -64,7 +65,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   latestSelectRequestId: 0,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
-  setConversationId: async (nextConversationId) => {
+  setConversation: async (nextConversationId) => {
     const previousId = get().conversationId;
 
     if (previousId === nextConversationId) {
@@ -78,11 +79,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return { ...state, conversationId: nextConversationId, messages: [] };
     });
 
-    if (
-      previousId === "new" ||
-      !nextConversationId ||
-      nextConversationId === "new"
-    ) {
+    if (!nextConversationId || nextConversationId === "new") {
       return;
     }
 
@@ -431,8 +428,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   setCurrentModel: (model) => {
     set({ currentModel: model });
   },
-  sendMessage: async (value) => {
-    const trimmed = (value ?? get().input).trim();
+  sendMessage: async (router) => {
+    const input = get().input;
+    const trimmed = input.trim();
     const attachments = get().pendingAttachments;
     if (get().pending) {
       return;
@@ -442,7 +440,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const selectedModel = get().currentModel;
-    const currentConversationId = get().conversationId;
+    let currentConversationId = get().conversationId;
     const existingMessages = get().messages;
 
     const userBlocks: ContentBlock[] = [];
@@ -459,15 +457,32 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     };
 
     const nextMessages = [...existingMessages, userMessage];
+
     const controller = new AbortController();
 
-    set({
-      messages: nextMessages,
-      input: "",
-      pending: true,
-      abortController: controller,
-      pendingAttachments: [],
-    });
+    if (currentConversationId === "new" && router) {
+      const newId = generateConversationId();
+      currentConversationId = newId;
+
+      set({
+        conversationId: newId,
+        messages: nextMessages,
+        input: "",
+        pending: true,
+        abortController: controller,
+        pendingAttachments: [],
+      });
+
+      router.push(`/c/${newId}`);
+    } else {
+      set({
+        messages: nextMessages,
+        input: "",
+        pending: true,
+        abortController: controller,
+        pendingAttachments: [],
+      });
+    }
 
     try {
       const response = await fetch("/api/chat", {
@@ -519,18 +534,53 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
                       ? data.conversationId
                       : null;
                   if (id) {
-                    set({ conversationId: id });
                     const title =
                       typeof data.title === "string" ? data.title : "新会话";
+                    const user_id =
+                      typeof data.user_id === "string" ? data.user_id : "";
+                    const created_at =
+                      typeof data.created_at === "string"
+                        ? data.created_at
+                        : new Date().toISOString();
+                    const updated_at =
+                      typeof data.updated_at === "string"
+                        ? data.updated_at
+                        : new Date().toISOString();
                     const { addConversation } =
                       useConversationsStore.getState();
                     addConversation({
                       id,
                       title,
-                      user_id: "",
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
+                      user_id,
+                      created_at,
+                      updated_at,
                     });
+                  }
+                  continue;
+                }
+
+                if (data.type === "conversation_updated") {
+                  const id =
+                    typeof data.conversationId === "string"
+                      ? data.conversationId
+                      : null;
+                  if (id) {
+                    const updated_at =
+                      typeof data.updated_at === "string"
+                        ? data.updated_at
+                        : new Date().toISOString();
+                    const { conversations, setConversations } =
+                      useConversationsStore.getState();
+                    const existing = conversations.find(
+                      (item) => item.id === id
+                    );
+                    if (existing) {
+                      const updated = { ...existing, updated_at };
+                      const remaining = conversations.filter(
+                        (item) => item.id !== id
+                      );
+                      setConversations([updated, ...remaining]);
+                    }
                   }
                   continue;
                 }
@@ -638,27 +688,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         content: `Error: ${message}`,
       });
     } finally {
-      const activeConversationId = get().conversationId;
-      if (activeConversationId) {
-        const { conversations, setConversations } =
-          useConversationsStore.getState();
-        const existing = conversations.find(
-          (item) => item.id === activeConversationId
-        );
-        if (existing) {
-          const updated = {
-            ...existing,
-            updated_at: new Date().toISOString(),
-          };
-          const remaining = conversations.filter(
-            (item) => item.id !== activeConversationId
-          );
-          setConversations([updated, ...remaining]);
-        }
-        set({ pending: false, abortController: null });
-      } else {
-        set({ pending: false, abortController: null });
-      }
+      set({ pending: false, abortController: null });
     }
   },
 }));

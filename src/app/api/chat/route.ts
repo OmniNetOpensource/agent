@@ -294,6 +294,17 @@ export async function POST(req: Request) {
     }
 
     let activeConversationId = conversationId ?? null;
+    let conversationCreatedEvent:
+      | {
+          type: "conversation_created";
+          conversationId: string;
+          title: string;
+          user_id: string;
+          created_at: string;
+          updated_at: string;
+        }
+      | null = null;
+
     const history: Message[] = conversationHistory.map((message) => ({
       ...message,
       blocks: Array.isArray(message.blocks) ? message.blocks : [],
@@ -316,21 +327,33 @@ export async function POST(req: Request) {
         activeConversationId = null;
       } else if (!existingConversation) {
         const title = buildConversationTitle(latestUserMessage);
+        const now = new Date().toISOString();
         const { error: createConversationError } = await supabase
           .from("conversations")
           .insert({
             id: activeConversationId,
             user_id: supabaseUser.id,
             title,
+            created_at: now,
+            updated_at: now,
           });
 
-          if (createConversationError) {
-            console.error(
-              "[Chat-API] Failed to create conversation:",
-              createConversationError.message
-            );
-            activeConversationId = null;
-          }
+        if (createConversationError) {
+          console.error(
+            "[Chat-API] Failed to create conversation:",
+            createConversationError.message
+          );
+          activeConversationId = null;
+        } else if (activeConversationId) {
+          conversationCreatedEvent = {
+            type: "conversation_created",
+            conversationId: activeConversationId,
+            title,
+            user_id: supabaseUser.id,
+            created_at: now,
+            updated_at: now,
+          };
+        }
       }
     }
 
@@ -353,6 +376,12 @@ export async function POST(req: Request) {
           userMessageId: null,
           assistantMessageId: null,
         };
+
+        if (conversationCreatedEvent) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(conversationCreatedEvent)}\n\n`)
+          );
+        }
 
         const closeStream = () => {
           if (!streamClosed) {
@@ -569,6 +598,14 @@ export async function POST(req: Request) {
                 partialAssistantBlocks,
                 messageIds
               );
+              const updatedEvent = {
+                type: "conversation_updated",
+                conversationId: activeConversationId,
+                updated_at: new Date().toISOString(),
+              };
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
+              );
             }
 
             console.log("[Chat-API] Executing", toolCalls.length, "tool calls");
@@ -674,6 +711,14 @@ export async function POST(req: Request) {
               latestUserMessage,
               assistantBlocks,
               messageIds
+            );
+            const updatedEvent = {
+              type: "conversation_updated",
+              conversationId: activeConversationId,
+              updated_at: new Date().toISOString(),
+            };
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
             );
           }
 

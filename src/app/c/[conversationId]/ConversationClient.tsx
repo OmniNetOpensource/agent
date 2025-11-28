@@ -9,10 +9,10 @@ type Props = {
 };
 
 export default function ConversationClient({ conversationId }: Props) {
-  const setConversationId = useChatStore((state) => state.setConversationId);
+  const setConversation = useChatStore((state) => state.setConversation);
 
   useEffect(() => {
-    setConversationId(conversationId);
+    setConversation(conversationId);
   }, [conversationId]);
 
   return conversationId !== "new" ? (

@@ -19,7 +19,7 @@ export function ConversationList() {
   const hasFetched = useConversationsStore((state) => state.hasFetched);
   const activeConversationId = useChatStore((state) => state.conversationId);
   const pending = useChatStore((state) => state.pending);
-  const setConversationId = useChatStore((state) => state.setConversationId);
+  const setConversation = useChatStore((state) => state.setConversation);
 
   useEffect(() => {
     if (hasFetched) {
@@ -68,7 +68,7 @@ export function ConversationList() {
                 return;
               }
             }
-            setConversationId(conversation.id);
+            setConversation(conversation.id);
             router.push(`/c/${conversation.id}`);
           }}
         />
