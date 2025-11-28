@@ -16,12 +16,24 @@ export function ConversationList() {
   const fetchConversations = useConversationsStore(
     (state) => state.fetchConversations
   );
+  const hasFetched = useConversationsStore((state) => state.hasFetched);
   const activeConversationId = useChatStore((state) => state.conversationId);
   const pending = useChatStore((state) => state.pending);
+  const setConversationId = useChatStore((state) => state.setConversationId);
 
   useEffect(() => {
+    if (hasFetched) {
+      return;
+    }
     void fetchConversations();
-  }, [fetchConversations]);
+  }, [fetchConversations, hasFetched]);
+
+  useEffect(() => {
+    if (!conversations.length) return;
+    for (const item of conversations) {
+      void router.prefetch(`/c/${item.id}`);
+    }
+  }, [conversations, router]);
 
   if (conversationsLoading) {
     return (
@@ -56,6 +68,7 @@ export function ConversationList() {
                 return;
               }
             }
+            setConversationId(conversation.id);
             router.push(`/c/${conversation.id}`);
           }}
         />

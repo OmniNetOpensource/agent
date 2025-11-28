@@ -24,32 +24,22 @@ export async function GET(
 
   const { data: conversation, error: convError } = await supabase
     .from("conversations")
-    .select("user_id")
+    .select(
+      "user_id, messages(id, conversation_id, role, blocks, created_at)"
+    )
     .eq("id", id)
-    .single();
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true, foreignTable: "messages" })
+    .maybeSingle();
 
-  if (convError || !conversation || conversation.user_id !== user.id) {
+  if (convError || !conversation) {
     return NextResponse.json(
       { error: "Conversation not found" },
       { status: 404 }
     );
   }
 
-  const { data, error } = await supabase
-    .from("messages")
-    .select("id, conversation_id, role, blocks, created_at")
-    .eq("conversation_id", id)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error("[Messages] Failed to fetch", error.message);
-    return NextResponse.json(
-      { error: "Failed to load messages" },
-      { status: 500 }
-    );
-  }
-
-  const messages = (data ?? []).map((message) => ({
+  const messages = (conversation.messages ?? []).map((message) => ({
     ...message,
     blocks: Array.isArray(message.blocks) ? message.blocks : [],
   })) as DbMessage[];

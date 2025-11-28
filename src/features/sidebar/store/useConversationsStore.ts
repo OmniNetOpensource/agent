@@ -4,6 +4,7 @@ import type { Conversation } from "@/types/conversation";
 type ConversationsState = {
   conversations: Conversation[];
   conversationsLoading: boolean;
+  hasFetched: boolean;
 };
 
 type ConversationsActions = {
@@ -17,6 +18,7 @@ export const useConversationsStore = create<
 >((set) => ({
   conversations: [],
   conversationsLoading: false,
+  hasFetched: false,
   addConversation: (conversation) =>
     set((state) => {
       const filtered = state.conversations.filter(
@@ -26,18 +28,36 @@ export const useConversationsStore = create<
     }),
   setConversations: (conversations) => set({ conversations }),
   fetchConversations: async () => {
-    set({ conversationsLoading: true });
+    let skip = false;
+    set((state) => {
+      if (state.hasFetched || state.conversationsLoading) {
+        skip = true;
+        return state;
+      }
+      return { ...state, conversationsLoading: true };
+    });
+
+    if (skip) {
+      return;
+    }
+
+    let fetched = false;
     try {
       const res = await fetch("/api/conversations?limit=10");
       const data = await res.json();
 
       if (data?.conversations) {
-        set({ conversations: data.conversations });
+        fetched = true;
+        set({ conversations: data.conversations, hasFetched: true });
       }
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
     } finally {
-      set({ conversationsLoading: false });
+      set((state) => ({
+        ...state,
+        conversationsLoading: false,
+        hasFetched: state.hasFetched || fetched,
+      }));
     }
   },
 }));

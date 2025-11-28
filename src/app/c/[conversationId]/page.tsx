@@ -34,26 +34,19 @@ export default async function ConversationPage({ params }: Props) {
 
   const { data: conversation, error: convError } = await supabase
     .from("conversations")
-    .select("*")
+    .select(
+      "id, user_id, title, created_at, updated_at, messages(id, conversation_id, role, blocks, created_at)"
+    )
     .eq("id", conversationId)
     .eq("user_id", user.id)
-    .single();
+    .order("created_at", { ascending: true, foreignTable: "messages" })
+    .maybeSingle();
 
   if (convError || !conversation) {
     notFound();
   }
 
-  const { data: messages, error: msgError } = await supabase
-    .from("messages")
-    .select("id, conversation_id, role, blocks, created_at")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
-
-  if (msgError) {
-    notFound();
-  }
-
-  const normalizedMessages: Message[] = (messages ?? []).map((message) => ({
+  const normalizedMessages: Message[] = (conversation.messages ?? []).map((message) => ({
     role: message.role,
     blocks: Array.isArray(message.blocks)
       ? message.blocks.map((block) =>
@@ -71,7 +64,13 @@ export default async function ConversationPage({ params }: Props) {
     <ConversationClient
       conversationId={conversationId}
       initialMessages={normalizedMessages}
-      conversation={conversation as Conversation}
+      conversation={{
+        id: conversation.id,
+        user_id: conversation.user_id,
+        title: conversation.title,
+        created_at: conversation.created_at,
+        updated_at: conversation.updated_at,
+      }}
     />
   );
 }
