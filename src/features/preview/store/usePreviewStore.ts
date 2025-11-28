@@ -9,6 +9,7 @@ export type PreviewState = {
 export type PreviewActions = {
   openPreview: (code: string, language: string) => void;
   closePreview: () => void;
+  resetPreview: () => void;
 };
 
 export const usePreviewStore = create<PreviewState & PreviewActions>((set) => ({
@@ -17,4 +18,5 @@ export const usePreviewStore = create<PreviewState & PreviewActions>((set) => ({
   language: "",
   openPreview: (code, language) => set({ isOpen: true, code, language }),
   closePreview: () => set({ isOpen: false }),
+  resetPreview: () => set({ isOpen: false, code: "", language: "" }),
 }));

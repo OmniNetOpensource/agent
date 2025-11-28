@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { ConversationItem } from "./ConversationItem";
 
 export function ConversationList() {
-  const router = useRouter();
   const conversations = useConversationsStore((state) => state.conversations);
   const conversationsLoading = useConversationsStore(
     (state) => state.conversationsLoading
@@ -18,8 +16,6 @@ export function ConversationList() {
   );
   const hasFetched = useConversationsStore((state) => state.hasFetched);
   const activeConversationId = useChatStore((state) => state.conversationId);
-  const pending = useChatStore((state) => state.pending);
-  const setConversation = useChatStore((state) => state.setConversation);
 
   useEffect(() => {
     if (hasFetched) {
@@ -27,13 +23,6 @@ export function ConversationList() {
     }
     void fetchConversations();
   }, [fetchConversations, hasFetched]);
-
-  useEffect(() => {
-    if (!conversations.length) return;
-    for (const item of conversations) {
-      void router.prefetch(`/c/${item.id}`);
-    }
-  }, [conversations, router]);
 
   if (conversationsLoading) {
     return (
@@ -59,18 +48,6 @@ export function ConversationList() {
           key={conversation.id}
           conversation={conversation}
           isActive={conversation.id === activeConversationId}
-          onClick={async () => {
-            if (pending) {
-              const confirmed = window.confirm(
-                "AI正在生成内容，离开当前对话可能会丢失正在生成的内容，确定要离开吗？"
-              );
-              if (!confirmed) {
-                return;
-              }
-            }
-            setConversation(conversation.id);
-            router.push(`/c/${conversation.id}`);
-          }}
         />
       ))}
     </div>

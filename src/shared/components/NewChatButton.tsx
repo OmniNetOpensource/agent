@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 
 interface NewChatButtonProps {
   isCollapsed?: boolean;
@@ -11,6 +12,7 @@ interface NewChatButtonProps {
 export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
   const router = useRouter();
   const { pending, clear } = useChatStore();
+  const { resetPreview } = usePreviewStore();
 
   const handleNewChat = () => {
     if (pending) {
@@ -23,6 +25,7 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
     }
     router.push("/c/new");
     clear();
+    resetPreview();
   };
 
   return (

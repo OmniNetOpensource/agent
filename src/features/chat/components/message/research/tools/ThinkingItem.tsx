@@ -19,7 +19,7 @@ export const ThinkingItem = memo(function ThinkingItem({
   const contentId = `thinking-item-${itemKey}`;
 
   return (
-    <div className="group border-b border-(--border-subtle) last:border-0 animate-enter-down">
+    <div className="group border-b border-(--border-subtle) last:border-0">
       <button
         type="button"
         onClick={toggleItem}

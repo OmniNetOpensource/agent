@@ -101,7 +101,7 @@ function SearchResultCard({
         "group relative flex w-[280px] shrink-0 flex-col gap-3 rounded-xl p-4 transition-all duration-500 ease-out",
         "bg-(--surface-card) border border-(--border-subtle)",
         "hover:-translate-y-2 hover:shadow-float hover:border-(--border-hover)",
-        "animate-enter-down"
+        ""
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -180,7 +180,7 @@ export function BraveSearch({ tool }: BraveSearchProps) {
   const braveResults = result ? parseBraveSearchResults(result.result) : null;
 
   return (
-    <div className="animate-enter-down px-4 py-2">
+    <div className="px-4 py-2">
       {/* Searching State */}
       {!result && (
         <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-sm text-(--text-secondary)">

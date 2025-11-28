@@ -18,6 +18,7 @@ import { create } from "zustand";
 import type { DbMessage } from "@/types/conversation";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { fetchConversationMessages } from "@/src/features/chat/lib/api";
 
 export type ChatState = {
   messages: Message[];
@@ -40,6 +41,11 @@ export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
   setConversation: (id: string | null) => Promise<boolean | void>;
+  setLoadedConversation: (
+    id: string,
+    messages: Message[],
+    navigate?: () => void
+  ) => void;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
@@ -65,6 +71,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   latestSelectRequestId: 0,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
+  setLoadedConversation: (id, messages, navigate) => {
+    set({ conversationId: id, messages, pending: false });
+    if (navigate) {
+      navigate();
+    }
+  },
   setConversation: async (nextConversationId) => {
     const previousId = get().conversationId;
 
@@ -83,59 +95,35 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    const fetchConversationMessages = async (id: string): Promise<boolean> => {
-      const { abortController } = get();
-      if (abortController) {
-        abortController.abort();
-      }
+    const { abortController } = get();
+    if (abortController) {
+      abortController.abort();
+    }
 
-      const requestId = get().latestSelectRequestId + 1;
-      set({ latestSelectRequestId: requestId });
+    const requestId = get().latestSelectRequestId + 1;
+    set({ latestSelectRequestId: requestId });
 
-      try {
-        const response = await fetch(`/api/conversations/${id}/messages`, {
-          cache: "no-cache",
-        });
-        if (!response.ok) {
-          if (get().latestSelectRequestId === requestId) {
-            set({ conversationId: "new", messages: [], pending: false });
-          }
-          return false;
-        }
+    try {
+      const normalized = await fetchConversationMessages(nextConversationId);
 
-        const data = (await response.json()) as { messages?: DbMessage[] };
-        const normalized: Message[] = (data.messages ?? []).map((msg) => ({
-          role: msg.role,
-          blocks: Array.isArray(msg.blocks)
-            ? msg.blocks.map((block) =>
-                block.type === "research"
-                  ? {
-                      ...block,
-                      items: block.items.map((item) => ({ ...item })),
-                    }
-                  : { ...block }
-              )
-            : [],
-        }));
-
-        if (get().latestSelectRequestId !== requestId) {
-          return false;
-        }
-
-        set({ messages: normalized, conversationId: id, pending: false });
-        return true;
-      } catch (error) {
-        console.error("[Conversations] Failed to load messages", error);
-        set({ pending: false });
-        if (get().latestSelectRequestId === requestId) {
-          set({ conversationId: "new", messages: [], pending: false });
-        }
+      if (get().latestSelectRequestId !== requestId) {
         return false;
       }
-    };
 
-    // Fetch the conversation's messages
-    return fetchConversationMessages(nextConversationId);
+      set({
+        messages: normalized,
+        conversationId: nextConversationId,
+        pending: false,
+      });
+      return true;
+    } catch (error) {
+      console.error("[Conversations] Failed to load messages", error);
+      set({ pending: false });
+      if (get().latestSelectRequestId === requestId) {
+        set({ conversationId: "new", messages: [], pending: false });
+      }
+      return false;
+    }
   },
   clear: () =>
     set({

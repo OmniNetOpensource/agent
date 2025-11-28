@@ -91,7 +91,7 @@ export function SettingsModal({
       onClick={onClose}
     >
       <div
-        className="relative h-[50vh] w-[50vw] min-w-[320px] max-w-4xl rounded-[var(--radius-lg)] border border-(--border-subtle) bg-(--surface-card) p-6 shadow-lg animate-scale-in"
+        className="relative h-[50vh] w-[50vw] min-w-[320px] max-w-4xl rounded-[var(--radius-lg)] border border-(--border-subtle) bg-(--surface-card) p-6 shadow-lg"
         style={{ boxShadow: "var(--shadow-float)" }}
         onClick={(event) => event.stopPropagation()}
       >

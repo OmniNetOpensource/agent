@@ -226,7 +226,7 @@ export function FetchUrl({ tool }: FetchUrlProps) {
     : "pending";
 
   return (
-    <div className="animate-enter-down px-4">
+    <div className="px-4">
       <FetchTerminal url={url} status={status} progress={progress} />
     </div>
   );

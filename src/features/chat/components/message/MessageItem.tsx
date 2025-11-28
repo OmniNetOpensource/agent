@@ -42,7 +42,7 @@ export const MessageItem = memo(function MessageItem({
     <div
       key={`${message.role}-${index}`}
       className={cx(
-        "flex flex-col space-y-2 animate-enter-up",
+        "flex flex-col space-y-2",
         isUser ? "ml-auto max-w-[85%]" : "mr-auto w-full max-w-[95%]"
       )}
     >

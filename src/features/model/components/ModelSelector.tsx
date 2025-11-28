@@ -171,7 +171,7 @@ export function ModelSelector() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-full z-[var(--z-dropdown)] min-w-[240px] overflow-hidden rounded-2xl bg-popover/80 backdrop-blur-xl shadow-float origin-top-left animate-enter-down">
+        <div className="absolute top-full mt-2 left-0 w-full z-[var(--z-dropdown)] min-w-[240px] overflow-hidden rounded-2xl bg-popover/80 backdrop-blur-xl shadow-float origin-top-left">
           <div className="p-1.5">
             {error ? (
               <div className="px-3 py-2 text-xs text-muted-foreground">
@@ -240,7 +240,7 @@ export function ModelSelector() {
                             >
                               <span>{highlightLabel(model.label, search)}</span>
                               {currentModel === model.id && (
-                                <Check className="w-3.5 h-3.5 text-primary animate-scale-in" />
+                                <Check className="w-3.5 h-3.5 text-primary" />
                               )}
                             </button>
                           </div>
