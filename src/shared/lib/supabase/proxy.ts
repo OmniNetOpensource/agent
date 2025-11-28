@@ -29,8 +29,9 @@ export async function updateSession(request: NextRequest) {
       },
     });
 
-    // 用 getUser 而非 getSession，因为 getUser 会实际向服务器验证 token
-    await supabase.auth.getUser();
+    // 用 getSession 做本地验证，避免每次请求都发网络请求到 Supabase
+    // 这会自动刷新过期的 session cookie
+    await supabase.auth.getSession();
 
     return response;
   } catch (error) {

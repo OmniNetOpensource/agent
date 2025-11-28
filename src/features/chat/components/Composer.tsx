@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ChangeEvent,
   FormEvent,
@@ -16,10 +18,10 @@ import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 
 type ComposerProps = {
-  isNewchat: boolean;
+  isNewRoute: boolean;
 };
 
-export function Composer({ isNewchat }: ComposerProps) {
+export function Composer({ isNewRoute }: ComposerProps) {
   const { user } = useAuth();
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
@@ -28,6 +30,7 @@ export function Composer({ isNewchat }: ComposerProps) {
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
   const setConversationId = useChatStore((state) => state.setConversationId);
+  const messages = useChatStore((state) => state.messages);
   const addConversation = useConversationsStore(
     (state) => state.addConversation
   );
@@ -43,7 +46,7 @@ export function Composer({ isNewchat }: ComposerProps) {
       return;
     }
 
-    if (isNewchat) {
+    if (isNewRoute) {
       if (user) {
         const newId = generateConversationId();
         setConversationId(newId);
@@ -127,6 +130,7 @@ export function Composer({ isNewchat }: ComposerProps) {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const sendDisabled = pending ? false : !hasText && !hasAttachments;
+  const isNewchat = isNewRoute && messages.length === 0;
 
   const formClassName = isNewchat
     ? "flex flex-1 items-center justify-center py-12"

@@ -1,69 +1,56 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Composer } from "@/src/features/chat/components/Composer";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MessageList } from "@/src/features/chat/components/MessageList";
-import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import type { Message } from "@/src/features/chat/types/chat";
-import type { Conversation } from "@/types/conversation";
 
 type Props = {
   conversationId: string | null;
-  initialMessages: Message[];
-  conversation?: Conversation;
 };
 
-export default function ConversationClient({
-  conversationId,
-  initialMessages,
-  conversation,
-}: Props) {
-  const setMessages = useChatStore((state) => state.setMessages);
-  const setConversationId = useChatStore((state) => state.setConversationId);
-  const messages = useChatStore((state) => state.messages);
+export default function ConversationClient({ conversationId }: Props) {
+  const router = useRouter();
   const clear = useChatStore((state) => state.clear);
-  const initializedRef = useRef(false);
+  const setMessages = useChatStore((state) => state.setMessages);
+  const selectConversation = useChatStore((state) => state.selectConversation);
+  const setConversationId = useChatStore((state) => state.setConversationId);
+  const [loading, setLoading] = useState(conversationId !== null);
 
   const isNewChat = conversationId === null;
 
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    clear();
-
     if (isNewChat) {
+      clear();
       return;
     }
 
     setConversationId(conversationId);
-    setMessages(initialMessages);
-  }, [
-    clear,
-    conversation,
-    conversationId,
-    initialMessages,
-    isNewChat,
-    setConversationId,
-    setMessages,
-  ]);
+    setMessages([]);
 
-  const hasMessages = messages.length > 0;
+    selectConversation(conversationId, () => {
+      alert("加载对话失败，请重试");
+      router.push("/c/new");
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, []);
+
+  if (isNewChat) {
+    return null;
+  }
 
   return (
-    <div className="flex h-full w-full flex-col">
-      <main className="relative flex-1 min-h-0 flex">
-        <div className="flex-1 min-w-0 flex flex-col relative">
-          {hasMessages && (
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <MessageList />
-            </div>
-          )}
-          <Composer isNewchat={isNewChat && !hasMessages} />
+    <div className="flex-1 min-h-0 flex flex-col">
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center text-(--text-tertiary) text-sm">
+          加载中...
         </div>
-        <PreviewPanel />
-      </main>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <MessageList />
+        </div>
+      )}
     </div>
   );
 }
