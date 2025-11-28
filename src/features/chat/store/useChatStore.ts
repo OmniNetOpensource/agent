@@ -15,7 +15,6 @@ import {
   readFileAsDataUrl,
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
-import type { DbMessage } from "@/types/conversation";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { fetchConversationMessages } from "@/src/features/chat/lib/api";

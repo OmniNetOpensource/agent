@@ -104,7 +104,7 @@ export function ConversationItem({
         setLoadedConversation(conversation.id, messages, () => {
           router.push(`/c/${conversation.id}`);
         });
-      } catch (error) {
+      } catch {
         // If fetch fails, let the normal navigation happen (it might retry or show error page)
         router.push(`/c/${conversation.id}`);
       } finally {
