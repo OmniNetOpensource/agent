@@ -66,6 +66,8 @@
   --z-modal-content: 51;
   --z-notification: 60;
   --z-toast: 60;
+  --z-mobile-overlay: 25;
+  --z-mobile-sidebar: 26;
 
   /* Tailwind mappings */
   --color-background: var(--surface-base);
@@ -212,6 +214,35 @@ body {
   background: var(--surface-overlay);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+/* Mobile Sidebar & Overlay */
+.mobile-sidebar-overlay {
+  animation: mobile-overlay-fade-in 180ms var(--transition-smooth);
+}
+
+.mobile-sidebar-drawer {
+  animation: mobile-sidebar-slide-in 220ms var(--transition-smooth);
+}
+
+@keyframes mobile-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-sidebar-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Interactive elements */

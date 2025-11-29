@@ -12,9 +12,9 @@ export function MessageList() {
     <div
       role="log"
       aria-live="polite"
-      className="w-full py-6 pr-2 pb-32"
+      className="w-full py-6 px-3 sm:px-4 md:px-0 pb-28 md:pb-32"
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col space-y-4">
+      <div className="mx-auto flex w-full max-w-3xl flex-col space-y-3 md:space-y-4">
         {messages.map((message, index) => {
           const isLastMessage = index === messages.length - 1;
           const isStreaming = isLastMessage && pending;

@@ -154,13 +154,13 @@ export function ModelSelector() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
+          flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer
           bg-transparent hover:bg-(--surface-hover) backdrop-blur-sm
-          text-foreground min-w-[180px] justify-between
+          text-foreground min-w-[120px] sm:min-w-[180px] justify-between
           ${isOpen ? "bg-(--surface-hover)" : ""}
         `}
       >
-        <span className="truncate">
+        <span className="max-w-[120px] sm:max-w-[160px] truncate">
           {error ? "模型加载失败" : currentModelLabel || "未选择模型"}
         </span>
         <ChevronDown
@@ -171,7 +171,7 @@ export function ModelSelector() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-full z-[var(--z-dropdown)] min-w-[240px] overflow-hidden rounded-2xl bg-popover/80 backdrop-blur-xl shadow-float origin-top-left">
+        <div className="absolute top-full mt-2 left-0 right-0 sm:right-auto z-[var(--z-dropdown)] min-w-[240px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-popover/80 backdrop-blur-xl shadow-float origin-top-left">
           <div className="p-1.5">
             {error ? (
               <div className="px-3 py-2 text-xs text-muted-foreground">
@@ -185,7 +185,7 @@ export function ModelSelector() {
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="搜索模型..."
                     disabled={models.length === 0 || loading}
-                    className="w-full rounded-lg bg-muted/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-60"
+                    className="w-full rounded-lg bg-muted/50 px-3 py-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-60"
                   />
                 </div>
 
@@ -229,7 +229,7 @@ export function ModelSelector() {
                                 setCurrentModel(model.id);
                               }}
                               className={`
-                                flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-sm text-left transition-all duration-200 cursor-pointer
+                                flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer
                                 hover:bg-(--surface-hover)
                                 ${
                                   currentModel === model.id

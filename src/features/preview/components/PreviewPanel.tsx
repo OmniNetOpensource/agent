@@ -111,7 +111,7 @@ export function PreviewPanel() {
   return (
     <div
       ref={containerRef}
-      className="h-full border-l border-(--border-subtle) bg-background flex flex-col relative"
+      className="hidden md:flex h-full border-l border-(--border-subtle) bg-background flex-col relative"
       style={{ width: DEFAULT_WIDTH }}
     >
       {/* 拖拽分隔线 */}

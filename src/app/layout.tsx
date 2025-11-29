@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Nunito, Geist_Mono } from "next/font/google";
 import { Header } from "@/src/features/chat/components/Header";
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
+import { MobileSidebarWrapper } from "@/src/features/sidebar/components/MobileSidebarWrapper";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -43,7 +44,8 @@ export default function RootLayout({
   } catch (e) {}
 })();`}</Script>
         <div className="flex h-screen bg-background text-foreground">
-          <div className="h-full overflow-visible z-[var(--z-sidebar)]">
+          <MobileSidebarWrapper />
+          <div className="hidden md:block h-full overflow-visible z-[var(--z-sidebar)]">
             <Sidebar />
           </div>
           <div className="relative flex-1 overflow-hidden flex flex-col">

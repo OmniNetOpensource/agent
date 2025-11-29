@@ -110,8 +110,8 @@ export function Composer({ isNewRoute }: ComposerProps) {
     ? "flex flex-1 items-center justify-center py-12"
     : "absolute inset-x-0 bottom-0 z-[var(--z-composer)]";
   const containerClassName = isNewchat
-    ? "w-full max-w-3xl px-6"
-    : "w-full max-w-3xl mx-auto px-4 py-6";
+    ? "w-full max-w-3xl px-3 sm:px-4 md:px-6"
+    : "w-full max-w-3xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6";
 
   return (
     <form
@@ -187,7 +187,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
             <button
               type="button"
               onClick={handlePickFiles}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+              className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
               title="添加附件"
             >
               <Paperclip className="h-5 w-5" />
@@ -204,7 +204,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="输入您的消息..."
-              className="min-h-10 max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
+              className="min-h-10 max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-sm sm:text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
               style={{ height: "44px" }}
             />
 
@@ -217,7 +217,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
                   stop();
                 }
               }}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+              className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
                 sendDisabled
                   ? "bg-(--surface-muted) text-(--text-tertiary) cursor-not-allowed"
                   : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-md"
