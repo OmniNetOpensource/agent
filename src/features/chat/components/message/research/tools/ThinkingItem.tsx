@@ -24,23 +24,18 @@ export const ThinkingItem = memo(function ThinkingItem({
         type="button"
         onClick={toggleItem}
         className={cx(
-          "flex w-full items-center gap-3 px-4 py-3 text-xs transition-colors hover:bg-(--surface-hover)",
+          "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-(--surface-hover)",
           isExpanded ? "bg-(--surface-hover)" : "bg-transparent"
         )}
         aria-expanded={isExpanded}
         aria-controls={contentId}
       >
-        <div
-          className={cx(
-            "flex items-center justify-center rounded-md p-1 transition-colors border",
-            "bg-(--surface-card) text-foreground border-(--border-strong)"
-          )}
-        >
+        <div className="flex items-center justify-center text-(--text-tertiary)">
           <Brain className="h-3.5 w-3.5" />
         </div>
 
-        <span className="flex-1 text-left font-mono font-medium text-(--text-secondary) tracking-tight">
-          THOUGHT_PROCESS
+        <span className="flex-1 text-left font-medium text-(--text-secondary)">
+          Thinking Process
         </span>
 
         <ChevronRight
@@ -58,7 +53,7 @@ export const ThinkingItem = memo(function ThinkingItem({
           isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs font-mono text-(--text-secondary) border-t border-(--border-subtle)">
+        <div className="overflow-x-auto bg-(--surface-muted) px-3 py-2 text-xs text-(--text-secondary)">
           <Markdown content={item.text} />
         </div>
       </div>

@@ -1,12 +1,13 @@
 import type { Tool } from "@/src/features/chat/types/chat";
 import Markdown from "@/src/shared/components/Markdown";
-import { Search, Zap, ExternalLink, Globe, Lock } from "lucide-react";
+import { Search, Zap, ExternalLink, Globe, ChevronRight } from "lucide-react";
 import { cx } from "@/src/shared/utils/cx";
 import { getToolLifecycle } from "../utils";
+import { useState } from "react";
 
-// ============================================================================
+// ==============================================================================
 // Types & Utilities
-// ============================================================================
+// ==============================================================================
 
 type BraveSearchResult = {
   title: string;
@@ -73,9 +74,9 @@ function tryGetHostname(url: string) {
   }
 }
 
-// ============================================================================
+// ==============================================================================
 // SearchResultCard Component (Internal)
-// ============================================================================
+// ==============================================================================
 
 type SearchResultCardProps = {
   title: string;
@@ -98,29 +99,23 @@ function SearchResultCard({
       target="_blank"
       rel="noreferrer noopener"
       className={cx(
-        "group relative flex w-[280px] shrink-0 flex-col gap-3 rounded-xl p-4 transition-all duration-500 ease-out",
+        "group relative flex w-[240px] shrink-0 flex-col gap-2 rounded-lg p-3 transition-all duration-300 ease-out",
         "bg-(--surface-card) border border-(--border-subtle)",
-        "hover:-translate-y-2 hover:shadow-float hover:border-(--border-hover)",
-        ""
+        "hover:-translate-y-1 hover:shadow-sm hover:border-(--border-hover)"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* Tech Decoration Lines - Minimalist */}
-      <div className="absolute -left-px top-6 h-6 w-[2px] bg-foreground opacity-0 transition-all duration-300 group-hover:opacity-100" />
-      <div className="absolute -right-px bottom-6 h-6 w-[2px] bg-foreground opacity-0 transition-all duration-300 group-hover:opacity-100" />
-
       {/* Header */}
-      <div className="relative z-[var(--z-card-inner)] flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-(--surface-hover) text-foreground transition-all duration-300 group-hover:scale-105">
-          <Globe className="h-4 w-4" />
+      <div className="flex items-start gap-2">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-(--surface-hover) text-(--text-secondary)">
+          <Globe className="h-3 w-3" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2 text-[10px] font-bold tracking-widest text-(--text-tertiary) transition-colors group-hover:text-(--text-secondary)">
-            <Lock className="h-2.5 w-2.5" />
-            <span className="truncate uppercase">{hostname}</span>
+          <div className="mb-0.5 text-[10px] font-medium text-(--text-tertiary) uppercase truncate">
+            {hostname}
           </div>
           <div
-            className="text-sm font-bold leading-tight text-foreground transition-colors"
+            className="text-xs font-semibold leading-tight text-foreground"
             style={{
               display: "-webkit-box",
               WebkitLineClamp: 2,
@@ -134,10 +129,10 @@ function SearchResultCard({
       </div>
 
       {/* Description */}
-      <div className="relative z-[var(--z-card-inner)] min-h-[40px]">
+      <div className="min-h-[32px]">
         {description ? (
           <p
-            className="text-xs leading-relaxed text-(--text-secondary) font-medium"
+            className="text-[10px] leading-relaxed text-(--text-secondary)"
             style={{
               display: "-webkit-box",
               WebkitLineClamp: 3,
@@ -148,26 +143,26 @@ function SearchResultCard({
             {description}
           </p>
         ) : (
-          <p className="text-xs italic text-(--text-tertiary)">
-            No metadata available
+          <p className="text-[10px] italic text-(--text-tertiary)">
+            No description
           </p>
         )}
       </div>
 
       {/* Footer */}
-      <div className="relative z-[var(--z-card-inner)] flex items-center justify-between border-t border-(--border-subtle) pt-3 mt-auto">
-        <div className="flex items-center gap-1 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 text-(--color-brand)">
-          <span className="text-[10px] font-bold">VISIT</span>
-          <ExternalLink className="h-3 w-3" />
+      <div className="flex items-center justify-end pt-2 mt-auto border-t border-(--border-subtle)">
+        <div className="flex items-center gap-1 text-(--text-tertiary) group-hover:text-(--color-brand) transition-colors">
+          <span className="text-[9px] font-medium">VISIT</span>
+          <ExternalLink className="h-2.5 w-2.5" />
         </div>
       </div>
     </a>
   );
 }
 
-// ============================================================================
+// ==============================================================================
 // BraveSearch Component (Main Export)
-// ============================================================================
+// ==============================================================================
 
 type BraveSearchProps = {
   tool: Tool;
@@ -178,19 +173,19 @@ export function BraveSearch({ tool }: BraveSearchProps) {
   const query =
     typeof tool.call.args.query === "string" ? tool.call.args.query : "Unknown query";
   const braveResults = result ? parseBraveSearchResults(result.result) : null;
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div className="px-4 py-2">
+    <div className="px-3 py-2">
       {/* Searching State */}
       {!result && (
-        <div className="flex items-center gap-3 rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-sm text-(--text-secondary)">
-          <div className="relative flex h-4 w-4 items-center justify-center">
+        <div className="flex items-center gap-2 text-xs text-(--text-secondary)">
+          <div className="relative flex h-3 w-3 items-center justify-center">
             <div className="absolute inset-0 animate-ping rounded-full bg-(--text-tertiary) opacity-20" />
-            <Search className="relative h-3.5 w-3.5 animate-pulse text-foreground" />
+            <Search className="relative h-3 w-3 animate-pulse text-foreground" />
           </div>
-          <span className="font-mono text-xs text-(--text-tertiary)">
-            SEARCHING_QUERY:{" "}
-            <span className="font-bold text-foreground">{query}</span>
+          <span className="font-medium">
+            Searching for: <span className="text-foreground">{query}</span>
           </span>
         </div>
       )}
@@ -198,38 +193,54 @@ export function BraveSearch({ tool }: BraveSearchProps) {
       {/* Results State */}
       {braveResults ? (
         <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1 text-xs font-medium text-(--text-tertiary)">
-            <Zap className="h-3.5 w-3.5 text-foreground" />
-            <span className="font-mono uppercase tracking-wider">
-              Search Results: {query}
-            </span>
-          </div>
-          {braveResults.length > 0 ? (
-            <div className="overflow-x-auto bg-(--surface-muted) rounded-xl border border-(--border-subtle) p-3 relative group/scroll">
-              {/* Scroll indicators */}
-              <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex w-full items-center justify-between group"
+          >
+            <div className="flex items-center gap-2 text-xs font-medium text-(--text-tertiary) group-hover:text-(--text-secondary) transition-colors">
+              <Zap className="h-3 w-3 text-foreground" />
+              <span>
+                Search Results: {query}
+              </span>
+            </div>
+            <ChevronRight
+              className={cx(
+                "h-3 w-3 text-(--text-tertiary) transition-transform duration-200",
+                isExpanded && "rotate-90"
+              )}
+            />
+          </button>
+          
+          {isExpanded && (
+            <>
+              {braveResults.length > 0 ? (
+                <div className="overflow-x-auto bg-(--surface-muted) rounded-lg border border-(--border-subtle) p-2 relative group/scroll">
+                  {/* Scroll indicators */}
+                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
+                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
 
-              <div className="flex gap-3 w-max pb-2">
-                {braveResults.map((result, index) => (
-                  <SearchResultCard
-                    key={`${result.url}-${index}`}
-                    title={result.title}
-                    url={result.url}
-                    description={result.description}
-                    delay={index * 90}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-4 text-center text-xs font-mono text-(--text-tertiary)">
-              &gt; SYSTEM: NO_RESULTS_FOUND
-            </div>
+                  <div className="flex gap-2 w-max pb-1">
+                    {braveResults.map((result, index) => (
+                      <SearchResultCard
+                        key={`${result.url}-${index}`}
+                        title={result.title}
+                        url={result.url}
+                        description={result.description}
+                        delay={index * 90}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-center text-xs text-(--text-tertiary)">
+                  No results found
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : result ? (
-        <div className="overflow-x-auto bg-(--surface-muted) p-4 text-xs rounded-lg border border-(--border-subtle) font-mono text-(--text-secondary)">
+        <div className="overflow-x-auto bg-(--surface-muted) p-3 text-xs rounded-lg border border-(--border-subtle) text-(--text-secondary)">
           <Markdown content={result.result} />
         </div>
       ) : null}
