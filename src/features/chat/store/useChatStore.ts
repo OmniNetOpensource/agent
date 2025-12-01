@@ -18,12 +18,13 @@ import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { fetchConversationMessages } from "@/src/features/chat/lib/api";
+import { ChatClient } from "@/src/features/chat/lib/chat-client";
 
 export type ChatState = {
   messages: Message[];
   input: string;
   pending: boolean;
-  abortController: AbortController | null;
+  chatClient: ChatClient | null;
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
   conversationId: string | null;
@@ -63,7 +64,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
   input: "",
   pending: false,
-  abortController: null,
+  chatClient: null,
   currentModel: DEFAULT_CHAT_MODEL_ID,
   pendingAttachments: [],
   conversationId: null,
@@ -94,9 +95,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    const { abortController } = get();
-    if (abortController) {
-      abortController.abort();
+    const { chatClient } = get();
+    if (chatClient) {
+      chatClient.abort();
     }
 
     const requestId = get().latestSelectRequestId + 1;
@@ -131,7 +132,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       pending: false,
       pendingAttachments: [],
       conversationId: "new",
-      abortController: null,
+      chatClient: null,
     }),
   addAttachments: async (files) => {
     const items = Array.from(files || []);
@@ -405,12 +406,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return { messages: next };
     }),
   stop: () => {
-    const { abortController } = get();
-    if (!abortController) {
+    const { chatClient } = get();
+    if (!chatClient) {
       return;
     }
-    abortController.abort();
-    set({ pending: false, abortController: null });
+    chatClient.abort();
+    set({ pending: false, chatClient: null });
   },
   setCurrentModel: (model) => {
     set({ currentModel: model });
@@ -445,7 +446,146 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     const nextMessages = [...existingMessages, userMessage];
 
-    const controller = new AbortController();
+    const chatClient = new ChatClient({
+      onEvent: (data) => {
+        if (data.type === "conversation_created") {
+          const id =
+            typeof data.conversationId === "string"
+              ? data.conversationId
+              : null;
+          if (id) {
+            const title =
+              typeof data.title === "string" ? data.title : "新会话";
+            const user_id =
+              typeof data.user_id === "string" ? data.user_id : "";
+            const created_at =
+              typeof data.created_at === "string"
+                ? data.created_at
+                : new Date().toISOString();
+            const updated_at =
+              typeof data.updated_at === "string"
+                ? data.updated_at
+                : new Date().toISOString();
+            const { addConversation } = useConversationsStore.getState();
+            addConversation({
+              id,
+              title,
+              user_id,
+              created_at,
+              updated_at,
+            });
+          }
+          return;
+        }
+
+        if (data.type === "conversation_updated") {
+          const id =
+            typeof data.conversationId === "string"
+              ? data.conversationId
+              : null;
+          if (id) {
+            const updated_at =
+              typeof data.updated_at === "string"
+                ? data.updated_at
+                : new Date().toISOString();
+            const { conversations, setConversations } =
+              useConversationsStore.getState();
+            const existing = conversations.find((item) => item.id === id);
+            if (existing) {
+              const updated = { ...existing, updated_at };
+              const remaining = conversations.filter((item) => item.id !== id);
+              setConversations([updated, ...remaining]);
+            }
+          }
+          return;
+        }
+
+        if (data.type === "thinking") {
+          get().appendToAssistant({
+            kind: "thinking",
+            text:
+              typeof data.content === "string"
+                ? data.content
+                : String(data.content ?? ""),
+          });
+        } else if (data.type === "tool_call") {
+          const tool = typeof data.tool === "string" ? data.tool : "未知工具";
+          get().appendToAssistant({
+            kind: "tool",
+            data: {
+              call: {
+                tool,
+                args: (data.args && typeof data.args === "object"
+                  ? data.args
+                  : {}) as Record<string, unknown>,
+              },
+              progress: [],
+            },
+          });
+        } else if (data.type === "tool_progress") {
+          const tool = typeof data.tool === "string" ? data.tool : "未知工具";
+          const stage =
+            typeof data.stage === "string" ? data.stage : "progress";
+          const message =
+            typeof data.message === "string"
+              ? data.message
+              : String(data.message ?? "");
+          const receivedBytes =
+            typeof data.receivedBytes === "number"
+              ? data.receivedBytes
+              : undefined;
+          const totalBytes =
+            typeof data.totalBytes === "number"
+              ? data.totalBytes
+              : undefined;
+
+          get().appendToAssistant({
+            kind: "tool_progress",
+            tool,
+            stage,
+            message,
+            receivedBytes,
+            totalBytes,
+          });
+        } else if (data.type === "tool_result") {
+          let resultText: string;
+          if (typeof data.result === "string") {
+            resultText = data.result;
+          } else {
+            try {
+              resultText = JSON.stringify(data.result, null, 2);
+            } catch {
+              resultText = String(data.result ?? "");
+            }
+          }
+          get().appendToAssistant({
+            kind: "tool_result",
+            tool: typeof data.tool === "string" ? data.tool : "未知工具",
+            result: resultText,
+          });
+        } else if (data.type === "content") {
+          const addition =
+            typeof data.content === "string"
+              ? data.content
+              : String(data.content ?? "");
+          get().appendToAssistant({
+            type: "content",
+            content: addition,
+          });
+        }
+      },
+      onError: (error) => {
+        const message =
+          error instanceof Error ? error.message : "Unable to reach the chat API.";
+        get().appendToAssistant({
+          type: "content",
+          content: `Error: ${message}`,
+        });
+      },
+      onFinish: () => {
+        set({ pending: false, chatClient: null });
+      },
+    });
 
     if (currentConversationId === "new" && router) {
       const newId = generateConversationId();
@@ -456,7 +596,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         messages: nextMessages,
         input: "",
         pending: true,
-        abortController: controller,
+        chatClient,
         pendingAttachments: [],
       });
 
@@ -466,216 +606,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         messages: nextMessages,
         input: "",
         pending: true,
-        abortController: controller,
+        chatClient,
         pendingAttachments: [],
       });
     }
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          conversationHistory: nextMessages,
-          conversationId:
-            currentConversationId && currentConversationId !== "new"
-              ? currentConversationId
-              : null,
-          model: selectedModel,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Server refused the request");
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("The server response could not be streamed");
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-
-        if (value) {
-          buffer += decoder.decode(value, { stream: true });
-
-          const lines = buffer.split("\n\n");
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-
-            if (line.startsWith("data: ")) {
-              try {
-                const jsonStr = line.substring(6);
-                const data = JSON.parse(jsonStr);
-
-                if (data.type === "conversation_created") {
-                  const id =
-                    typeof data.conversationId === "string"
-                      ? data.conversationId
-                      : null;
-                  if (id) {
-                    const title =
-                      typeof data.title === "string" ? data.title : "新会话";
-                    const user_id =
-                      typeof data.user_id === "string" ? data.user_id : "";
-                    const created_at =
-                      typeof data.created_at === "string"
-                        ? data.created_at
-                        : new Date().toISOString();
-                    const updated_at =
-                      typeof data.updated_at === "string"
-                        ? data.updated_at
-                        : new Date().toISOString();
-                    const { addConversation } =
-                      useConversationsStore.getState();
-                    addConversation({
-                      id,
-                      title,
-                      user_id,
-                      created_at,
-                      updated_at,
-                    });
-                  }
-                  continue;
-                }
-
-                if (data.type === "conversation_updated") {
-                  const id =
-                    typeof data.conversationId === "string"
-                      ? data.conversationId
-                      : null;
-                  if (id) {
-                    const updated_at =
-                      typeof data.updated_at === "string"
-                        ? data.updated_at
-                        : new Date().toISOString();
-                    const { conversations, setConversations } =
-                      useConversationsStore.getState();
-                    const existing = conversations.find(
-                      (item) => item.id === id
-                    );
-                    if (existing) {
-                      const updated = { ...existing, updated_at };
-                      const remaining = conversations.filter(
-                        (item) => item.id !== id
-                      );
-                      setConversations([updated, ...remaining]);
-                    }
-                  }
-                  continue;
-                }
-
-                if (data.type === "thinking") {
-                  get().appendToAssistant({
-                    kind: "thinking",
-                    text:
-                      typeof data.content === "string"
-                        ? data.content
-                        : String(data.content ?? ""),
-                  });
-                } else if (data.type === "tool_call") {
-                  const tool =
-                    typeof data.tool === "string" ? data.tool : "未知工具";
-                  get().appendToAssistant({
-                    kind: "tool",
-                    data: {
-                      call: {
-                        tool,
-                        args: (data.args && typeof data.args === "object"
-                          ? data.args
-                          : {}) as Record<string, unknown>,
-                      },
-                      progress: [],
-                    },
-                  });
-                } else if (data.type === "tool_progress") {
-                  const tool =
-                    typeof data.tool === "string" ? data.tool : "未知工具";
-                  const stage =
-                    typeof data.stage === "string" ? data.stage : "progress";
-                  const message =
-                    typeof data.message === "string"
-                      ? data.message
-                      : String(data.message ?? "");
-                  const receivedBytes =
-                    typeof data.receivedBytes === "number"
-                      ? data.receivedBytes
-                      : undefined;
-                  const totalBytes =
-                    typeof data.totalBytes === "number"
-                      ? data.totalBytes
-                      : undefined;
-
-                  get().appendToAssistant({
-                    kind: "tool_progress",
-                    tool,
-                    stage,
-                    message,
-                    receivedBytes,
-                    totalBytes,
-                  });
-                } else if (data.type === "tool_result") {
-                  let resultText: string;
-                  if (typeof data.result === "string") {
-                    resultText = data.result;
-                  } else {
-                    try {
-                      resultText = JSON.stringify(data.result, null, 2);
-                    } catch {
-                      resultText = String(data.result ?? "");
-                    }
-                  }
-                  get().appendToAssistant({
-                    kind: "tool_result",
-                    tool:
-                      typeof data.tool === "string" ? data.tool : "未知工具",
-                    result: resultText,
-                  });
-                } else if (data.type === "content") {
-                  const addition =
-                    typeof data.content === "string"
-                      ? data.content
-                      : String(data.content ?? "");
-                  get().appendToAssistant({
-                    type: "content",
-                    content: addition,
-                  });
-                }
-              } catch (e) {
-                console.error("Failed to parse SSE data:", e, "line:", line);
-              }
-            }
-          }
-        }
-
-        if (done) break;
-      }
-
-      reader.releaseLock();
-    } catch (error) {
-      const isAbortError =
-        (error instanceof DOMException && error.name === "AbortError") ||
-        (error instanceof Error && error.name === "AbortError");
-      if (isAbortError) {
-        return;
-      }
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unable to reach the chat API.";
-      get().appendToAssistant({
-        type: "content",
-        content: `Error: ${message}`,
-      });
-    } finally {
-      set({ pending: false, abortController: null });
-    }
+    chatClient.sendMessage(nextMessages, selectedModel, currentConversationId);
   },
 }));

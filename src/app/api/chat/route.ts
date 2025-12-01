@@ -7,9 +7,7 @@ import {
   getOpenRouterHeaders,
   isSupportedChatModel,
 } from "@/src/features/model/lib/openrouter";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  ContentBlock,
   Message,
   ResearchItem,
   ToolProgress,
@@ -18,13 +16,18 @@ import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";
 import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
 import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { ChatRequest } from "@/src/features/chat/types/chat";
-
-type StreamToolCall = {
-  index?: number;
-  id?: string;
-  type?: "function";
-  function?: { name?: string; arguments?: string };
-};
+import {
+  buildAssistantBlocks,
+  buildSystemPrompt,
+  ChatMessage,
+  StreamToolCall,
+  toChatMessages,
+} from "./utils";
+import {
+  ensureConversation,
+  SavedMessageIds,
+  saveMessages,
+} from "./repository";
 
 type StreamChunk = {
   choices?: Array<{
@@ -35,14 +38,6 @@ type StreamChunk = {
     };
     finishReason?: string | null;
   }>;
-};
-
-type ChatMessage = {
-  role: "system" | "user" | "assistant" | "tool";
-  content?: unknown;
-  toolCalls?: StreamToolCall[];
-  toolCallId?: string;
-  name?: string;
 };
 
 // Type for OpenRouter SDK's chat.send method (SDK types may be incomplete)
@@ -61,177 +56,15 @@ type ChatSendMethod = {
 const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
 const encoder = new TextEncoder();
 
-const buildSystemPrompt = () => `
-今天的日期是：${new Date().toISOString().slice(0, 10)}
-
-# 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
-
-# 什么时候不需要搜索：已知的知识
-
-- 搜索工具使用技法：多次组合不同关键词进行多次搜索
-- 获取更详细的信息：fetch 特定网页
-`;
-
-const buildConversationTitle = (message: Message) => {
-  const text = message.blocks
-    .filter((b) => b.type === "content")
-    .map((b) => b.content)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!text) {
-    return "新会话";
-  }
-
-  const normalized = text.replace(/\r?\n/g, " ").trim();
-  return normalized.length > 50 ? `${normalized.slice(0, 50)}...` : normalized;
-};
-
-const toChatMessages = (history: Message[]): ChatMessage[] =>
-  history
-    .map((msg) => {
-      const relevantBlocks = msg.blocks.filter(
-        (block) => block.type === "content" || block.type === "attachments"
-      );
-
-      const contentParts: unknown[] = [];
-
-      for (const block of relevantBlocks) {
-        if (block.type === "content") {
-          contentParts.push({
-            type: "text",
-            text: block.content,
-          });
-        } else if (block.type === "attachments") {
-          for (const att of block.attachments) {
-            const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
-
-            if (att.kind === "image") {
-              contentParts.push({
-                type: "image_url",
-                imageUrl: { url: att.dataUrl },
-              });
-            } else if (att.kind === "video") {
-              contentParts.push({
-                type: "video_url",
-                videoUrl: { url: att.dataUrl },
-              });
-            } else if (att.kind === "audio") {
-              const format = att.mimeType.split("/")[1]?.split(";")[0] || "wav";
-              contentParts.push({
-                type: "input_audio",
-                inputAudio: { data: base64Data, format },
-              });
-            } else {
-              contentParts.push({
-                type: "file",
-                file: { filename: att.name, fileData: att.dataUrl },
-              });
-            }
-          }
-        }
-      }
-
-      return {
-        role: msg.role,
-        content: contentParts,
-      };
-    })
-    .filter((msg) => {
-      if (msg.role !== "assistant") {
-        return true;
-      }
-      return Array.isArray(msg.content) && msg.content.length > 0;
-    });
-
-const buildAssistantBlocks = (
-  items: ResearchItem[],
-  content: string | null
-): ContentBlock[] => {
-  const blocks: ContentBlock[] = [];
-  if (items.length > 0) {
-    blocks.push({ type: "research", items });
-  }
-  if (content) {
-    blocks.push({ type: "content", content });
-  }
-  return blocks;
-};
-
-type SavedMessageIds = {
-  userMessageId: string | null;
-  assistantMessageId: string | null;
-};
-
-const generateMessageId = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-const saveMessages = async (
-  supabase: SupabaseClient,
-  conversationId: string,
-  userMessage: Message,
-  assistantBlocks: ContentBlock[],
-  messageIds: SavedMessageIds
-) => {
-  const nextIds: SavedMessageIds = {
-    userMessageId: messageIds.userMessageId ?? generateMessageId(),
-    assistantMessageId:
-      assistantBlocks.length > 0
-        ? messageIds.assistantMessageId ?? generateMessageId()
-        : messageIds.assistantMessageId,
-  };
-
-  const rows = [
-    {
-      id: nextIds.userMessageId,
-      conversation_id: conversationId,
-      role: "user",
-      blocks: userMessage.blocks,
-    },
-  ];
-
-  if (assistantBlocks.length > 0) {
-    rows.push({
-      id: nextIds.assistantMessageId,
-      conversation_id: conversationId,
-      role: "assistant",
-      blocks: assistantBlocks,
-    });
-  }
-
-  const { error: upsertError } = await supabase
-    .from("messages")
-    .upsert(rows, { onConflict: "id" });
-
-  if (upsertError) {
-    console.error("[Chat-API] Failed to save messages:", upsertError.message);
-  }
-
-  const { error: updateError } = await supabase
-    .from("conversations")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", conversationId);
-
-  if (updateError) {
-    console.error(
-      "[Chat-API] Failed to update conversation timestamp:",
-      updateError.message
-    );
-  }
-
-  messageIds.userMessageId = nextIds.userMessageId;
-  messageIds.assistantMessageId = nextIds.assistantMessageId ?? null;
-};
-
 export async function POST(req: Request) {
   try {
     const { conversationHistory, conversationId, model } =
       (await req.json()) as ChatRequest;
 
-    if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+    if (
+      !Array.isArray(conversationHistory) ||
+      conversationHistory.length === 0
+    ) {
       return NextResponse.json(
         { reply: "Invalid conversation history" },
         { status: 400 }
@@ -294,16 +127,14 @@ export async function POST(req: Request) {
     }
 
     let activeConversationId = conversationId ?? null;
-    let conversationCreatedEvent:
-      | {
-          type: "conversation_created";
-          conversationId: string;
-          title: string;
-          user_id: string;
-          created_at: string;
-          updated_at: string;
-        }
-      | null = null;
+    let conversationCreatedEvent: {
+      type: "conversation_created";
+      conversationId: string;
+      title: string;
+      user_id: string;
+      created_at: string;
+      updated_at: string;
+    } | null = null;
 
     const history: Message[] = conversationHistory.map((message) => ({
       ...message,
@@ -311,50 +142,14 @@ export async function POST(req: Request) {
     }));
 
     if (supabaseUser && supabase && activeConversationId) {
-      const { data: existingConversation, error: existingConversationError } =
-        await supabase
-          .from("conversations")
-          .select("id")
-          .eq("id", activeConversationId)
-          .eq("user_id", supabaseUser.id)
-          .maybeSingle();
-
-      if (existingConversationError) {
-        console.error(
-          "[Chat-API] Failed to verify conversation:",
-          existingConversationError.message
-        );
-        activeConversationId = null;
-      } else if (!existingConversation) {
-        const title = buildConversationTitle(latestUserMessage);
-        const now = new Date().toISOString();
-        const { error: createConversationError } = await supabase
-          .from("conversations")
-          .insert({
-            id: activeConversationId,
-            user_id: supabaseUser.id,
-            title,
-            created_at: now,
-            updated_at: now,
-          });
-
-        if (createConversationError) {
-          console.error(
-            "[Chat-API] Failed to create conversation:",
-            createConversationError.message
-          );
-          activeConversationId = null;
-        } else if (activeConversationId) {
-          conversationCreatedEvent = {
-            type: "conversation_created",
-            conversationId: activeConversationId,
-            title,
-            user_id: supabaseUser.id,
-            created_at: now,
-            updated_at: now,
-          };
-        }
-      }
+      const result = await ensureConversation(
+        supabase,
+        supabaseUser,
+        activeConversationId,
+        latestUserMessage
+      );
+      activeConversationId = result.conversationId;
+      conversationCreatedEvent = result.event;
     }
 
     const messages: ChatMessage[] = [
@@ -379,7 +174,9 @@ export async function POST(req: Request) {
 
         if (conversationCreatedEvent) {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(conversationCreatedEvent)}\n\n`)
+            encoder.encode(
+              `data: ${JSON.stringify(conversationCreatedEvent)}\n\n`
+            )
           );
         }
 
