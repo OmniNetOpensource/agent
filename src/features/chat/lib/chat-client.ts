@@ -15,7 +15,8 @@ export class ChatClient {
   public async sendMessage(
     messages: Message[],
     model: string,
-    conversationId: string | null
+    conversationId: string | null,
+    searchEnabled?: boolean
   ) {
     this.abortController = new AbortController();
 
@@ -29,6 +30,7 @@ export class ChatClient {
           conversationId:
             conversationId && conversationId !== "new" ? conversationId : null,
           model,
+          searchEnabled,
         }),
       });
 

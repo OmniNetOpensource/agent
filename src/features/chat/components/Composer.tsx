@@ -9,7 +9,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, Globe, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
@@ -27,6 +27,8 @@ export function Composer({ isNewRoute }: ComposerProps) {
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
+  const searchEnabled = useChatStore((state) => state.searchEnabled);
+  const setSearchEnabled = useChatStore((state) => state.setSearchEnabled);
   const messages = useChatStore((state) => state.messages);
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
@@ -228,6 +230,26 @@ export function Composer({ isNewRoute }: ComposerProps) {
               ) : (
                 <ArrowUp className="h-5 w-5" />
               )}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-start px-1">
+            <button
+              type="button"
+              onClick={() => setSearchEnabled(!searchEnabled)}
+              title="开启后，模型会自主决定是否搜索"
+              className={`group flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                searchEnabled
+                  ? "border-blue-200 bg-blue-50 text-blue-600 shadow-sm dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400"
+                  : "border-transparent bg-transparent text-(--text-tertiary) hover:bg-(--surface-hover) hover:text-foreground"
+              }`}
+            >
+              <Globe
+                className={`h-3.5 w-3.5 transition-transform ${
+                  searchEnabled ? "scale-110" : "group-hover:scale-110"
+                }`}
+              />
+              <span>联网</span>
             </button>
           </div>
         </div>

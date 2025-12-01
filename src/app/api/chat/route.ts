@@ -58,7 +58,7 @@ const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
   try {
-    const { conversationHistory, conversationId, model } =
+    const { conversationHistory, conversationId, model, searchEnabled } =
       (await req.json()) as ChatRequest;
 
     if (
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
 
     const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
 
-    const tools = toolSpecs;
+    const tools = searchEnabled === false ? [] : toolSpecs;
     console.log(
       "[Chat-API] Tools loaded:",
       tools.length,
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
     }
 
     const messages: ChatMessage[] = [
-      { role: "system", content: buildSystemPrompt() },
+      { role: "system", content: buildSystemPrompt(searchEnabled) },
       ...toChatMessages(history),
     ];
 

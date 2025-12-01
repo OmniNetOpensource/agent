@@ -19,9 +19,16 @@ export type ChatMessage = {
   name?: string;
 };
 
-export const buildSystemPrompt = () => `
+export const buildSystemPrompt = (searchEnabled: boolean = true) => {
+  const basePrompt = `
 今天的日期是：${new Date().toISOString().slice(0, 10)}
+`;
 
+  if (!searchEnabled) {
+    return basePrompt;
+  }
+
+  return `${basePrompt}
 # 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
 
 # 什么时候不需要搜索：已知的知识
@@ -29,6 +36,7 @@ export const buildSystemPrompt = () => `
 - 搜索工具使用技法：多次组合不同关键词进行多次搜索
 - 获取更详细的信息：fetch 特定网页
 `;
+};
 
 export const buildConversationTitle = (message: Message) => {
   const text = message.blocks

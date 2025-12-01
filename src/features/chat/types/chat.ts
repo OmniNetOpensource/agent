@@ -51,4 +51,5 @@ export type ChatRequest = {
   conversationHistory: Message[];
   conversationId?: string | null;
   model?: string;
+  searchEnabled?: boolean;
 };

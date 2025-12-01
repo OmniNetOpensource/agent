@@ -29,6 +29,7 @@ export type ChatState = {
   pendingAttachments: Attachment[];
   conversationId: string | null;
   latestSelectRequestId: number;
+  searchEnabled: boolean;
 };
 
 type ToolLifecycleUpdate =
@@ -53,6 +54,7 @@ export type ChatActions = {
   sendMessage: (router?: AppRouterInstance) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
+  setSearchEnabled: (enabled: boolean) => void;
 };
 
 export const generateConversationId = () =>
@@ -69,8 +71,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   pendingAttachments: [],
   conversationId: null,
   latestSelectRequestId: 0,
+  searchEnabled: true,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
+  setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
   setLoadedConversation: (id, messages, navigate) => {
     set({ conversationId: id, messages, pending: false });
     if (navigate) {
@@ -133,6 +137,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       pendingAttachments: [],
       conversationId: "new",
       chatClient: null,
+      searchEnabled: true,
     }),
   addAttachments: async (files) => {
     const items = Array.from(files || []);
@@ -428,6 +433,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const selectedModel = get().currentModel;
+    const searchEnabled = get().searchEnabled;
     let currentConversationId = get().conversationId;
     const existingMessages = get().messages;
 
@@ -611,6 +617,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       });
     }
 
-    chatClient.sendMessage(nextMessages, selectedModel, currentConversationId);
+    chatClient.sendMessage(
+      nextMessages,
+      selectedModel,
+      currentConversationId,
+      searchEnabled
+    );
   },
 }));
