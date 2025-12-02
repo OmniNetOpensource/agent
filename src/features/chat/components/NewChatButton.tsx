@@ -28,7 +28,7 @@ export function NewChatButton() {
     <button
       type="button"
       onClick={handleNewChat}
-      className="group relative inline-flex h-10 items-center overflow-hidden rounded-xl cursor-pointer text-foreground transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-50 w-10 md:w-full"
+      className="group relative inline-flex h-10 items-center overflow-hidden rounded-xl cursor-pointer text-foreground transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-50 w-10 md:w-auto md:pr-3"
       aria-label="新对话"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center">

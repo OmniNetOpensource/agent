@@ -177,80 +177,82 @@ export function Composer({ isNewRoute }: ComposerProps) {
             </div>
           )}
 
-          <div className="relative flex w-full items-end gap-2 rounded-3xl border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg transition-all focus-within:border-(--border-hover) focus-within:shadow-xl">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
-              className="hidden"
-            />
-
-            <button
-              type="button"
-              onClick={handlePickFiles}
-              className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
-              title="添加附件"
-            >
-              <Paperclip className="h-5 w-5" />
-            </button>
-
-            <textarea
-              ref={textareaRef}
-              id="message-input"
-              name="message"
-              value={input}
-              onChange={(event) => {
-                setInput(event.target.value);
-              }}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              placeholder="输入您的消息..."
-              className="min-h-10 max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-sm sm:text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
-              style={{ height: "44px" }}
-            />
-
-            <button
-              type={pending ? "button" : "submit"}
-              disabled={sendDisabled}
-              onClick={(event) => {
-                if (pending) {
-                  event.preventDefault();
-                  stop();
-                }
-              }}
-              className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
-                sendDisabled
-                  ? "bg-(--surface-muted) text-(--text-tertiary) cursor-not-allowed"
-                  : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-md"
-              }`}
-            >
-              {pending ? (
-                <Square className="h-4 w-4 fill-current" />
-              ) : (
-                <ArrowUp className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-start px-1">
-            <button
-              type="button"
-              onClick={() => setSearchEnabled(!searchEnabled)}
-              title="开启后，模型会自主决定是否搜索"
-              className={`group flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
-                searchEnabled
-                  ? "border-blue-200 bg-blue-50 text-blue-600 shadow-sm dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400"
-                  : "border-transparent bg-transparent text-(--text-tertiary) hover:bg-(--surface-hover) hover:text-foreground"
-              }`}
-            >
-              <Globe
-                className={`h-3.5 w-3.5 transition-transform ${
-                  searchEnabled ? "scale-110" : "group-hover:scale-110"
-                }`}
+          <div className="relative flex w-full flex-col gap-1 rounded-3xl border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg transition-all focus-within:border-(--border-hover) focus-within:shadow-xl">
+            <div className="flex w-full items-end gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
+                className="hidden"
               />
-              <span>联网</span>
-            </button>
+
+              <button
+                type="button"
+                onClick={handlePickFiles}
+                className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+                title="添加附件"
+              >
+                <Paperclip className="h-5 w-5" />
+              </button>
+
+              <textarea
+                ref={textareaRef}
+                id="message-input"
+                name="message"
+                value={input}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                }}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                placeholder="输入您的消息..."
+                className="min-h-10 max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-sm sm:text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
+                style={{ height: "44px" }}
+              />
+
+              <button
+                type={pending ? "button" : "submit"}
+                disabled={sendDisabled}
+                onClick={(event) => {
+                  if (pending) {
+                    event.preventDefault();
+                    stop();
+                  }
+                }}
+                className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                  sendDisabled
+                    ? "bg-(--surface-muted) text-(--text-tertiary) cursor-not-allowed"
+                    : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-md"
+                }`}
+              >
+                {pending ? (
+                  <Square className="h-4 w-4 fill-current" />
+                ) : (
+                  <ArrowUp className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center px-1">
+              <button
+                type="button"
+                onClick={() => setSearchEnabled(!searchEnabled)}
+                title="开启后，模型会自主决定是否搜索"
+                className={`group flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-medium transition-all ${
+                  searchEnabled
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-(--text-tertiary) hover:text-foreground"
+                }`}
+              >
+                <Globe
+                  className={`h-3.5 w-3.5 transition-transform ${
+                    searchEnabled ? "scale-110" : "group-hover:scale-110"
+                  }`}
+                />
+                <span>联网</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
