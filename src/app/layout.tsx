@@ -33,12 +33,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <head>
-        <script src="https://unpkg.com/react-scan/dist/auto.global.js" async />
-        <Script
-          src="https://unpkg.com/react-grab/dist/index.global.js"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
+        {process.env.NODE_ENV === "development" && (
+          <>
+            <script
+              src="https://unpkg.com/react-scan/dist/auto.global.js"
+              async
+            />
+            <Script
+              src="https://unpkg.com/react-grab/dist/index.global.js"
+              crossOrigin="anonymous"
+              strategy="beforeInteractive"
+            />
+          </>
+        )}
       </head>
       <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
         <Script id="theme-init" strategy="beforeInteractive">{`
@@ -52,9 +59,7 @@ export default function RootLayout({
   } catch (e) {}
 })();`}</Script>
         <MobileProvider>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          <TooltipProvider>{children}</TooltipProvider>
         </MobileProvider>
       </body>
     </html>
