@@ -83,7 +83,7 @@ function MobileSidebarWrapper({
 
   return (
     <div
-      className={`fixed inset-0 z-[var(--z-mobile-overlay)] ${
+      className={`fixed inset-0 z-(--z-mobile-overlay) ${
         !isOpen ? "pointer-events-none" : ""
       }`}
     >
@@ -94,7 +94,7 @@ function MobileSidebarWrapper({
         />
       )}
       <aside
-        className={`absolute left-0 top-0 h-full bg-(--surface-base) mobile-sidebar-drawer z-[var(--z-mobile-sidebar)] overflow-hidden ${
+        className={`absolute left-0 top-0 h-full bg-background mobile-sidebar-drawer z-(--z-mobile-sidebar) overflow-hidden ${
           isOpen ? "w-[80vw] max-w-xs transition-[width] duration-300" : "w-0"
         }`}
       >

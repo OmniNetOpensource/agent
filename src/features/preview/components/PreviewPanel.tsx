@@ -117,7 +117,7 @@ export function PreviewPanel() {
       {/* 拖拽分隔线 */}
       <div
         onMouseDown={handleMouseDown}
-        className="absolute left-0 top-0 h-full w-4 -translate-x-1/2 cursor-col-resize z-[var(--z-draggable)] flex items-center justify-center group"
+        className="absolute left-0 top-0 h-full w-4 -translate-x-1/2 cursor-col-resize z-(--z-draggable) flex items-center justify-center group"
       >
         {/* 细线 */}
         <div
