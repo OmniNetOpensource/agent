@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { User } from "@supabase/supabase-js";
-import { Settings } from "lucide-react";
-import { SettingsModal } from "./SettingsModal";
+import { Loader2, LogIn, Settings, User2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,34 +9,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { SettingsModal } from "./SettingsModal";
 
-type UserMenuProps = {
-  user: User;
-  onSignOut: () => Promise<void> | void;
+type GuestMenuProps = {
   isCollapsed?: boolean;
 };
 
-const getAvatarUrl = (user: User) =>
-  (user.user_metadata as Record<string, unknown>)?.avatar_url as
-    | string
-    | undefined;
-
-const getDisplayName = (user: User) =>
-  ((user.user_metadata as Record<string, unknown>)?.full_name as
-    | string
-    | undefined) ||
-  user.email ||
-  "用户";
-
-export function UserMenu({
-  user,
-  onSignOut,
-  isCollapsed = false,
-}: UserMenuProps) {
+export function GuestMenu({ isCollapsed = false }: GuestMenuProps) {
+  const { signIn, loading, supabaseReady } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const avatarUrl = getAvatarUrl(user);
-  const displayName = getDisplayName(user);
+  const buttonDisabled = loading || !supabaseReady;
 
   const handleOpenSettings = () => {
     setSettingsOpen(true);
@@ -48,9 +30,9 @@ export function UserMenu({
     setSettingsOpen(false);
   };
 
-  const handleSignOut = async () => {
-    await onSignOut();
-    setSettingsOpen(false);
+  const handleSignIn = async () => {
+    if (buttonDisabled) return;
+    await signIn();
   };
 
   return (
@@ -63,9 +45,8 @@ export function UserMenu({
           >
             <span className="flex min-w-0 items-center gap-2 shrink-0">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={avatarUrl} alt={displayName} />
                 <AvatarFallback className="text-sm font-semibold">
-                  {displayName.slice(0, 1).toUpperCase()}
+                  <User2 className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
               <span
@@ -74,13 +55,11 @@ export function UserMenu({
                 }`}
               >
                 <span className="truncate font-semibold text-foreground">
-                  {displayName}
+                  Guest
                 </span>
-                {user.email && (
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </span>
-                )}
+                <span className="truncate text-xs text-muted-foreground">
+                  游客模式
+                </span>
               </span>
             </span>
           </button>
@@ -88,22 +67,19 @@ export function UserMenu({
         <DropdownMenuContent side="top" align="start" className="min-w-[220px]">
           <div className="flex items-center gap-1.5 px-2 py-1.5">
             <Avatar className="h-5 w-5">
-              <AvatarImage src={avatarUrl} alt={displayName} />
               <AvatarFallback className="text-xs font-semibold">
-                {displayName.slice(0, 1).toUpperCase()}
+                <User2 className="h-3 w-3" />
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="truncate text-sm font-medium text-foreground">
-                  {displayName}
+                  Guest
                 </span>
               </div>
-              {user.email && (
-                <div className="text-xs leading-tight text-muted-foreground">
-                  {user.email}
-                </div>
-              )}
+              <div className="text-xs leading-tight text-muted-foreground">
+                游客模式，登录后可同步聊天记录
+              </div>
             </div>
           </div>
 
@@ -113,14 +89,37 @@ export function UserMenu({
             <Settings className="h-4 w-4" />
             设置
           </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={handleSignIn}
+            disabled={buttonDisabled}
+            className="flex items-center gap-2 text-sm"
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-muted ring-1 ring-border">
+              <span className="text-xs font-bold">G</span>
+            </span>
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                正在登录...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <LogIn className="h-4 w-4" />
+                使用 Google 登录
+              </span>
+            )}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <SettingsModal
         open={settingsOpen}
         onClose={handleCloseSettings}
-        hasUser
-        onSignOut={handleSignOut}
+        hasUser={false}
+        onSignIn={signIn}
+        authLoading={loading}
+        supabaseReady={supabaseReady}
       />
     </div>
   );

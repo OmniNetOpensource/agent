@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, Check } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
@@ -132,21 +132,35 @@ export function ModelSelector() {
   }, []);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (trimmedSearch !== "" && scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
-  }, [search]);
+  }, [search, trimmedSearch]);
 
-  // 当 Popover 打开时，等待 Portal 挂载后重新测量 virtualizer
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (isOpen) {
-      // 使用 requestAnimationFrame 确保 DOM 已挂载
       const raf = requestAnimationFrame(() => {
         virtualizer.measure();
       });
       return () => cancelAnimationFrame(raf);
     }
   }, [isOpen, virtualizer]);
+
+  useEffect(() => {
+    if (isOpen && trimmedSearch === "" && currentModel && models.length > 0) {
+      const currentIndex = models.findIndex((m) => m.id === currentModel);
+      if (currentIndex !== -1) {
+        // 确保测量完成后再滚动
+        const timer = setTimeout(() => {
+          virtualizer.measure();
+          requestAnimationFrame(() => {
+            virtualizer.scrollToIndex(currentIndex, { align: "center" });
+          });
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isOpen, currentModel, models, trimmedSearch, virtualizer]);
 
   if (loading) {
     return null;

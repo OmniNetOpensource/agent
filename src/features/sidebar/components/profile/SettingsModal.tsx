@@ -1,7 +1,7 @@
 "use client";
 
 import { flushSync } from "react-dom";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogIn, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 import {
   Dialog,
@@ -15,19 +15,34 @@ import { Button } from "@/components/ui/button";
 type SettingsModalProps = {
   open: boolean;
   onClose: () => void;
-  onSignOut: () => Promise<void> | void;
+  hasUser: boolean;
+  onSignOut?: () => Promise<void> | void;
+  onSignIn?: () => Promise<void> | void;
+  authLoading?: boolean;
+  supabaseReady?: boolean;
 };
 
 export function SettingsModal({
   open,
   onClose,
+  hasUser,
   onSignOut,
+  onSignIn,
+  authLoading = false,
+  supabaseReady = true,
 }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
+    if (!onSignOut) return;
     await onSignOut();
     onClose();
+  };
+
+  const handleSignIn = async () => {
+    if (!onSignIn) return;
+    if (authLoading || !supabaseReady) return;
+    await onSignIn();
   };
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -111,14 +126,39 @@ export function SettingsModal({
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={handleSignOut}
-            className="self-start"
-          >
-            <LogOut className="h-4 w-4" />
-            退出登录
-          </Button>
+          <div className="flex gap-3">
+            {!hasUser && onSignIn && (
+              <Button
+                variant="outline"
+                onClick={handleSignIn}
+                disabled={authLoading || !supabaseReady}
+                className="self-start"
+              >
+                {authLoading ? (
+                  <>
+                    <LogIn className="h-4 w-4 animate-spin" />
+                    正在登录...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4" />
+                    使用 Google 登录
+                  </>
+                )}
+              </Button>
+            )}
+
+            {hasUser && onSignOut && (
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+                className="self-start"
+              >
+                <LogOut className="h-4 w-4" />
+                退出登录
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

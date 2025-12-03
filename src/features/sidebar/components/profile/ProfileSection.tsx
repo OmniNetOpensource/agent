@@ -1,7 +1,7 @@
 "use client";
 
-import { LoginButton } from "./LoginButton";
 import { UserMenu } from "./UserMenu";
+import { GuestMenu } from "./GuestMenu";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 
 type ProfileSectionProps = {
@@ -13,7 +13,7 @@ export function ProfileSection({ isCollapsed }: ProfileSectionProps) {
 
   return (
     <div className={`px-2 py-4`}>
-      <div className={"flex justify-center" }>
+      <div className={"flex justify-center"}>
         {user ? (
           <UserMenu
             user={user}
@@ -23,7 +23,7 @@ export function ProfileSection({ isCollapsed }: ProfileSectionProps) {
             isCollapsed={isCollapsed}
           />
         ) : (
-          <LoginButton isCollapsed={isCollapsed} />
+          <GuestMenu isCollapsed={isCollapsed} />
         )}
       </div>
     </div>

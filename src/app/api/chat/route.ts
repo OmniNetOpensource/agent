@@ -88,7 +88,17 @@ export async function POST(req: Request) {
 
     const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
 
-    const tools = searchEnabled === false ? [] : toolSpecs;
+    const isGeminiModel = requestedModel.toLowerCase().includes("gemini");
+
+    const tools =
+      searchEnabled === false || isGeminiModel ? [] : toolSpecs;
+
+    if (isGeminiModel && searchEnabled !== false) {
+      console.log(
+        "[Chat-API] Detected Gemini model, disabling tools to avoid missing reasoning details / thought_signature errors."
+      );
+    }
+
     console.log(
       "[Chat-API] Tools loaded:",
       tools.length,
@@ -282,6 +292,7 @@ export async function POST(req: Request) {
               }
             );
             let assistantMessage = "";
+            let currentReasoning = "";
             const toolCalls: Array<{
               id: string;
               type: "function";
@@ -291,12 +302,17 @@ export async function POST(req: Request) {
             let finishedWithStop = false;
 
             for await (const chunk of completion as AsyncIterable<StreamChunk>) {
+              console.log(
+                "[Chat-API] OpenRouter chunk:",
+                JSON.stringify(chunk)
+              );
               const delta = chunk?.choices?.[0]?.delta;
               const finishReason = chunk?.choices?.[0]?.finishReason as
                 | string
                 | undefined;
 
               if (delta?.reasoning) {
+                currentReasoning += delta.reasoning;
                 appendThinking(delta.reasoning);
                 const data = {
                   type: "thinking",
@@ -381,6 +397,7 @@ export async function POST(req: Request) {
               role: "assistant",
               content: assistantMessage || null,
               toolCalls,
+              reasoning: currentReasoning || undefined,
             });
 
             if (supabaseUser && supabase && activeConversationId) {

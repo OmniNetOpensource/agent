@@ -17,6 +17,8 @@ export type ChatMessage = {
   toolCalls?: StreamToolCall[];
   toolCallId?: string;
   name?: string;
+  // Optional reasoning / thinking content for models like Gemini
+  reasoning?: string;
 };
 
 export const buildSystemPrompt = (searchEnabled: boolean = true) => {

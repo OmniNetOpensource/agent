@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 **Aether** is an AI chat application built with Next.js that provides a conversational interface with:
+
 - Multi-model LLM support via OpenRouter
 - Real-time web search and URL fetching capabilities
 - Message attachments (images, videos, audio, files)
@@ -12,19 +13,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - User authentication and account management
 - Research tracking (thinking processes and tool execution visibility)
 
-
-
 ## Architecture & Structure
 
 ### Frontend Structure (`src/`)
 
 - **`src/app/`** - Next.js app directory (routes and layouts)
+
   - `api/` - Server-side API routes (chat, models, conversations, auth)
   - `c/[conversationId]/` - Chat conversation page
   - `page.tsx` - Home (redirects to `/c/new`)
   - `layout.tsx` - Root layout with Sidebar + Header
 
 - **`src/features/`** - Feature-based organization
+
   - `chat/` - Chat UI components (MessageList, Composer, Header) and state (useChatStore)
     - `types/chat.ts` - Message, ContentBlock, ResearchItem type definitions
     - Components handle message rendering, tool progress, research visibility
@@ -44,16 +45,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Key Type System (`types/conversation.ts`)
 
 ```typescript
-Conversation    // DB record with id, user_id, title, timestamps
-DbMessage       // DB message with id, blocks, role, timestamps
-ContentBlock    // "content" | "attachments" | "research"
-Message         // Frontend message: role + blocks[]
-ResearchItem    // "thinking" or "tool" execution record
+Conversation; // DB record with id, user_id, title, timestamps
+DbMessage; // DB message with id, blocks, role, timestamps
+ContentBlock; // "content" | "attachments" | "research"
+Message; // Frontend message: role + blocks[]
+ResearchItem; // "thinking" or "tool" execution record
 ```
 
 ## State Management (Zustand)
 
 **`useChatStore`** - Manages chat session state:
+
 - `messages[]` - Conversation history
 - `input` - User input text
 - `pending` - Loading state during API calls
@@ -63,6 +65,7 @@ ResearchItem    // "thinking" or "tool" execution record
 - Actions: `setInput`, `sendMessage`, `appendToAssistant`, `stop`, etc.
 
 **`useConversationsStore`** - Manages conversation list:
+
 - `conversations[]` - Loaded conversations
 - `conversationsLoading` - Fetch state
 - `fetchConversations()` - Loads user's conversations from `/api/conversations`
@@ -72,7 +75,9 @@ ResearchItem    // "thinking" or "tool" execution record
 ## API Routes
 
 ### `POST /api/chat`
+
 Core chat endpoint that:
+
 1. Receives conversation history + selected model
 2. Streams response via Server-Sent Events (SSE)
 3. Executes tools (brave_search, fetch_url) in a loop up to 20 iterations
@@ -84,15 +89,19 @@ Core chat endpoint that:
 **Response**: SSE stream with events (type + data)
 
 ### `GET /api/models`
+
 Returns available models from OpenRouter API
 
 ### `GET /api/conversations`
+
 Fetches user's conversation history (requires auth)
 
 ### `GET/POST /api/conversations/[id]`
+
 Get conversation details, delete conversation
 
 ### `GET /api/conversations/[id]/messages`
+
 Fetch all messages in a conversation
 
 ## Message Block Architecture
@@ -111,6 +120,7 @@ ResearchItem =
 ```
 
 This allows:
+
 - User messages with text + multiple attachments
 - Assistant messages with thinking process + tool calls/results + final text
 - Progressive rendering as stream arrives
@@ -118,11 +128,13 @@ This allows:
 ## Environment Variables
 
 Required in `.env.local`:
+
 - `OPENROUTER_API_KEY` - OpenRouter API key
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
 
 Optional:
+
 - `OPENROUTER_DEFAULT_MODEL` - Default LLM model
 - `OPENROUTER_HTTP_REFERER` - HTTP referer header
 - `OPENROUTER_X_TITLE` - App title for OpenRouter
@@ -133,6 +145,7 @@ Optional:
 Tools are defined in `src/shared/lib/tools.ts` and sent to OpenRouter as function definitions:
 
 1. **brave_search** - Query web search
+
    - Input: `{ query: string }`
    - Returns: Search results
 
@@ -145,7 +158,9 @@ Tools are called via `/api/chat` streaming loop. The system prompt is in Chinese
 ## Important Patterns & Conventions
 
 ### SSE Event Stream Format
+
 Streamed from `/api/chat`:
+
 ```
 data: {"type": "content", "content": "..."}
 data: {"type": "thinking", "content": "..."}
@@ -157,14 +172,18 @@ data: {"type": "conversation_updated", "conversationId": "...", ...}
 ```
 
 ### URL Path Aliases
+
 TypeScript path alias configured:
+
 - `@/*` resolves to project root or `./src/*`
 - Use for imports: `import { x } from "@/src/features/chat/..."`
 
 ### CSS Variables
+
 Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use these for frontend styling instead of hardcoded colors.
 
 ### UI Framework
+
 - React 19 with Next.js 16
 - Tailwind CSS v4
 - Lucide React for icons
@@ -190,3 +209,4 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 - Take time with implementation; be detailed
 - Don't run pnpm unless necessary
 - frontend style need to fit in the current project's style
+- write plan first . when i say go, you could just edit without my permission
