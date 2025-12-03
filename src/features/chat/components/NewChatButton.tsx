@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
+import { Button } from "@/components/ui/button";
 
 export function NewChatButton() {
   const router = useRouter();
@@ -25,18 +26,18 @@ export function NewChatButton() {
   };
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={handleNewChat}
-      className="group relative inline-flex h-10 items-center overflow-hidden rounded-xl cursor-pointer text-foreground transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-50 w-10 md:w-auto md:pr-3"
+      className="group relative h-10 w-10 overflow-hidden rounded-xl px-0 md:w-auto md:pr-3"
       aria-label="新对话"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center">
-        <Plus className="h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90" />
+        <Plus className="h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
       </span>
-      <span className="overflow-hidden whitespace-nowrap text-sm font-medium text-foreground transition-all duration-300 hidden md:block">
+      <span className="hidden overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 md:block">
         新对话
       </span>
-    </button>
+    </Button>
   );
 }

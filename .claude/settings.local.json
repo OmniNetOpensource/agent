@@ -4,10 +4,17 @@
       "Bash(cat:*)",
       "Bash(dir \"d:\\develop\\projects\\agent\\app\")",
       "Bash(dir:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(del \"d:\\develop\\projects\\agent\\src\\shared\\utils\\cx.ts\")",
+      "Bash(pnpm type-check:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "shadcn"
+  ],
   "outputStyle": "default"
 }

@@ -3,7 +3,9 @@ import Script from "next/script";
 import { Nunito, Geist_Mono } from "next/font/google";
 import { Header } from "@/src/features/chat/components/Header";
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
-import { MobileSidebarWrapper } from "@/src/features/sidebar/components/MobileSidebarWrapper";
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { MobileProvider } from "@/src/shared/mobile/MobileProvider";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -32,6 +34,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
+      <head>
+        <script src="https://unpkg.com/react-scan/dist/auto.global.js" async />
+        <Script
+          src="https://unpkg.com/react-grab/dist/index.global.js"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
         <Script id="theme-init" strategy="beforeInteractive">{`
 (function () {
@@ -43,16 +53,17 @@ export default function RootLayout({
     dark ? c.add('dark') : c.remove('dark');
   } catch (e) {}
 })();`}</Script>
-        <div className="flex h-screen bg-background text-foreground">
-          <MobileSidebarWrapper />
-          <div className="hidden md:block h-full overflow-visible z-[var(--z-sidebar)]">
-            <Sidebar />
-          </div>
-          <div className="relative flex-1 overflow-hidden flex flex-col">
-            <Header />
-            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-          </div>
-        </div>
+        <MobileProvider>
+          <TooltipProvider>
+            <div className="flex h-screen w-screen bg-background text-foreground">
+              <Sidebar />
+              <div className="relative flex-1 overflow-hidden flex flex-col">
+                <Header />
+                <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+              </div>
+            </div>
+          </TooltipProvider>
+        </MobileProvider>
       </body>
     </html>
   );

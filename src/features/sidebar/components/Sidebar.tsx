@@ -1,103 +1,238 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { PanelLeft, X } from "lucide-react";
 
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { ConversationList } from "./history/ConversationList";
 import { ProfileSection } from "./profile/ProfileSection";
 import { NewChatButton } from "./NewChatButton";
-import { useMobileUIStore } from "@/src/features/sidebar/store/useMobileUIStore";
+import { useMobileStore } from "@/src/shared/mobile/useMobileStore";
 
-type SidebarProps = {
-  isMobileDrawer?: boolean;
-};
+function SidebarToggle({
+  isOpen,
+  setIsOpen,
+  isMobile,
+}: {
+  isOpen: boolean;
+  setIsOpen: (v: boolean) => void;
+  isMobile: boolean;
+}) {
+  const handleClick = () => setIsOpen(!isOpen);
 
-export default function Sidebar({ isMobileDrawer = false }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const { user, loading: authLoading, supabaseReady } = useAuth();
-  const closeMobileSidebar = useMobileUIStore((state) => state.closeSidebar);
+  if (isMobile) {
+    return (
+      <button
+        type="button"
+        onClick={isOpen ? undefined : handleClick}
+        aria-label={isOpen ? "关闭侧边栏" : "打开侧边栏"}
+        className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-full bg-transparent text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground ${
+          isOpen ? "pointer-events-none" : ""
+        }`}
+      >
+        <PanelLeft className="h-5 w-5" />
+      </button>
+    );
+  }
 
-  const toggleCollapsed = () => {
-    if (isMobileDrawer) {
-      return;
-    }
-    setIsCollapsed((prev) => !prev);
-  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={isOpen ? "收起侧边栏" : "展开侧边栏"}
+      className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground active:scale-95"
+    >
+      <PanelLeft
+        className={`h-5 w-5 transition-transform duration-500 ${
+          isOpen ? "" : "rotate-180"
+        }`}
+      />
+    </button>
+  );
+}
 
-  const effectiveCollapsed = isMobileDrawer ? false : isCollapsed;
+function MobileSidebarWrapper({
+  isOpen,
+  onClose,
+  children,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) onClose();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
-    if (!supabaseReady) {
-      return;
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
-  }, [supabaseReady]);
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  return (
+    <div
+      className={`fixed inset-0 z-[var(--z-mobile-overlay)] ${
+        !isOpen ? "pointer-events-none" : ""
+      }`}
+    >
+      {isOpen && (
+        <div
+          className="absolute inset-0 bg-black/50 mobile-sidebar-overlay"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`absolute left-0 top-0 h-full bg-(--surface-base) mobile-sidebar-drawer z-[var(--z-mobile-sidebar)] overflow-hidden ${
+          isOpen ? "w-[80vw] max-w-xs transition-[width] duration-300" : "w-0"
+        }`}
+      >
+        {children}
+      </aside>
+    </div>
+  );
+}
+
+export default function Sidebar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useMobileStore((state) => state.isMobile);
+  const { user, loading: authLoading } = useAuth();
+
+  if (isMobile) {
+    return (
+      <>
+        <SidebarToggle isOpen={isOpen} setIsOpen={setIsOpen} isMobile={true} />
+        <MobileSidebarWrapper isOpen={isOpen} onClose={() => setIsOpen(false)}>
+          <div className="flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/80 backdrop-blur-md">
+            <div className="flex items-center justify-between px-3 h-14 shrink-0">
+              <Link
+                href="/"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-(--surface-hover)"
+                aria-label="返回首页"
+              >
+                <Image
+                  src="/aether-logo.svg"
+                  alt="Aether"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="关闭侧边栏"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-3 pb-4">
+              <NewChatButton isCollapsed={false} />
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
+              <div className="flex h-full flex-col gap-3">
+                <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
+                  <span>历史记录</span>
+                  {user && (
+                    <span className="text-[11px] text-(--text-tertiary)">
+                      {authLoading ? "同步中..." : "已登录"}
+                    </span>
+                  )}
+                </div>
+                {user ? (
+                  <ConversationList />
+                ) : (
+                  <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
+                    登录后可保存并查看历史记录，未登录仅在当前页临时存储。
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <ProfileSection isCollapsed={false} />
+          </div>
+        </MobileSidebarWrapper>
+      </>
+    );
+  }
 
   return (
     <aside
-      className={`flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cubic-bezier(0.32,0.72,0,1) ${
-        isMobileDrawer ? "w-full" : effectiveCollapsed ? "w-16" : "w-52"
+      className={`relative flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 ${
+        isOpen ? "w-52" : "w-16"
       }`}
     >
-      <div className="flex items-center gap-2 px-3 py-5">
-        <NewChatButton isCollapsed={effectiveCollapsed} />
-        <div className="ml-auto flex items-center gap-2">
-          {isMobileDrawer && (
-            <button
-              type="button"
-              onClick={closeMobileSidebar}
-              aria-label="关闭侧边栏"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          {!isMobileDrawer && (
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label={effectiveCollapsed ? "展开侧边栏" : "收起侧边栏"}
-              className="relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full cursor-pointer text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground active:scale-95"
-            >
-              <PanelLeft
-                className={`h-5 w-5 transition-transform duration-500 ${
-                  effectiveCollapsed ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-          )}
-        </div>
+      <div className="absolute top-0 left-0 right-0 h-16 flex items-center px-3">
+        {isOpen && (
+          <Link
+            href="/"
+            className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-(--surface-hover)"
+            aria-label="返回首页"
+          >
+            <Image
+              src="/aether-logo.svg"
+              alt="Aether"
+              width={24}
+              height={24}
+              className="h-6 w-6"
+            />
+          </Link>
+        )}
+
+        <SidebarToggle isOpen={isOpen} setIsOpen={setIsOpen} isMobile={false} />
       </div>
 
-      <div
-        className={`flex-1 shrink-0 overflow-x-hidden px-4 py-2 ${
-          effectiveCollapsed ? "overflow-y-hidden" : "overflow-y-auto"
-        }`}
-      >
+      <div className="pt-16 flex-1 flex flex-col min-h-0">
+        <div className="px-3 pb-4 shrink-0">
+          <NewChatButton isCollapsed={!isOpen} />
+        </div>
+
         <div
-          className={`flex h-full flex-col gap-3 transition-opacity duration-300 ${
-            effectiveCollapsed ? "opacity-0 invisible" : "opacity-100 visible"
+          className={`flex-1 min-h-0 overflow-x-hidden px-4 py-2 ${
+            !isOpen ? "overflow-y-hidden" : "overflow-y-auto"
           }`}
         >
-          <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
-            <span>历史记录</span>
-            {user && (
-              <span className="text-[11px] text-(--text-tertiary)">
-                {authLoading ? "同步中..." : "已登录"}
-              </span>
+          <div
+            className={`flex flex-col gap-3 transition-opacity duration-300 ${
+              !isOpen ? "opacity-0 invisible" : "opacity-100 visible"
+            }`}
+          >
+            <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
+              <span>历史记录</span>
+              {user && (
+                <span className="text-[11px] text-(--text-tertiary)">
+                  {authLoading ? "同步中..." : "已登录"}
+                </span>
+              )}
+            </div>
+            {user ? (
+              <ConversationList />
+            ) : (
+              <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
+                登录后可保存并查看历史记录，未登录仅在当前页临时存储。
+              </div>
             )}
           </div>
-          {user ? (
-            <ConversationList />
-          ) : (
-            <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
-              登录后可保存并查看历史记录，未登录仅在当前页临时存储。
-            </div>
-          )}
+        </div>
+
+        <div className="shrink-0">
+          <ProfileSection isCollapsed={!isOpen} />
         </div>
       </div>
-
-      <ProfileSection isCollapsed={effectiveCollapsed} />
     </aside>
   );
 }

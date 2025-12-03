@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { Brain, ChevronRight } from "lucide-react";
 import Markdown from "@/src/shared/components/Markdown";
 import type { ResearchItem } from "@/src/features/chat/types/chat";
-import { cx } from "@/src/shared/utils/cx";
+import { cn } from "@/lib/utils";
 
 type ThinkingItemProps = {
   item: Extract<ResearchItem, { kind: "thinking" }>;
@@ -23,9 +23,9 @@ export const ThinkingItem = memo(function ThinkingItem({
       <button
         type="button"
         onClick={toggleItem}
-        className={cx(
-          "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-(--surface-hover)",
-          isExpanded ? "bg-(--surface-hover)" : "bg-transparent"
+        className={cn(
+          "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-accent",
+          isExpanded ? "bg-accent" : "bg-transparent"
         )}
         aria-expanded={isExpanded}
         aria-controls={contentId}
@@ -39,8 +39,8 @@ export const ThinkingItem = memo(function ThinkingItem({
         </span>
 
         <ChevronRight
-          className={cx(
-            "h-3.5 w-3.5 text-(--text-tertiary) transition-transform duration-200",
+          className={cn(
+            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
             isExpanded && "rotate-90"
           )}
         />
@@ -48,7 +48,7 @@ export const ThinkingItem = memo(function ThinkingItem({
 
       <div
         id={contentId}
-        className={cx(
+        className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
           isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}

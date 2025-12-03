@@ -1,10 +1,15 @@
 import { memo, useState } from "react";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
-import { cx } from "@/src/shared/utils/cx";
+import { cn } from "@/lib/utils";
 import { FetchUrl } from "./tools/FetchUrl";
 import { BraveSearch } from "./tools/BraveSearch";
 import { ThinkingItem } from "./tools/ThinkingItem";
-import { Activity, ChevronRight, Loader2, Wrench, Cpu } from "lucide-react";
+import { ChevronRight, Loader2, Cpu } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
@@ -43,8 +48,8 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           );
         }
         return (
-          <div className="px-4 py-2 text-xs text-(--color-destructive) font-mono border-l-2 border-(--color-destructive) bg-(--surface-muted)">
-            ⚠️ Missing UI for tool: <strong>{toolName}</strong>
+          <div className="px-4 py-2 text-xs text-destructive font-mono border-l-2 border-destructive bg-muted">
+            Missing UI for tool: <strong>{toolName}</strong>
           </div>
         );
     }
@@ -60,24 +65,24 @@ export const ResearchBlock = memo(function ResearchBlock({
   isActive,
 }: ResearchBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const toggleBlock = () => setIsExpanded((prev) => !prev);
 
   return (
-    <div className="my-2 overflow-hidden rounded-lg border border-(--border-subtle) bg-background">
-      <button
-        type="button"
-        onClick={toggleBlock}
-        className={cx(
-          "flex w-full items-center justify-between px-3 py-2 transition-all hover:bg-(--surface-hover)",
-          isActive && "bg-(--surface-hover)"
+    <Collapsible
+      open={isExpanded}
+      onOpenChange={setIsExpanded}
+      className="my-2 overflow-hidden rounded-lg border bg-background"
+    >
+      <CollapsibleTrigger
+        className={cn(
+          "flex w-full items-center justify-between px-3 py-2 transition-all hover:bg-accent",
+          isActive && "bg-accent"
         )}
-        aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-2">
           <div
-            className={cx(
-              "flex h-5 w-5 items-center justify-center text-(--text-tertiary)",
-              isActive && "text-(--color-brand)"
+            className={cn(
+              "flex h-5 w-5 items-center justify-center text-muted-foreground",
+              isActive && "text-primary"
             )}
           >
             {isActive ? (
@@ -89,15 +94,15 @@ export const ResearchBlock = memo(function ResearchBlock({
 
           <div className="flex items-center gap-2">
             <span
-              className={cx(
+              className={cn(
                 "text-sm font-medium",
-                isActive ? "text-foreground" : "text-(--text-secondary)"
+                isActive ? "text-foreground" : "text-muted-foreground"
               )}
             >
               {isActive ? "Researching..." : "Research completed"}
             </span>
             {!isExpanded && items.length > 0 && (
-              <span className="text-xs text-(--text-tertiary)">
+              <span className="text-xs text-muted-foreground">
                 ({items.length} steps)
               </span>
             )}
@@ -105,22 +110,17 @@ export const ResearchBlock = memo(function ResearchBlock({
         </div>
 
         <div
-          className={cx(
-            "flex h-5 w-5 items-center justify-center text-(--text-tertiary) transition-transform duration-200",
+          className={cn(
+            "flex h-5 w-5 items-center justify-center text-muted-foreground transition-transform duration-200",
             isExpanded && "rotate-90"
           )}
         >
           <ChevronRight className="h-4 w-4" />
         </div>
-      </button>
+      </CollapsibleTrigger>
 
-      <div
-        className={cx(
-          "transition-all duration-300 ease-in-out",
-          isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
-        )}
-      >
-        <div className="max-h-[500px] overflow-y-auto overscroll-contain border-t border-(--border-subtle) bg-(--surface-alt)">
+      <CollapsibleContent>
+        <div className="max-h-[500px] overflow-y-auto overscroll-contain border-t bg-muted/50">
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
             return (
@@ -128,13 +128,13 @@ export const ResearchBlock = memo(function ResearchBlock({
             );
           })}
           {isActive && (
-            <div className="flex items-center gap-2 p-3 text-xs text-(--text-tertiary)">
+            <div className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               <span>Analyzing...</span>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 });

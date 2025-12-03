@@ -1,11 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, Check } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { ChatModelId } from "@/src/features/model/lib/openrouter";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 type ModelOption = {
   id: ChatModelId;
@@ -59,7 +67,6 @@ export function ModelSelector() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const trimmedSearch = search.trim();
@@ -125,135 +132,127 @@ export function ModelSelector() {
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
   }, [search]);
+
+  // 当 Popover 打开时，等待 Portal 挂载后重新测量 virtualizer
+  useLayoutEffect(() => {
+    if (isOpen) {
+      // 使用 requestAnimationFrame 确保 DOM 已挂载
+      const raf = requestAnimationFrame(() => {
+        virtualizer.measure();
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [isOpen, virtualizer]);
 
   if (loading) {
     return null;
   }
 
   return (
-    <div className="relative" ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`
-          flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer
-          bg-transparent hover:bg-(--surface-hover) backdrop-blur-sm
-          text-foreground min-w-[120px] sm:min-w-[180px] justify-between
-          ${isOpen ? "bg-(--surface-hover)" : ""}
-        `}
-      >
-        <span className="max-w-[120px] sm:max-w-[160px] truncate">
-          {error ? "模型加载失败" : currentModelLabel || "未选择模型"}
-        </span>
-        <ChevronDown
-          className={`w-4 h-4 text-muted-foreground transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(
+            "min-w-[120px] sm:min-w-[180px] justify-between px-3 py-2 text-xs sm:text-sm font-medium",
+            isOpen && "bg-accent"
+          )}
+        >
+          <span className="max-w-[120px] sm:max-w-[160px] truncate">
+            {error ? "模型加载失败" : currentModelLabel || "未选择模型"}
+          </span>
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 text-muted-foreground transition-transform duration-300",
+              isOpen && "rotate-180"
+            )}
+          />
+        </Button>
+      </PopoverTrigger>
 
-      {isOpen && (
-        <div className="absolute top-full mt-2 left-0 right-0 sm:right-auto z-[var(--z-dropdown)] min-w-[240px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-popover/80 backdrop-blur-xl shadow-float origin-top-left">
-          <div className="p-1.5">
-            {error ? (
-              <div className="px-3 py-2 text-xs text-muted-foreground">
-                模型加载失败，请重试
+      <PopoverContent
+        align="start"
+        className="min-w-[240px] max-w-[calc(100vw-2rem)] p-1.5"
+      >
+        {error ? (
+          <div className="px-3 py-2 text-xs text-muted-foreground">
+            模型加载失败，请重试
+          </div>
+        ) : (
+          <>
+            <div className="px-2 pb-2 pt-1">
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="搜索模型..."
+                disabled={models.length === 0 || loading}
+                className="h-9 text-xs sm:text-sm"
+              />
+            </div>
+
+            {models.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-muted-foreground text-center">
+                {loading ? "正在加载模型..." : "暂无可用模型"}
+              </div>
+            ) : visibleModels.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-muted-foreground text-center">
+                没有匹配的模型
               </div>
             ) : (
-              <>
-                <div className="px-2 pb-2 pt-1">
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="搜索模型..."
-                    disabled={models.length === 0 || loading}
-                    className="w-full rounded-lg bg-muted/50 px-3 py-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all disabled:opacity-60"
-                  />
+              <div
+                ref={scrollRef}
+                className="max-h-[250px] overflow-y-auto px-1"
+              >
+                <div
+                  style={{
+                    height: `${virtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {virtualizer.getVirtualItems().map((virtualItem) => {
+                    const model = visibleModels[virtualItem.index];
+                    return (
+                      <div
+                        key={model.id}
+                        ref={virtualizer.measureElement}
+                        data-index={virtualItem.index}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setCurrentModel(model.id);
+                            setIsOpen(false);
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer hover:bg-accent",
+                            currentModel === model.id && "font-semibold"
+                          )}
+                        >
+                          <span>{highlightLabel(model.label, search)}</span>
+                          {currentModel === model.id && (
+                            <Check className="w-3.5 h-3.5 text-primary" />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                {models.length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-muted-foreground text-center">
-                    {loading ? "正在加载模型..." : "暂无可用模型"}
-                  </div>
-                ) : visibleModels.length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-muted-foreground text-center">
-                    没有匹配的模型
-                  </div>
-                ) : (
-                  <div
-                    ref={scrollRef}
-                    className="max-h-[250px] overflow-y-auto px-1"
-                  >
-                    <div
-                      style={{
-                        height: `${virtualizer.getTotalSize()}px`,
-                        width: "100%",
-                        position: "relative",
-                      }}
-                    >
-                      {virtualizer.getVirtualItems().map((virtualItem) => {
-                        const model = visibleModels[virtualItem.index];
-                        return (
-                          <div
-                            key={model.id}
-                            ref={virtualizer.measureElement}
-                            data-index={virtualItem.index}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              transform: `translateY(${virtualItem.start}px)`,
-                            }}
-                          >
-                            <button
-                              onClick={() => {
-                                setCurrentModel(model.id);
-                              }}
-                              className={`
-                                flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer
-                                hover:bg-(--surface-hover)
-                                ${
-                                  currentModel === model.id
-                                    ? "font-semibold"
-                                    : ""
-                                }
-                              `}
-                            >
-                              <span>{highlightLabel(model.label, search)}</span>
-                              {currentModel === model.id && (
-                                <Check className="w-3.5 h-3.5 text-primary" />
-                              )}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
-          </div>
-        </div>
-      )}
-    </div>
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }

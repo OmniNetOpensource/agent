@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
-import { createPortal } from "react-dom";
 import { flushSync } from "react-dom";
-import { LogOut, Moon, Sun, X } from "lucide-react";
-
+import { LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 
 type SettingsModalProps = {
   open: boolean;
@@ -19,25 +24,6 @@ export function SettingsModal({
   onSignOut,
 }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
-
-  if (!open) {
-    return null;
-  }
 
   const handleSignOut = async () => {
     await onSignOut();
@@ -85,37 +71,23 @@ export function SettingsModal({
     });
   };
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-black/35 backdrop-blur-md"
-      onClick={onClose}
-    >
-      <div
-        className="relative h-[50vh] w-[50vw] min-w-[320px] max-w-4xl rounded-[var(--radius-lg)] border border-(--border-subtle) bg-(--surface-card) p-6 shadow-lg"
-        style={{ boxShadow: "var(--shadow-float)" }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">设置</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="h-[50vh] w-[50vw] min-w-[320px] max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>设置</DialogTitle>
+        </DialogHeader>
 
         <div className="flex h-[calc(100%-3rem)] flex-col justify-between">
           <div className="space-y-6">
             {/* Appearance Section */}
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-(--text-secondary)">
+              <h3 className="text-sm font-medium text-muted-foreground">
                 外观
               </h3>
-              <div className="flex items-center justify-between rounded-xl border border-(--border-subtle) bg-(--surface-muted)/30 p-3">
+              <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-(--surface-base) text-foreground shadow-sm ring-1 ring-(--border-subtle)">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background text-foreground shadow-sm ring-1 ring-border">
                     {theme === "dark" ? (
                       <Sun className="h-4 w-4" />
                     ) : (
@@ -126,46 +98,29 @@ export function SettingsModal({
                     <span className="text-sm font-medium text-foreground">
                       深色模式
                     </span>
-                    <span className="text-xs text-(--text-tertiary)">
+                    <span className="text-xs text-muted-foreground">
                       {theme === "dark" ? "已开启" : "已关闭"}
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
+                <Switch
+                  checked={theme === "dark"}
                   onClick={handleThemeToggle}
-                  role="switch"
-                  aria-checked={theme === "dark"}
-                  className={`relative h-6 w-11 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                    theme === "dark"
-                      ? "bg-(--text-primary)"
-                      : "bg-(--border-strong)"
-                  }`}
-                >
-                  <span
-                    className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      theme === "dark" ? "translate-x-5" : "translate-x-0.5"
-                    }`}
-                  />
-                </button>
+                />
               </div>
             </div>
           </div>
 
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={handleSignOut}
-            className="inline-flex items-center gap-2 self-start rounded-lg border border-(--border-subtle) bg-(--surface-card) px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-(--surface-hover)"
+            className="self-start"
           >
             <LogOut className="h-4 w-4" />
             退出登录
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
-
-  return typeof document !== "undefined"
-    ? createPortal(modalContent, document.body)
-    : null;
 }

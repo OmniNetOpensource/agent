@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
+import { Button } from "@/components/ui/button";
 
 interface NewChatButtonProps {
   isCollapsed?: boolean;
@@ -29,22 +30,22 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
   };
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={handleNewChat}
-      className="group relative inline-flex h-10 w-full items-center overflow-hidden rounded-xl cursor-pointer text-foreground transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-50"
+      className="group relative h-10 w-full justify-start px-0 overflow-hidden"
       aria-label="新对话"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center">
-        <Plus className="h-5 w-5 text-foreground transition-transform duration-300 group-hover:rotate-90" />
+        <Plus className="h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
       </span>
       <span
-        className={`overflow-hidden whitespace-nowrap text-sm font-medium text-foreground transition-all duration-300 ${
+        className={`overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-300 ${
           isCollapsed ? "w-0 opacity-0" : "opacity-100"
         }`}
       >
         新对话
       </span>
-    </button>
+    </Button>
   );
 }

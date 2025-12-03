@@ -9,8 +9,9 @@ import {
   Download,
   Eye,
 } from "lucide-react";
-import { cx } from "@/src/shared/utils/cx";
+import { cn } from "@/lib/utils";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
+import { Button } from "@/components/ui/button";
 
 type CodeBlockProps = {
   language?: string;
@@ -108,7 +109,6 @@ export default function CodeBlock({
 
   const handlePreview = () => {
     if (!canPreview || !hasCode) return;
-    // Toggle: 如果当前预览的是同一段代码，则关闭；否则打开新预览
     if (isOpen && previewCode === code) {
       closePreview();
     } else {
@@ -116,95 +116,95 @@ export default function CodeBlock({
     }
   };
 
-  const buttonClass =
-    "inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-50";
-
   return (
-    <div className="group  rounded-lg border border-(--code-block-border) bg-(--code-block-bg)">
-      {/* Header - 点击可收起/展开 */}
+    <div className="group rounded-lg border bg-muted/50">
+      {/* Header */}
       <div
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className={cx(
-          "sticky top-0 z-[var(--z-sticky)] flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-(--surface-hover) transition-all duration-200 ease-in-out",
+        className={cn(
+          "sticky top-0 z-10 flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-accent transition-all duration-200 ease-in-out",
           isCollapsed ? "rounded-lg" : "rounded-t-lg"
         )}
       >
-        {/* 左侧：展开/收起图标 + 语言标签 */}
+        {/* Left: expand/collapse icon + language label */}
         <div className="flex items-center gap-1.5">
           {isCollapsed ? (
-            <ChevronRight className="h-3.5 w-3.5 text-(--text-tertiary)" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-(--text-tertiary)" />
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           )}
           {normalizedLanguage ? (
-            <span className="text-xs font-medium text-(--text-secondary)">
+            <span className="text-xs font-medium text-muted-foreground">
               {normalizedLanguage.toUpperCase()}
             </span>
           ) : (
-            <span className="text-xs text-(--text-tertiary)">Code</span>
+            <span className="text-xs text-muted-foreground">Code</span>
           )}
         </div>
 
-        {/* 右侧：操作按钮 */}
+        {/* Right: action buttons */}
         <div
           className="flex items-center gap-1"
           onClick={(e) => e.stopPropagation()}
         >
           {canPreview && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handlePreview}
-              className={buttonClass}
               title="预览代码"
               aria-label="预览代码"
               disabled={!hasCode}
+              className="h-7 gap-1 px-2 text-[11px]"
             >
               <Eye className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">预览</span>
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleDownload}
-            className={buttonClass}
             title="下载代码"
             aria-label="下载代码"
             disabled={!hasCode}
+            className="h-7 gap-1 px-2 text-[11px]"
           >
             <Download className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">下载</span>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleCopy}
-            className={buttonClass}
             title="复制到剪贴板"
             aria-label="复制到剪贴板"
             disabled={!hasCode}
+            className="h-7 gap-1 px-2 text-[11px]"
           >
             {isCopied ? (
-              <Check className="h-3.5 w-3.5 text-(--color-success)" />
+              <Check className="h-3.5 w-3.5 text-green-500" />
             ) : (
               <Copy className="h-3.5 w-3.5" />
             )}
             <span className="hidden sm:inline">
               {isCopied ? "已复制" : "复制"}
             </span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* 代码区域 */}
+      {/* Code area */}
       <div
-        className={cx(
+        className={cn(
           "grid transition-[grid-template-rows] duration-200 ease-in-out",
           isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
         )}
       >
         <pre
-          className={cx(
+          className={cn(
             className,
-            "overflow-hidden overflow-x-auto rounded-none bg-transparent text-sm text-(--code-block-text) transition-[padding] duration-600 ease-in-out",
+            "overflow-hidden overflow-x-auto rounded-none bg-transparent text-sm transition-[padding] duration-600 ease-in-out",
             isCollapsed ? "py-0 px-4" : "p-4"
           )}
         >

@@ -1,7 +1,7 @@
 import type { Tool } from "@/src/features/chat/types/chat";
 import Markdown from "@/src/shared/components/Markdown";
 import { Search, Zap, ExternalLink, Globe, ChevronRight } from "lucide-react";
-import { cx } from "@/src/shared/utils/cx";
+import { cn } from "@/lib/utils";
 import { getToolLifecycle } from "../utils";
 import { useState } from "react";
 
@@ -98,10 +98,10 @@ function SearchResultCard({
       href={url}
       target="_blank"
       rel="noreferrer noopener"
-      className={cx(
-        "group relative flex w-[240px] shrink-0 flex-col gap-2 rounded-lg p-3 transition-all duration-300 ease-out",
-        "bg-(--surface-card) border border-(--border-subtle)",
-        "hover:-translate-y-1 hover:shadow-sm hover:border-(--border-hover)"
+      className={cn(
+        "group relative flex w-60 shrink-0 flex-col gap-2 rounded-lg p-3 transition-all duration-300 ease-out",
+        "bg-card border",
+        "hover:-translate-y-1 hover:shadow-sm hover:border-ring"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -204,8 +204,8 @@ export function BraveSearch({ tool }: BraveSearchProps) {
               </span>
             </div>
             <ChevronRight
-              className={cx(
-                "h-3 w-3 text-(--text-tertiary) transition-transform duration-200",
+              className={cn(
+                "h-3 w-3 text-muted-foreground transition-transform duration-200",
                 isExpanded && "rotate-90"
               )}
             />

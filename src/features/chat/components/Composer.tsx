@@ -13,6 +13,9 @@ import { ArrowUp, Globe, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 type ComposerProps = {
   isNewRoute: boolean;
@@ -97,7 +100,6 @@ export function Composer({ isNewRoute }: ComposerProps) {
       return;
     }
     await addAttachments(Array.from(files));
-    // 允许重复选择同一文件
     event.target.value = "";
   };
 
@@ -110,7 +112,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
 
   const formClassName = isNewchat
     ? "flex flex-1 items-center justify-center py-12"
-    : "absolute inset-x-0 bottom-0 z-[var(--z-composer)]";
+    : "absolute inset-x-0 bottom-0 z-(--z-composer)";
   const containerClassName = isNewchat
     ? "w-full max-w-3xl px-3 sm:px-4 md:px-6"
     : "w-full max-w-3xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6";
@@ -124,7 +126,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
       <div className={containerClassName}>
         <div className="flex flex-col gap-3">
           {pendingAttachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 rounded-2xl border border-(--border-subtle) bg-(--surface-card) px-4 py-3 shadow-lg">
+            <div className="flex flex-wrap gap-2 rounded-2xl border bg-card px-4 py-3 shadow-lg">
               {pendingAttachments.map((attachment) =>
                 attachment.kind === "image" ? (
                   <div key={attachment.id} className="group relative">
@@ -136,22 +138,24 @@ export function Composer({ isNewRoute }: ComposerProps) {
                       className="h-20 w-auto rounded-xl object-cover"
                       unoptimized
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label="移除附件"
                       onClick={() => removeAttachment(attachment.id)}
-                      className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute right-1 top-1 h-6 w-6 rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div
                     key={attachment.id}
-                    className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-xl border border-(--border-subtle) bg-background p-2 pr-3 shadow-sm"
+                    className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-xl border bg-background p-2 pr-3 shadow-sm"
                   >
-                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-(--border-subtle) bg-(--surface-muted)">
-                      <div className="flex h-full w-full items-center justify-center text-(--text-tertiary)">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                         <Paperclip className="h-4 w-4" />
                       </div>
                     </div>
@@ -159,25 +163,27 @@ export function Composer({ isNewRoute }: ComposerProps) {
                       <div className="truncate text-xs font-medium text-foreground">
                         {attachment.name}
                       </div>
-                      <div className="text-[10px] text-(--text-tertiary)">
+                      <div className="text-[10px] text-muted-foreground">
                         {formatFileSize(attachment.size)}
                       </div>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label="移除附件"
                       onClick={() => removeAttachment(attachment.id)}
-                      className="rounded-full p-1 text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+                      className="h-6 w-6 rounded-full"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 )
               )}
             </div>
           )}
 
-          <div className="relative flex w-full flex-col gap-1 rounded-3xl border border-(--border-subtle) bg-(--surface-card) p-2 shadow-lg transition-all focus-within:border-(--border-hover) focus-within:shadow-xl">
+          <div className="relative flex w-full flex-col gap-1 rounded-3xl border bg-card p-2 shadow-lg transition-all focus-within:border-ring focus-within:shadow-xl">
             <div className="flex w-full items-end gap-2">
               <input
                 type="file"
@@ -187,16 +193,18 @@ export function Composer({ isNewRoute }: ComposerProps) {
                 className="hidden"
               />
 
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={handlePickFiles}
-                className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-(--text-tertiary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+                className="h-9 w-9 shrink-0 rounded-full sm:h-10 sm:w-10"
                 title="添加附件"
               >
                 <Paperclip className="h-5 w-5" />
-              </button>
+              </Button>
 
-              <textarea
+              <Textarea
                 ref={textareaRef}
                 id="message-input"
                 name="message"
@@ -207,11 +215,11 @@ export function Composer({ isNewRoute }: ComposerProps) {
                 onKeyDown={handleKeyDown}
                 rows={1}
                 placeholder="输入您的消息..."
-                className="min-h-10 max-h-[200px] flex-1 resize-none bg-transparent py-2.5 text-sm sm:text-base text-foreground placeholder:text-(--text-tertiary) focus:outline-none"
+                className="min-h-10 max-h-[200px] flex-1 resize-none border-0 bg-transparent py-2.5 text-sm focus-visible:ring-0 sm:text-base"
                 style={{ height: "44px" }}
               />
 
-              <button
+              <Button
                 type={pending ? "button" : "submit"}
                 disabled={sendDisabled}
                 onClick={(event) => {
@@ -220,38 +228,44 @@ export function Composer({ isNewRoute }: ComposerProps) {
                     stop();
                   }
                 }}
-                className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                size="icon"
+                className={cn(
+                  "h-9 w-9 shrink-0 rounded-full sm:h-10 sm:w-10 transition-all duration-200",
                   sendDisabled
-                    ? "bg-(--surface-muted) text-(--text-tertiary) cursor-not-allowed"
-                    : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-md"
-                }`}
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : "hover:scale-105 active:scale-95"
+                )}
               >
                 {pending ? (
                   <Square className="h-4 w-4 fill-current" />
                 ) : (
                   <ArrowUp className="h-5 w-5" />
                 )}
-              </button>
+              </Button>
             </div>
 
             <div className="flex items-center px-1">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSearchEnabled(!searchEnabled)}
                 title="开启后，模型会自主决定是否搜索"
-                className={`group flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-medium transition-all ${
+                className={cn(
+                  "group h-7 gap-1.5 rounded-full px-2 text-xs font-medium",
                   searchEnabled
                     ? "text-blue-600 dark:text-blue-400"
-                    : "text-(--text-tertiary) hover:text-foreground"
-                }`}
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
                 <Globe
-                  className={`h-3.5 w-3.5 transition-transform ${
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
                     searchEnabled ? "scale-110" : "group-hover:scale-110"
-                  }`}
+                  )}
                 />
                 <span>联网</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>

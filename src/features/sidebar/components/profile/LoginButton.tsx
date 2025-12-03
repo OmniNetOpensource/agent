@@ -2,6 +2,7 @@
 
 import { Loader2, LogIn } from "lucide-react";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 type LoginButtonProps = {
   isCollapsed?: boolean;
@@ -12,16 +13,16 @@ export function LoginButton({ isCollapsed }: LoginButtonProps) {
   const buttonDisabled = loading || !supabaseReady;
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
       onClick={signIn}
       disabled={buttonDisabled}
-      className={`group inline-flex items-center justify-center gap-2 rounded-xl border border-(--border-subtle) bg-(--surface-card) text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 ${
-        isCollapsed ? "h-10 w-10 p-0" : "w-full px-4 py-3"
+      className={`group transition-all hover:-translate-y-0.5 hover:shadow-md ${
+        isCollapsed ? "h-10 w-10 p-0" : "w-full px-4 py-3 h-auto"
       }`}
     >
       <span
-        className={`relative flex items-center justify-center rounded-lg bg-(--surface-muted) text-foreground ring-1 ring-(--border-subtle) transition-transform group-hover:scale-105 ${
+        className={`relative flex items-center justify-center rounded-lg bg-muted ring-1 ring-border transition-transform group-hover:scale-105 ${
           isCollapsed ? "h-6 w-6" : "h-6 w-6"
         }`}
       >
@@ -42,6 +43,6 @@ export function LoginButton({ isCollapsed }: LoginButtonProps) {
           )}
         </span>
       )}
-    </button>
+    </Button>
   );
 }
