@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Nunito, Geist_Mono } from "next/font/google";
-import { Header } from "@/src/features/chat/components/Header";
-import Sidebar from "@/src/features/sidebar/components/Sidebar";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileProvider } from "@/src/shared/mobile/MobileProvider";
@@ -55,13 +53,7 @@ export default function RootLayout({
 })();`}</Script>
         <MobileProvider>
           <TooltipProvider>
-            <div className="flex h-screen w-screen bg-background text-foreground">
-              <Sidebar />
-              <div className="relative flex-1 overflow-hidden flex flex-col">
-                <Header />
-                <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-              </div>
-            </div>
+            {children}
           </TooltipProvider>
         </MobileProvider>
       </body>

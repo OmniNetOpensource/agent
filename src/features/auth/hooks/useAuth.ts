@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/shared/lib/supabase/client";
 import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
+import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
 
 type UseAuthResult = {
   user: User | null;
@@ -18,11 +19,16 @@ export function useAuth(): UseAuthResult {
   const clientRef = useRef<ReturnType<
     typeof createSupabaseBrowserClient
   > | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(() => supabaseReady);
+
+  // 使用 Zustand store 管理状态
+  const user = useAuthStore((state) => state.user);
+  const loading = useAuthStore((state) => state.loading);
+  const setUser = useAuthStore((state) => state.setUser);
+  const setLoading = useAuthStore((state) => state.setLoading);
 
   useEffect(() => {
     if (!supabaseReady) {
+      setLoading(false);
       return;
     }
 
@@ -46,6 +52,7 @@ export function useAuth(): UseAuthResult {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        // setUser 内部会比较 user ID，避免不必要的更新
         setUser(session?.user ?? null);
       }
     );
@@ -54,9 +61,9 @@ export function useAuth(): UseAuthResult {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [supabaseReady, setUser, setLoading]);
 
-  const signIn = async () => {
+  const signIn = useCallback(async () => {
     if (!supabaseReady || !clientRef.current) {
       alert("请先配置 Supabase 环境变量后再登录。");
       return;
@@ -83,9 +90,9 @@ export function useAuth(): UseAuthResult {
       console.error("[Auth] Sign-in failed", error.message);
       alert("登录失败，请稍后重试。");
     }
-  };
+  }, [supabaseReady]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     if (!supabaseReady || !clientRef.current) {
       return;
     }
@@ -94,7 +101,7 @@ export function useAuth(): UseAuthResult {
       console.error("[Auth] Sign-out failed", error.message);
       alert("登出失败，请稍后重试。");
     }
-  };
+  }, [supabaseReady]);
 
   return {
     user,
