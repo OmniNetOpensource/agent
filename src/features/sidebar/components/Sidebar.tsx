@@ -7,7 +7,7 @@ import { PanelLeft, X } from "lucide-react";
 
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { ConversationList } from "./history/ConversationList";
-import { ProfileSection } from "./profile/ProfileSection";
+import { ProfileMenu } from "./profile/ProfileMenu";
 import { NewChatButton } from "./NewChatButton";
 import { useMobileStore } from "@/src/shared/mobile/useMobileStore";
 
@@ -164,7 +164,7 @@ export default function Sidebar() {
               </div>
             </div>
 
-            <ProfileSection isCollapsed={false} />
+            <ProfileMenu isCollapsed={false} />
           </div>
         </MobileSidebarWrapper>
       </>
@@ -242,7 +242,7 @@ export default function Sidebar() {
         </div>
 
         <div className="shrink-0">
-          <ProfileSection isCollapsed={!isOpen} />
+          <ProfileMenu isCollapsed={!isOpen} />
         </div>
       </div>
     </aside>
