@@ -192,17 +192,6 @@ export function Composer() {
                 className="hidden"
               />
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handlePickFiles}
-                className="h-9 w-9 shrink-0 rounded-full sm:h-10 sm:w-10"
-                title="添加附件"
-              >
-                <Paperclip className="h-5 w-5" />
-              </Button>
-
               <Textarea
                 ref={textareaRef}
                 id="message-input"
@@ -244,27 +233,39 @@ export function Composer() {
             </div>
 
             <div className="flex items-center justify-between px-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchEnabled(!searchEnabled)}
-                title="开启后，模型会自主决定是否搜索"
-                className={cn(
-                  "group h-7 gap-1.5 rounded-full px-2 text-xs font-medium",
-                  searchEnabled
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Globe
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchEnabled(!searchEnabled)}
+                  title="开启后，模型会自主决定是否搜索"
                   className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    searchEnabled ? "scale-110" : "group-hover:scale-110"
+                    "group h-7 gap-1.5 rounded-full px-2 text-xs font-medium",
+                    searchEnabled
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
-                />
-                <span>联网</span>
-              </Button>
+                >
+                  <Globe
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform",
+                      searchEnabled ? "scale-110" : "group-hover:scale-110"
+                    )}
+                  />
+                  <span>联网</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePickFiles}
+                  title="添加附件"
+                  className="h-7 gap-1.5 rounded-full px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <ModelSelector />
             </div>
           </div>

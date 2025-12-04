@@ -36,12 +36,22 @@ export function GuestMenu({ isCollapsed = false }: GuestMenuProps) {
   };
 
   return (
-    <div className="relative w-full">
+    <div 
+      className="relative transition-all duration-500"
+      style={{ width: isCollapsed ? "auto" : "100%" }}
+    >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-2 py-1 text-sm transition-colors hover:bg-accent"
+            className="flex cursor-pointer items-center gap-3 text-sm transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
+            style={{
+              width: isCollapsed ? 40 : "100%",
+              height: isCollapsed ? 40 : "auto",
+              padding: isCollapsed ? 4 : "4px 8px",
+              borderRadius: isCollapsed ? 6 : 6,
+              justifyContent: isCollapsed ? "center" : "flex-start",
+            }}
           >
             <span className="flex min-w-0 items-center gap-2 shrink-0">
               <Avatar className="h-8 w-8">
@@ -50,9 +60,11 @@ export function GuestMenu({ isCollapsed = false }: GuestMenuProps) {
                 </AvatarFallback>
               </Avatar>
               <span
-                className={`flex min-w-0 flex-col text-left transition-all duration-300 ${
-                  isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
-                }`}
+                className="flex min-w-0 flex-col text-left transition-all duration-500 overflow-hidden"
+                style={{ 
+                  width: isCollapsed ? 0 : "auto", 
+                  opacity: isCollapsed ? 0 : 1 
+                }}
               >
                 <span className="truncate font-semibold text-foreground">
                   Guest

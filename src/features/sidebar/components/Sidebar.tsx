@@ -28,7 +28,7 @@ function SidebarToggle({
         type="button"
         onClick={isOpen ? undefined : handleClick}
         aria-label={isOpen ? "关闭侧边栏" : "打开侧边栏"}
-        className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-full bg-transparent text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground ${
+        className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${
           isOpen ? "pointer-events-none" : ""
         }`}
       >
@@ -42,7 +42,8 @@ function SidebarToggle({
       type="button"
       onClick={handleClick}
       aria-label={isOpen ? "收起侧边栏" : "展开侧边栏"}
-      className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground active:scale-95"
+      className="absolute top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-all duration-500 hover:bg-accent hover:text-accent-foreground active:scale-95"
+      style={{ right: isOpen ? 12 : 4 }}
     >
       <PanelLeft
         className={`h-5 w-5 transition-transform duration-500 ${
@@ -118,7 +119,7 @@ export default function Sidebar() {
             <div className="flex items-center justify-between px-3 h-14 shrink-0">
               <Link
                 href="/"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-(--surface-hover)"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
                 aria-label="返回首页"
               >
                 <Image
@@ -133,7 +134,7 @@ export default function Sidebar() {
                 type="button"
                 onClick={() => setIsOpen(false)}
                 aria-label="关闭侧边栏"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-(--text-secondary) transition-colors hover:bg-(--surface-hover) hover:text-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -173,31 +174,42 @@ export default function Sidebar() {
   return (
     <aside
       className={`relative flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 ${
-        isOpen ? "w-52" : "w-16"
+        isOpen ? "w-52" : "w-12"
       }`}
     >
-      <div className="absolute top-0 left-0 right-0 h-16 flex items-center px-3">
-        {isOpen && (
-          <Link
-            href="/"
-            className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-(--surface-hover)"
-            aria-label="返回首页"
-          >
-            <Image
-              src="/aether-logo.svg"
-              alt="Aether"
-              width={24}
-              height={24}
-              className="h-6 w-6"
-            />
-          </Link>
-        )}
+      <div
+        className="absolute top-0 left-0 right-0 h-16 flex items-center transition-all duration-500"
+        style={{ paddingLeft: isOpen ? 12 : 4, paddingRight: isOpen ? 12 : 4 }}
+      >
+        <Link
+          href="/"
+          className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
+          aria-label="返回首页"
+          style={{
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? "auto" : "none",
+          }}
+        >
+          <Image
+            src="/aether-logo.svg"
+            alt="Aether"
+            width={24}
+            height={24}
+            className="h-6 w-6"
+          />
+        </Link>
 
         <SidebarToggle isOpen={isOpen} setIsOpen={setIsOpen} isMobile={false} />
       </div>
 
       <div className="pt-16 flex-1 flex flex-col min-h-0">
-        <div className="px-3 pb-4 shrink-0">
+        <div
+          className="pb-4 shrink-0 flex transition-all duration-500"
+          style={{
+            paddingLeft: isOpen ? 12 : 4,
+            paddingRight: isOpen ? 12 : 4,
+          }}
+        >
           <NewChatButton isCollapsed={!isOpen} />
         </div>
 
