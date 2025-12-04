@@ -8,22 +8,15 @@ import { ResearchBlock } from "./research/ResearchBlock";
 import { Copy, Check, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type MessageItemProps = {
-  message: Message;
-  index: number;
-  isStreaming: boolean;
+type CopyButtonProps = {
+  blocks: Message["blocks"];
 };
 
-export const MessageItem = memo(function MessageItem({
-  message,
-  index,
-  isStreaming,
-}: MessageItemProps) {
-  const isUser = message.role === "user";
+const CopyButton = ({ blocks }: CopyButtonProps) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = async () => {
-    const text = message.blocks
+    const text = blocks
       .filter((b) => b.type === "content")
       .map((b) => b.content)
       .join("\n\n");
@@ -38,6 +31,37 @@ export const MessageItem = memo(function MessageItem({
       console.error("Failed to copy text: ", err);
     }
   };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleCopy}
+      className="h-auto gap-1.5 px-2 py-1 text-xs"
+      title="复制内容"
+    >
+      {isCopied ? (
+        <Check className="h-3.5 w-3.5" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+      {isCopied ? "已复制" : "复制"}
+    </Button>
+  );
+};
+
+type MessageItemProps = {
+  message: Message;
+  index: number;
+  isStreaming: boolean;
+};
+
+export const MessageItem = memo(function MessageItem({
+  message,
+  index,
+  isStreaming,
+}: MessageItemProps) {
+  const isUser = message.role === "user";
 
   return (
     <div
@@ -152,21 +176,13 @@ export const MessageItem = memo(function MessageItem({
         )}
       </div>
 
-      <div className="flex items-center justify-end px-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="h-auto gap-1.5 px-2 py-1 text-xs"
-          title="复制内容"
-        >
-          {isCopied ? (
-            <Check className="h-3.5 w-3.5" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
-          )}
-          {isCopied ? "已复制" : "复制"}
-        </Button>
+      <div
+        className={cn(
+          "flex items-center px-1",
+          isUser ? "justify-end" : "justify-start"
+        )}
+      >
+        <CopyButton blocks={message.blocks} />
       </div>
     </div>
   );

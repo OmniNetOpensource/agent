@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 
 export function NewChatButton() {
   const router = useRouter();
-  const { pending, clear } = useChatStore();
+  const pending = useChatStore((state) => state.pending);
+  const clear = useChatStore((state) => state.clear);
   const { resetPreview } = usePreviewStore();
 
   const handleNewChat = () => {

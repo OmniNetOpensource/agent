@@ -11,17 +11,17 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Globe, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  useChatStore,
+  useIsNewChat,
+} from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { ModelSelector } from "@/src/features/model/components/ModelSelector";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-type ComposerProps = {
-  isNewRoute: boolean;
-};
-
-export function Composer({ isNewRoute }: ComposerProps) {
+export function Composer() {
   const router = useRouter();
   const { user } = useAuth();
   const input = useChatStore((state) => state.input);
@@ -32,7 +32,6 @@ export function Composer({ isNewRoute }: ComposerProps) {
   const removeAttachment = useChatStore((state) => state.removeAttachment);
   const searchEnabled = useChatStore((state) => state.searchEnabled);
   const setSearchEnabled = useChatStore((state) => state.setSearchEnabled);
-  const messages = useChatStore((state) => state.messages);
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
@@ -108,7 +107,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const sendDisabled = pending ? false : !hasText && !hasAttachments;
-  const isNewchat = isNewRoute && messages.length === 0;
+  const isNewchat = useIsNewChat();
 
   const formClassName = isNewchat
     ? "flex flex-1 items-center justify-center py-12"
@@ -244,7 +243,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
               </Button>
             </div>
 
-            <div className="flex items-center px-1">
+            <div className="flex items-center justify-between px-1">
               <Button
                 type="button"
                 variant="ghost"
@@ -266,6 +265,7 @@ export function Composer({ isNewRoute }: ComposerProps) {
                 />
                 <span>联网</span>
               </Button>
+              <ModelSelector />
             </div>
           </div>
         </div>

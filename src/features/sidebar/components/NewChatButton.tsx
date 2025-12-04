@@ -12,7 +12,8 @@ interface NewChatButtonProps {
 
 export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
   const router = useRouter();
-  const { pending, clear } = useChatStore();
+  const pending = useChatStore((state) => state.pending);
+  const clear = useChatStore((state) => state.clear);
   const { resetPreview } = usePreviewStore();
 
   const handleNewChat = () => {

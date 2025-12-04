@@ -35,9 +35,9 @@ export default function RootLayout({
       <head>
         {process.env.NODE_ENV === "development" && (
           <>
-            <script
+            <Script
               src="https://unpkg.com/react-scan/dist/auto.global.js"
-              async
+              strategy="beforeInteractive"
             />
             <Script
               src="https://unpkg.com/react-grab/dist/index.global.js"

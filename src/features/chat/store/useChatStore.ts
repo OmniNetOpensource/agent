@@ -541,9 +541,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
               ? data.receivedBytes
               : undefined;
           const totalBytes =
-            typeof data.totalBytes === "number"
-              ? data.totalBytes
-              : undefined;
+            typeof data.totalBytes === "number" ? data.totalBytes : undefined;
 
           get().appendToAssistant({
             kind: "tool_progress",
@@ -582,7 +580,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       },
       onError: (error) => {
         const message =
-          error instanceof Error ? error.message : "Unable to reach the chat API.";
+          error instanceof Error
+            ? error.message
+            : "Unable to reach the chat API.";
         get().appendToAssistant({
           type: "content",
           content: `Error: ${message}`,
@@ -625,3 +625,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     );
   },
 }));
+
+export const useIsNewChat = () =>
+  useChatStore(
+    (state) => state.conversationId === "new" && state.messages.length === 0
+  );

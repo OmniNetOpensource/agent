@@ -20,6 +20,10 @@ type ModelOption = {
   label: string;
 };
 
+const MODELS: ModelOption[] = [
+  { id: "openai/gpt-5.1-codex-mini", label: "轻舟" },
+];
+
 const highlightLabel = (label: string, keyword: string): ReactNode => {
   const trimmed = keyword.trim();
   if (!trimmed) return label;
@@ -63,17 +67,14 @@ export function ModelSelector() {
   const currentModel = useChatStore((state) => state.currentModel);
   const setCurrentModel = useChatStore((state) => state.setCurrentModel);
   const [isOpen, setIsOpen] = useState(false);
-  const [models, setModels] = useState<ModelOption[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const trimmedSearch = search.trim();
   const visibleModels =
     trimmedSearch === ""
-      ? models
-      : models.filter((model) =>
+      ? MODELS
+      : MODELS.filter((model) =>
           model.label.toLowerCase().includes(trimmedSearch.toLowerCase())
         );
 
@@ -85,51 +86,13 @@ export function ModelSelector() {
   });
 
   const currentModelLabel =
-    models.find((m) => m.id === currentModel)?.label || currentModel;
+    MODELS.find((m) => m.id === currentModel)?.label || currentModel;
 
   useEffect(() => {
-    let active = true;
-    const loadModels = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch("/api/models", { cache: "no-cache" });
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Failed to load models: ${text}`);
-        }
-        const data = (await response.json()) as {
-          models?: ModelOption[];
-          defaultModelId?: ChatModelId;
-        };
-        if (!active) return;
-        const incoming = Array.isArray(data.models) ? data.models : [];
-        setModels(incoming);
-
-        const defaultModelId =
-          data.defaultModelId || incoming[0]?.id || currentModel;
-        const hasCurrent =
-          !!currentModel && incoming.some((model) => model.id === currentModel);
-        if (!hasCurrent && defaultModelId) {
-          setCurrentModel(defaultModelId);
-        }
-      } catch (err) {
-        if (!active) return;
-        const message = err instanceof Error ? err.message : "Unknown error";
-        setError(message);
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadModels();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (!currentModel && MODELS.length > 0) {
+      setCurrentModel(MODELS[0].id);
+    }
+  }, [currentModel, setCurrentModel]);
 
   useEffect(() => {
     if (trimmedSearch !== "" && scrollRef.current) {
@@ -147,8 +110,8 @@ export function ModelSelector() {
   }, [isOpen, virtualizer]);
 
   useEffect(() => {
-    if (isOpen && trimmedSearch === "" && currentModel && models.length > 0) {
-      const currentIndex = models.findIndex((m) => m.id === currentModel);
+    if (isOpen && trimmedSearch === "" && currentModel && MODELS.length > 0) {
+      const currentIndex = MODELS.findIndex((m) => m.id === currentModel);
       if (currentIndex !== -1) {
         // 确保测量完成后再滚动
         const timer = setTimeout(() => {
@@ -160,11 +123,7 @@ export function ModelSelector() {
         return () => clearTimeout(timer);
       }
     }
-  }, [isOpen, currentModel, models, trimmedSearch, virtualizer]);
-
-  if (loading) {
-    return null;
-  }
+  }, [isOpen, currentModel, trimmedSearch, virtualizer]);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -177,7 +136,7 @@ export function ModelSelector() {
           )}
         >
           <span className="max-w-[120px] sm:max-w-[160px] truncate">
-            {error ? "模型加载失败" : currentModelLabel || "未选择模型"}
+            {currentModelLabel || "未选择模型"}
           </span>
           <ChevronDown
             className={cn(
@@ -192,80 +151,69 @@ export function ModelSelector() {
         align="start"
         className="min-w-[240px] max-w-[calc(100vw-2rem)] p-1.5"
       >
-        {error ? (
-          <div className="px-3 py-2 text-xs text-muted-foreground">
-            模型加载失败，请重试
+        <>
+          <div className="px-2 pb-2 pt-1">
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="搜索模型..."
+              className="h-9 text-xs sm:text-sm"
+            />
           </div>
-        ) : (
-          <>
-            <div className="px-2 pb-2 pt-1">
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="搜索模型..."
-                disabled={models.length === 0 || loading}
-                className="h-9 text-xs sm:text-sm"
-              />
-            </div>
 
-            {models.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-muted-foreground text-center">
-                {loading ? "正在加载模型..." : "暂无可用模型"}
-              </div>
-            ) : visibleModels.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-muted-foreground text-center">
-                没有匹配的模型
-              </div>
-            ) : (
+          {visibleModels.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-muted-foreground text-center">
+              没有匹配的模型
+            </div>
+          ) : (
+            <div
+              ref={scrollRef}
+              className="max-h-[250px] overflow-y-auto px-1"
+            >
               <div
-                ref={scrollRef}
-                className="max-h-[250px] overflow-y-auto px-1"
+                style={{
+                  height: `${virtualizer.getTotalSize()}px`,
+                  width: "100%",
+                  position: "relative",
+                }}
               >
-                <div
-                  style={{
-                    height: `${virtualizer.getTotalSize()}px`,
-                    width: "100%",
-                    position: "relative",
-                  }}
-                >
-                  {virtualizer.getVirtualItems().map((virtualItem) => {
-                    const model = visibleModels[virtualItem.index];
-                    return (
-                      <div
-                        key={model.id}
-                        ref={virtualizer.measureElement}
-                        data-index={virtualItem.index}
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          transform: `translateY(${virtualItem.start}px)`,
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const model = visibleModels[virtualItem.index];
+                  return (
+                    <div
+                      key={model.id}
+                      ref={virtualizer.measureElement}
+                      data-index={virtualItem.index}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          setCurrentModel(model.id);
+                          setIsOpen(false);
                         }}
+                        className={cn(
+                          "flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer hover:bg-accent",
+                          currentModel === model.id && "font-semibold"
+                        )}
                       >
-                        <button
-                          onClick={() => {
-                            setCurrentModel(model.id);
-                            setIsOpen(false);
-                          }}
-                          className={cn(
-                            "flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer hover:bg-accent",
-                            currentModel === model.id && "font-semibold"
-                          )}
-                        >
-                          <span>{highlightLabel(model.label, search)}</span>
-                          {currentModel === model.id && (
-                            <Check className="w-3.5 h-3.5 text-primary" />
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                        <span>{highlightLabel(model.label, search)}</span>
+                        {currentModel === model.id && (
+                          <Check className="w-3.5 h-3.5 text-primary" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </>
       </PopoverContent>
     </Popover>
   );
