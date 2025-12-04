@@ -78,6 +78,7 @@ export function ModelSelector() {
           model.label.toLowerCase().includes(trimmedSearch.toLowerCase())
         );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: visibleModels.length,
     getScrollElement: () => scrollRef.current,
@@ -166,10 +167,7 @@ export function ModelSelector() {
               没有匹配的模型
             </div>
           ) : (
-            <div
-              ref={scrollRef}
-              className="max-h-[250px] overflow-y-auto px-1"
-            >
+            <div ref={scrollRef} className="max-h-[250px] overflow-y-auto px-1">
               <div
                 style={{
                   height: `${virtualizer.getTotalSize()}px`,

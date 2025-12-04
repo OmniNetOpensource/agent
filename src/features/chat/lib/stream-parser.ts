@@ -1,9 +1,3 @@
-import {
-  ContentBlock,
-  ResearchItem,
-  ToolProgress,
-} from "@/src/features/chat/types/chat";
-
 export type StreamEvent =
   | { type: "content"; content: string }
   | { type: "thinking"; content: string }
