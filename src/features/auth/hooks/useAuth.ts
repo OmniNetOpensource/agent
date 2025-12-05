@@ -52,6 +52,7 @@ export function useAuth(): UseAuthResult {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log("[Auth] onAuthStateChange:", _event, session?.user?.id);
         // setUser 内部会比较 user ID，避免不必要的更新
         setUser(session?.user ?? null);
       }
@@ -92,7 +93,7 @@ export function useAuth(): UseAuthResult {
     }
   }, [supabaseReady]);
 
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
     if (!supabaseReady || !clientRef.current) {
       return;
     }
@@ -101,7 +102,8 @@ export function useAuth(): UseAuthResult {
       console.error("[Auth] Sign-out failed", error.message);
       alert("登出失败，请稍后重试。");
     }
-  }, [supabaseReady]);
+    //setUser(null);
+  };
 
   return {
     user,

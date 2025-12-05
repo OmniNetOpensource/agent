@@ -22,6 +22,10 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
 
   setUser: (newUser) =>
     set((state) => {
+      console.log("[AuthStore] setUser called:", {
+        oldUser: state.user?.id,
+        newUser: newUser?.id,
+      });
       // 只在 user ID 真正变化时才更新状态，避免不必要的重渲染
       if (state.user?.id === newUser?.id) {
         return state;
@@ -33,4 +37,3 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
 
   setSupabaseReady: (ready) => set({ supabaseReady: ready }),
 }));
-

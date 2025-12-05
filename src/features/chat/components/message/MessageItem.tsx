@@ -190,14 +190,17 @@ export const MessageItem = memo(function MessageItem({
         )}
       </div>
 
-      <div
-        className={cn(
-          "flex items-center px-1",
-          isUser ? "justify-end" : "justify-start"
-        )}
-      >
-        <CopyButton blocks={message.blocks} />
-      </div>
+      {/* Only show copy button for user messages OR for assistant messages when not streaming */}
+      {(isUser || !isStreaming) && (
+        <div
+          className={cn(
+            "flex items-center px-1",
+            isUser ? "justify-end" : "justify-start"
+          )}
+        >
+          <CopyButton blocks={message.blocks} />
+        </div>
+      )}
     </div>
   );
 });
