@@ -1,11 +1,8 @@
 "use client";
 
-import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Conversation } from "@/types/conversation";
-import { fetchConversationMessages } from "@/src/features/chat/lib/api";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import type { Message } from "@/src/features/chat/types/chat";
 
 type ConversationItemProps = {
   conversation: Conversation;
@@ -45,32 +42,9 @@ export function ConversationItem({
     ? formatTime(conversation.updated_at)
     : "";
 
-  const messagesRef = useRef<Message[] | null>(null);
-  const fetchPromiseRef = useRef<Promise<Message[]> | null>(null);
-  const setMessages = useChatStore((state) => state.setMessages);
-  const setConversationId = useChatStore((state) => state.setConversationId);
-  const fetchConversation = useChatStore((state) => state.fetchConversation);
-  const setFetchLoading = useChatStore((state) => state.setFetchLoading);
   const pending = useChatStore((state) => state.pending);
 
-  const prefetchMessages = () => {
-    if (messagesRef.current || fetchPromiseRef.current) {
-      return;
-    }
-
-    fetchPromiseRef.current = fetchConversationMessages(conversation.id)
-      .then((messages) => {
-        messagesRef.current = messages;
-        return messages;
-      })
-      .catch((error) => {
-        console.error("Prefetch failed:", error);
-        fetchPromiseRef.current = null;
-        throw error;
-      });
-  };
-
-  const handleClick = async () => {
+  const handleClick = () => {
     if (isActive) return;
 
     if (pending) {
@@ -82,46 +56,13 @@ export function ConversationItem({
       }
     }
 
-    // If we have prefetched data, use it immediately
-    if (messagesRef.current) {
-      setMessages(messagesRef.current);
-      setConversationId(conversation.id);
-      setFetchLoading(false);
-      router.push(`/c/${conversation.id}`);
-      return;
-    }
-
-    // If prefetch is in progress, wait for it
-    if (fetchPromiseRef.current) {
-      setFetchLoading(true);
-      try {
-        const messages = await fetchPromiseRef.current;
-        setMessages(messages);
-        setConversationId(conversation.id);
-        setFetchLoading(false);
-        router.push(`/c/${conversation.id}`);
-        return;
-      } catch {
-        setFetchLoading(false);
-        // If prefetch fails, fall through to use fetchConversation
-      }
-    }
-
-    // Otherwise, use store's fetchConversation method
-    try {
-      await fetchConversation(conversation.id);
-      router.push(`/c/${conversation.id}`);
-    } catch {
-      // If fetch fails, navigate anyway (page will handle error)
-      router.push(`/c/${conversation.id}`);
-    }
+    router.push(`/c/${conversation.id}`);
   };
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      onMouseEnter={prefetchMessages}
       className={`flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
         isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
       }`}

@@ -39,7 +39,6 @@ export type ChatActions = {
   setMessages: (messages: Message[]) => void;
   setConversationId: (id: string | null) => void;
   fetchConversation: (id: string) => Promise<void>;
-  setFetchLoading: (loading: boolean) => void;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
@@ -93,7 +92,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       throw error;
     }
   },
-  setFetchLoading: (loading) => set({ fetchLoading: loading }),
   clear: () =>
     set({
       messages: [],
