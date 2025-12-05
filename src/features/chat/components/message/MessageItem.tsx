@@ -5,7 +5,7 @@ import { Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "./research/ResearchBlock";
-import { Copy, Check, Paperclip } from "lucide-react";
+import { Copy, Check, Paperclip, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type CopyButtonProps = {
@@ -158,6 +158,20 @@ export const MessageItem = memo(function MessageItem({
 
               if (block.type === "attachments") {
                 return null;
+              }
+
+              if (block.type === "error") {
+                return (
+                  <div
+                    key={blockKey}
+                    className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <div className="flex-1 whitespace-pre-wrap">
+                      {block.message}
+                    </div>
+                  </div>
+                );
               }
 
               return (

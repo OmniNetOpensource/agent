@@ -43,7 +43,8 @@ export type ChatContentPart =
 export type ContentBlock =
   | { type: "content"; content: string }
   | { type: "attachments"; attachments: Attachment[] }
-  | { type: "research"; items: ResearchItem[] };
+  | { type: "research"; items: ResearchItem[] }
+  | { type: "error"; message: string };
 
 export type Message = { role: "user" | "assistant"; blocks: ContentBlock[] };
 

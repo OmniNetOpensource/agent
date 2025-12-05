@@ -12,7 +12,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - User authentication and account management
 - Research tracking (thinking processes and tool execution visibility)
 
+## Common Development Commands
 
+```bash
+pnpm dev           # Start development server (http://localhost:3000)
+pnpm build         # Production build
+pnpm start         # Start production server
+pnpm type-check    # TypeScript validation (no emit)
+pnpm lint          # ESLint check
+pnpm check         # Full validation: type-check + lint + build
+```
+
+**Note**: ESLint disables `react-hooks/exhaustive-deps` to allow flexible dependency arrays in hooks like `useEffect`. TypeScript runs in strict mode.
 
 ## Architecture & Structure
 
@@ -82,18 +93,22 @@ Core chat endpoint that:
 
 **Request**: `{ conversationHistory, conversationId, model }`
 **Response**: SSE stream with events (type + data)
+**Implementation**: [src/app/api/chat/route.ts](src/app/api/chat/route.ts) with persistence in [src/app/api/chat/repository.ts](src/app/api/chat/repository.ts)
 
 ### `GET /api/models`
-Returns available models from OpenRouter API
+Returns available models from OpenRouter API filtered by availability
 
 ### `GET /api/conversations`
-Fetches user's conversation history (requires auth)
+Fetches user's conversation history (requires auth), returns list of conversation metadata
 
-### `GET/POST /api/conversations/[id]`
-Get conversation details, delete conversation
+### `GET /api/conversations/[id]`
+Get conversation details
+
+### `POST /api/conversations/[id]`
+Delete a conversation
 
 ### `GET /api/conversations/[id]/messages`
-Fetch all messages in a conversation
+Fetch all messages in a conversation (paginated or all)
 
 ## Message Block Architecture
 
@@ -115,6 +130,50 @@ This allows:
 - Assistant messages with thinking process + tool calls/results + final text
 - Progressive rendering as stream arrives
 
+## Supabase Schema
+
+**`conversations` table:**
+```
+id              UUID primary key
+user_id         UUID (foreign key to auth.users)
+title           text (initially null, set on first assistant message)
+created_at      timestamp with time zone
+updated_at      timestamp with time zone
+```
+
+**`messages` table:**
+```
+id              UUID primary key
+conversation_id UUID (foreign key to conversations)
+role            text ('user' | 'assistant')
+blocks          jsonb (array of ContentBlock objects)
+created_at      timestamp with time zone
+updated_at      timestamp with time zone
+```
+
+The `blocks` column stores the block-based message structure (content, attachments, research). This allows efficient querying of messages while supporting flexible content types.
+
+## Streaming Architecture
+
+The `/api/chat` endpoint implements Server-Sent Events (SSE) for real-time response streaming:
+
+1. **Stream Format**: Each update is a JSON object on a single line prefixed with `data: `
+2. **Event Types**:
+   - `content` - Text chunks (final response, can span multiple events)
+   - `thinking` - Model's reasoning process
+   - `tool_call` - Function call initiated (brave_search, fetch_url)
+   - `tool_progress` - Intermediate tool execution status
+   - `tool_result` - Tool execution result
+   - `conversation_created` / `conversation_updated` - DB sync events
+3. **Client-Side**: `src/features/chat/lib/chat-client.ts` parses events and dispatches to `useChatStore`
+4. **Tool Loop**: Server executes tools up to 20 iterations per request, collecting results before final response
+
+**Key Implementation Details:**
+- Tools only execute if their API keys are configured (e.g., BRAVE_API_KEY)
+- Each tool execution updates the research block progressively
+- Stream persists blocks to Supabase after completion (in `src/app/api/chat/repository.ts`)
+- System prompt is in Chinese, instructing thorough search before answering
+
 ## Environment Variables
 
 Required in `.env.local`:
@@ -126,7 +185,31 @@ Optional:
 - `OPENROUTER_DEFAULT_MODEL` - Default LLM model
 - `OPENROUTER_HTTP_REFERER` - HTTP referer header
 - `OPENROUTER_X_TITLE` - App title for OpenRouter
-- `BRAVE_API_KEY` - Enables web search tool
+- `BRAVE_API_KEY` - Enables web search tool (optional, fetch_url always available)
+
+## Theme System & CSS Variables
+
+**Theme Switching**: [src/features/theme/hooks/useTheme.ts](src/features/theme/hooks/useTheme.ts) manages dark/light mode toggled from the settings menu.
+
+**CSS Variables** are defined in [src/app/globals.css](src/app/globals.css) using Tailwind v4 format. These are the source of truth for all colors and should be used instead of hardcoded colors:
+- Foreground/background colors
+- Text colors
+- Border colors
+- Accent colors
+
+**Theme Initialization**: The root layout includes an in-head script that sets the theme before React hydrates to prevent flash of wrong theme.
+
+## Development Notes
+
+**Attachment Handling**: User-uploaded files are stored in `pendingAttachments` in `useChatStore` and included in the request to `/api/chat`. The server then formats them into ContentBlock structures for persistence.
+
+**Message Rendering**: [src/features/chat/components/MessageItem.tsx](src/features/chat/components/MessageItem.tsx) renders messages based on their blocks. Each block type (content, attachments, research) has specialized rendering logic in subcomponents.
+
+**Research Visibility**: The research/thinking process is progressively streamed and rendered by [src/features/chat/components/message/research/](src/features/chat/components/message/research/) components. Users can expand/collapse research sections.
+
+**Conversation Loading**: New conversations are created with `conversationId: "new"` until the first message is sent. The server returns a `conversation_created` event with the real conversation ID, which is then used for subsequent messages.
+
+**Model Selection**: Available models are fetched on-demand from `/api/models` and cached in `useChatStore`. The `currentModel` must be set before sending a message.
 
 ## Tools Available During Chat
 
@@ -173,14 +256,28 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 
 ## File Locations Reference
 
+**Entry & Layout:**
 - Main entry: [src/app/page.tsx](src/app/page.tsx)
+- Root layout: [src/app/layout.tsx](src/app/layout.tsx)
+- Global styles: [src/app/globals.css](src/app/globals.css)
+
+**Chat Feature:**
 - Chat API: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
-- Chat UI: [src/features/chat/components/](src/features/chat/components/)
+- Chat persistence: [src/app/api/chat/repository.ts](src/app/api/chat/repository.ts)
+- Chat components: [src/features/chat/components/](src/features/chat/components/)
 - Chat store: [src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)
-- Types: [src/features/chat/types/chat.ts](src/features/chat/types/chat.ts)
+- Chat types: [src/features/chat/types/chat.ts](src/features/chat/types/chat.ts)
+- SSE client: [src/features/chat/lib/chat-client.ts](src/features/chat/lib/chat-client.ts)
+
+**Other Features:**
 - Conversation store: [src/features/sidebar/store/useConversationsStore.ts](src/features/sidebar/store/useConversationsStore.ts)
+- Theme hook: [src/features/theme/hooks/useTheme.ts](src/features/theme/hooks/useTheme.ts)
+- Auth hook: [src/features/auth/hooks/useAuth.ts](src/features/auth/hooks/useAuth.ts)
+
+**Shared Utilities:**
 - Supabase client: [src/shared/lib/supabase/client.ts](src/shared/lib/supabase/client.ts)
-- Tools: [src/shared/lib/tools.ts](src/shared/lib/tools.ts)
+- Tools definition: [src/shared/lib/tools.ts](src/shared/lib/tools.ts)
+- File utilities: [src/shared/utils/file.ts](src/shared/utils/file.ts)
 
 ## Developer Preferences
 

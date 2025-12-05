@@ -90,8 +90,7 @@ export async function POST(req: Request) {
 
     const isGeminiModel = requestedModel.toLowerCase().includes("gemini");
 
-    const tools =
-      searchEnabled === false || isGeminiModel ? [] : toolSpecs;
+    const tools = searchEnabled === false || isGeminiModel ? [] : toolSpecs;
 
     if (isGeminiModel && searchEnabled !== false) {
       console.log(
@@ -502,8 +501,8 @@ export async function POST(req: Request) {
           if (iteration >= maxIterations && !streamClosed) {
             console.log("[Chat-API] Max iterations reached");
             const data = {
-              type: "content",
-              content: "\n\n[已达到最大工具调用次数限制]",
+              type: "error",
+              message: "[已达到最大工具调用次数限制]",
             };
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
@@ -543,8 +542,8 @@ export async function POST(req: Request) {
             const errorMessage =
               error instanceof Error ? error.message : String(error);
             const errorData = {
-              type: "content",
-              content: `\n\n错误：${errorMessage}`,
+              type: "error",
+              message: `错误：${errorMessage}`,
             };
             try {
               controller.enqueue(

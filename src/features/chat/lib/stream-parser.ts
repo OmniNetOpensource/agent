@@ -11,6 +11,7 @@ export type StreamEvent =
       totalBytes?: number;
     }
   | { type: "tool_result"; tool: string; result: string | object }
+  | { type: "error"; message: string }
   | {
       type: "conversation_created";
       conversationId: string;

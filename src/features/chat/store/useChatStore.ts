@@ -383,6 +383,17 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         return { messages: next };
       }
 
+      if (addition.type === "error") {
+        const assistantIndex = ensureAssistantIndex();
+        const assistantMessage = next[assistantIndex];
+        const blocks = [...assistantMessage.blocks];
+
+        blocks.push({ type: "error", message: addition.message });
+
+        next[assistantIndex] = { ...assistantMessage, blocks };
+        return { messages: next };
+      }
+
       if (addition.type !== "content") {
         return { messages: next };
       }
@@ -567,6 +578,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             tool: typeof data.tool === "string" ? data.tool : "未知工具",
             result: resultText,
           });
+        } else if (data.type === "error") {
+          const message =
+            typeof data.message === "string"
+              ? data.message
+              : String(data.message ?? "");
+          get().appendToAssistant({
+            type: "error",
+            message,
+          });
         } else if (data.type === "content") {
           const addition =
             typeof data.content === "string"
@@ -584,8 +604,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
             ? error.message
             : "Unable to reach the chat API.";
         get().appendToAssistant({
-          type: "content",
-          content: `Error: ${message}`,
+          type: "error",
+          message: `Error: ${message}`,
         });
       },
       onFinish: () => {

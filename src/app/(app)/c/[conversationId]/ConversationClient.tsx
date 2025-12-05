@@ -18,7 +18,7 @@ export default function ConversationClient({ conversationId }: Props) {
   }, [conversationId]);
 
   // 当 conversationId === "new" 且没有消息时，返回 null（保持初始空白/欢迎态界面）
-  if (conversationId === "new" && !hasMessages) {
+  if (!hasMessages) {
     return null;
   }
 
