@@ -12,7 +12,7 @@ export function MessageList() {
       aria-live="polite"
       className="w-full py-6 px-3 sm:px-4 md:px-0 pb-44 md:pb-52"
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col space-y-3 md:space-y-4">
+      <div className="mx-auto flex w-[90%] md:w-[60%] flex-col space-y-3 md:space-y-4">
         {messages.map((message, index) => {
           const isLastMessage = index === messages.length - 1;
           const isStreaming = isLastMessage && pending;

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
-import { Loader2, LogIn, Settings, User2 } from "lucide-react";
+import { BarChart3, Loader2, LogIn, Settings, User2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -156,6 +157,13 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
               <DropdownMenuItem onClick={handleOpenSettings}>
                 <Settings className="h-4 w-4" />
                 设置
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard">
+                  <BarChart3 className="h-4 w-4" />
+                  Dashboard / 数据面板
+                </Link>
               </DropdownMenuItem>
 
               {!user && (
