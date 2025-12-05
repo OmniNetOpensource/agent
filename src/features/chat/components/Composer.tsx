@@ -122,68 +122,69 @@ export function Composer() {
       onSubmit={handleSubmit}
       className={formClassName}
     >
-      {pendingAttachments.length > 0 && (
-        <div className="flex flex-wrap gap-2 rounded-2xl border bg-card px-4 py-3 shadow-lg">
-          {pendingAttachments.map((attachment) =>
-            attachment.kind === "image" ? (
-              <div key={attachment.id} className="group relative">
-                <Image
-                  src={attachment.dataUrl}
-                  alt={attachment.name}
-                  width={80}
-                  height={80}
-                  className="h-20 w-auto rounded-xl object-cover"
-                  unoptimized
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="移除附件"
-                  onClick={() => removeAttachment(attachment.id)}
-                  className="absolute right-1 top-1 h-6 w-6 rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div
-                key={attachment.id}
-                className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-xl border bg-background p-2 pr-3 shadow-sm"
-              >
-                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
-                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                    <Paperclip className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium text-foreground">
-                    {attachment.name}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    {formatFileSize(attachment.size)}
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="移除附件"
-                  onClick={() => removeAttachment(attachment.id)}
-                  className="h-6 w-6 rounded-full"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )
-          )}
-        </div>
-      )}
-
       <div className="relative flex w-full flex-col gap-1 rounded-3xl border bg-card p-2 shadow-lg transition-all focus-within:border-ring focus-within:shadow-xl">
+        {hasAttachments && (
+          <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0">
+            {pendingAttachments.map((attachment) =>
+              attachment.kind === "image" ? (
+                <div key={attachment.id} className="group relative">
+                  <Image
+                    src={attachment.dataUrl}
+                    alt={attachment.name}
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 rounded-xl object-cover"
+                    unoptimized
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="移除附件"
+                    onClick={() => removeAttachment(attachment.id)}
+                    className="absolute right-1 top-1 h-6 w-6 rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/70 hover:text-destructive"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  key={attachment.id}
+                  className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-xl border bg-background p-2 pr-3 shadow-sm"
+                >
+                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      <Paperclip className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs font-medium text-foreground">
+                      {attachment.name}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {formatFileSize(attachment.size)}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="移除附件"
+                    onClick={() => removeAttachment(attachment.id)}
+                    className="h-6 w-6 rounded-full hover:text-destructive"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )
+            )}
+          </div>
+        )}
+
         <div className="flex w-full items-end gap-2">
           <input
             type="file"
+            multiple
             ref={fileInputRef}
             onChange={handleFileChange}
             accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"

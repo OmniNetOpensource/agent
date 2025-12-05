@@ -19,6 +19,9 @@ type ModelOption = {
 
 const MODELS: ModelOption[] = [
   { id: "openai/gpt-5.1-codex-mini", label: "轻舟" },
+  { id: "google/gemini-3-pro-preview", label: "博学" },
+  { id: "deepseek/deepseek-v3.2-speciale", label: "中国做题家" },
+  { id: "anthropic/claude-opus-4.5", label: "娴雅" },
 ];
 
 export function ModelSelector() {
@@ -41,11 +44,11 @@ export function ModelSelector() {
         <Button
           variant="ghost"
           className={cn(
-            "min-w-[120px] sm:min-w-[180px] justify-between px-3 py-2 text-xs sm:text-sm font-medium",
+            "min-w-[60px] sm:min-w-[93px] justify-between px-3 py-2 text-xs sm:text-sm font-medium",
             isOpen && "bg-accent"
           )}
         >
-          <span className="max-w-[120px] sm:max-w-[160px] truncate">
+          <span className="max-w-[60px] sm:max-w-[80px] truncate">
             {currentModelLabel || "未选择模型"}
           </span>
           <ChevronDown

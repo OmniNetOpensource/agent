@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { PanelLeft, X } from "lucide-react";
 
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
@@ -122,13 +121,23 @@ export default function Sidebar() {
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
                 aria-label="返回首页"
               >
-                <Image
-                  src="/aether-logo.svg"
-                  alt="Aether"
-                  width={24}
-                  height={24}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 100 100"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   className="h-6 w-6"
-                />
+                  aria-label="Aether"
+                >
+                  <circle cx="50" cy="50" r="18" />
+                  <path
+                    d="M 26 26 A 34 34 0 1 1 74 74"
+                    transform="rotate(-45 50 50)"
+                  />
+                </svg>
               </Link>
               <button
                 type="button"
@@ -182,13 +191,23 @@ export default function Sidebar() {
             pointerEvents: isOpen ? "auto" : "none",
           }}
         >
-          <Image
-            src="/aether-logo.svg"
-            alt="Aether"
-            width={24}
-            height={24}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 100 100"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             className="h-6 w-6"
-          />
+            aria-label="Aether"
+          >
+            <circle cx="50" cy="50" r="18" />
+            <path
+              d="M 26 26 A 34 34 0 1 1 74 74"
+              transform="rotate(-45 50 50)"
+            />
+          </svg>
         </Link>
 
         <SidebarToggle isOpen={isOpen} setIsOpen={setIsOpen} isMobile={false} />
