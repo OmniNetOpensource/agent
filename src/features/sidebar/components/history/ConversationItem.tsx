@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Conversation } from "@/types/conversation";
 import { fetchConversationMessages } from "@/src/features/chat/lib/api";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import type { Message } from "@/src/features/chat/types/chat";
-import { Loader2 } from "lucide-react";
 
 type ConversationItemProps = {
   conversation: Conversation;
@@ -46,12 +45,13 @@ export function ConversationItem({
     ? formatTime(conversation.updated_at)
     : "";
 
-  const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef<Message[] | null>(null);
   const fetchPromiseRef = useRef<Promise<Message[]> | null>(null);
   const setLoadedConversation = useChatStore(
     (state) => state.setLoadedConversation
   );
+  const fetchConversation = useChatStore((state) => state.fetchConversation);
+  const setFetchLoading = useChatStore((state) => state.setFetchLoading);
   const pending = useChatStore((state) => state.pending);
 
   const prefetchMessages = () => {
@@ -83,12 +83,7 @@ export function ConversationItem({
       }
     }
 
-    // Ensure fetch is started
-    if (!messagesRef.current && !fetchPromiseRef.current) {
-      prefetchMessages();
-    }
-
-    // If we have data, set it immediately
+    // If we have prefetched data, use it immediately
     if (messagesRef.current) {
       setLoadedConversation(conversation.id, messagesRef.current, () => {
         router.push(`/c/${conversation.id}`);
@@ -96,20 +91,27 @@ export function ConversationItem({
       return;
     }
 
-    // If fetching, wait for it
+    // If prefetch is in progress, wait for it
     if (fetchPromiseRef.current) {
-      setIsLoading(true);
+      setFetchLoading(true);
       try {
         const messages = await fetchPromiseRef.current;
         setLoadedConversation(conversation.id, messages, () => {
           router.push(`/c/${conversation.id}`);
         });
+        return;
       } catch {
-        // If fetch fails, let the normal navigation happen (it might retry or show error page)
-        router.push(`/c/${conversation.id}`);
-      } finally {
-        setIsLoading(false);
+        // If prefetch fails, fall through to use fetchConversation
       }
+    }
+
+    // Otherwise, use store's fetchConversation method
+    try {
+      await fetchConversation(conversation.id);
+      router.push(`/c/${conversation.id}`);
+    } catch {
+      // If fetch fails, navigate anyway (page will handle error)
+      router.push(`/c/${conversation.id}`);
     }
   };
 
@@ -123,11 +125,7 @@ export function ConversationItem({
       }`}
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--surface-muted) text-sm font-semibold text-foreground">
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin text-(--text-tertiary)" />
-        ) : (
-          title.slice(0, 1).toUpperCase()
-        )}
+        {title.slice(0, 1).toUpperCase()}
       </div>
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-foreground">

@@ -20,9 +20,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`src/app/`** - Next.js app directory (routes and layouts)
 
   - `api/` - Server-side API routes (chat, models, conversations, auth)
-  - `c/[conversationId]/` - Chat conversation page
-  - `page.tsx` - Home (redirects to `/c/new`)
-  - `layout.tsx` - Root layout with Sidebar + Header
+  - `(app)/page.tsx` - Home chat page at `/` (renders new conversation UI)
+  - `(app)/c/[conversationId]/` - Chat conversation page
+  - `(app)/layout.tsx` - App layout with Sidebar + Header
 
 - **`src/features/`** - Feature-based organization
 
@@ -61,7 +61,7 @@ ResearchItem; // "thinking" or "tool" execution record
 - `pending` - Loading state during API calls
 - `currentModel` - Selected LLM model
 - `pendingAttachments[]` - Files being attached
-- `conversationId` - Current conversation (or "new")
+- `conversationId` - Current conversation ID (or `null` when starting a new chat)
 - Actions: `setInput`, `sendMessage`, `appendToAssistant`, `stop`, etc.
 
 **`useConversationsStore`** - Manages conversation list:
@@ -192,7 +192,7 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 
 ## File Locations Reference
 
-- Main entry: [src/app/page.tsx](src/app/page.tsx)
+- Main entry: [src/app/(app)/page.tsx](src/app/(app)/page.tsx)
 - Chat API: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
 - Chat UI: [src/features/chat/components/](src/features/chat/components/)
 - Chat store: [src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)

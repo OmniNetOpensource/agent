@@ -27,8 +27,7 @@ export class ChatClient {
         signal: this.abortController.signal,
         body: JSON.stringify({
           conversationHistory: messages,
-          conversationId:
-            conversationId && conversationId !== "new" ? conversationId : null,
+          conversationId: conversationId ?? null,
           model,
           searchEnabled,
         }),

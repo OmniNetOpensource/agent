@@ -31,9 +31,9 @@ pnpm check         # Full validation: type-check + lint + build
 
 - **`src/app/`** - Next.js app directory (routes and layouts)
   - `api/` - Server-side API routes (chat, models, conversations, auth)
-  - `c/[conversationId]/` - Chat conversation page
-  - `page.tsx` - Home (redirects to `/c/new`)
-  - `layout.tsx` - Root layout with Sidebar + Header
+  - `(app)/page.tsx` - Home chat page at `/` (renders new conversation UI)
+  - `(app)/c/[conversationId]/` - Chat conversation page
+  - `(app)/layout.tsx` - App layout with Sidebar + Header
 
 - **`src/features/`** - Feature-based organization
   - `chat/` - Chat UI components (MessageList, Composer, Header) and state (useChatStore)
@@ -70,7 +70,7 @@ ResearchItem    // "thinking" or "tool" execution record
 - `pending` - Loading state during API calls
 - `currentModel` - Selected LLM model
 - `pendingAttachments[]` - Files being attached
-- `conversationId` - Current conversation (or "new")
+- `conversationId` - Current conversation ID (or `null` when starting a new chat)
 - Actions: `setInput`, `sendMessage`, `appendToAssistant`, `stop`, etc.
 
 **`useConversationsStore`** - Manages conversation list:
@@ -207,7 +207,7 @@ Optional:
 
 **Research Visibility**: The research/thinking process is progressively streamed and rendered by [src/features/chat/components/message/research/](src/features/chat/components/message/research/) components. Users can expand/collapse research sections.
 
-**Conversation Loading**: New conversations are created with `conversationId: "new"` until the first message is sent. The server returns a `conversation_created` event with the real conversation ID, which is then used for subsequent messages.
+**Conversation Loading**: New conversations start without a `conversationId` (`null`). For logged-in users, the client generates a UUID before the first message is sent and uses it as the conversation ID; the server returns a `conversation_created` event with that ID for persistence. Guests keep `conversationId: null` and their messages are only stored locally in the current session.
 
 **Model Selection**: Available models are fetched on-demand from `/api/models` and cached in `useChatStore`. The `currentModel` must be set before sending a message.
 

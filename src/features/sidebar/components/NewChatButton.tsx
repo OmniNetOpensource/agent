@@ -25,7 +25,7 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
         return;
       }
     }
-    router.push("/c/new");
+    router.push("/");
     clear();
     resetPreview();
   };

@@ -44,7 +44,7 @@ export function Composer() {
       return;
     }
 
-    await sendMessage(user ? router : undefined);
+    await sendMessage(user ? (path) => router.push(path) : undefined);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

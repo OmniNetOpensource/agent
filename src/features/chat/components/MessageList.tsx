@@ -1,18 +1,54 @@
+import { useEffect } from "react";
 import { MessageItem } from "./message/MessageItem";
 import { PendingIndicator } from "./message/PendingIndicator";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import type { Message } from "@/src/features/chat/types/chat";
 
-export function MessageList() {
+type MessageListProps = {
+  conversationId?: string;
+  initialMessages?: Message[];
+};
+
+export function MessageList({
+  conversationId,
+  initialMessages,
+}: MessageListProps) {
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
+  const setConversation = useChatStore((state) => state.setConversation);
+  const setLoadedConversation = useChatStore(
+    (state) => state.setLoadedConversation
+  );
+  const currentConversationId = useChatStore((state) => state.conversationId);
+
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+
+    if (initialMessages && initialMessages.length > 0) {
+      setLoadedConversation(conversationId, initialMessages);
+      return;
+    }
+
+    if (currentConversationId !== conversationId) {
+      void setConversation(conversationId);
+    }
+  }, [
+    conversationId,
+    initialMessages,
+    currentConversationId,
+    setConversation,
+    setLoadedConversation,
+  ]);
 
   return (
-    <div
-      role="log"
-      aria-live="polite"
-      className="w-full py-6 px-3 sm:px-4 md:px-0 pb-44 md:pb-52"
-    >
-      <div className="mx-auto flex w-[90%] md:w-[60%] flex-col space-y-3 md:space-y-4">
+    <div className="h-full w-full overflow-y-auto">
+      <div
+        role="log"
+        aria-live="polite"
+        className="flex-1 min-h-0 flex flex-col overflow-y-auto py-6 px-3 sm:px-4 md:px-0 pb-44 md:pb-52 mx-auto w-[90%] md:w-[60%] space-y-3 md:space-y-4"
+      >
         {messages.map((message, index) => {
           const isLastMessage = index === messages.length - 1;
           const isStreaming = isLastMessage && pending;

@@ -21,7 +21,7 @@ export function NewChatButton() {
         return;
       }
     }
-    router.push("/c/new");
+    router.push("/");
     clear();
     resetPreview();
   };

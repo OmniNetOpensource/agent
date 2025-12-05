@@ -146,14 +146,6 @@ export default function Sidebar() {
 
             <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
               <div className="flex h-full flex-col gap-3">
-                <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
-                  <span>历史记录</span>
-                  {user && (
-                    <span className="text-[11px] text-(--text-tertiary)">
-                      {authLoading ? "同步中..." : "已登录"}
-                    </span>
-                  )}
-                </div>
                 {user ? (
                   <ConversationList />
                 ) : (
@@ -223,14 +215,6 @@ export default function Sidebar() {
               !isOpen ? "opacity-0 invisible" : "opacity-100 visible"
             }`}
           >
-            <div className="flex items-center justify-between px-1 text-xs font-semibold text-(--text-tertiary)">
-              <span>历史记录</span>
-              {user && (
-                <span className="text-[11px] text-(--text-tertiary)">
-                  {authLoading ? "同步中..." : "已登录"}
-                </span>
-              )}
-            </div>
             {user ? (
               <ConversationList />
             ) : (

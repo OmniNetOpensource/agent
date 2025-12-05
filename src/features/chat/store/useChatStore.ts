@@ -16,7 +16,6 @@ import {
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
-import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { fetchConversationMessages } from "@/src/features/chat/lib/api";
 import { ChatClient } from "@/src/features/chat/lib/chat-client";
 
@@ -24,6 +23,7 @@ export type ChatState = {
   messages: Message[];
   input: string;
   pending: boolean;
+  fetchLoading: boolean;
   chatClient: ChatClient | null;
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
@@ -47,11 +47,13 @@ export type ChatActions = {
     messages: Message[],
     navigate?: () => void
   ) => void;
+  fetchConversation: (id: string) => Promise<void>;
+  setFetchLoading: (loading: boolean) => void;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
-  sendMessage: (router?: AppRouterInstance) => Promise<void>;
+  sendMessage: (navigate?: (path: string) => void) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: ChatModelId) => void;
   setSearchEnabled: (enabled: boolean) => void;
@@ -66,6 +68,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
   input: "",
   pending: false,
+  fetchLoading: false,
   chatClient: null,
   currentModel: DEFAULT_CHAT_MODEL_ID,
   pendingAttachments: [],
@@ -76,11 +79,36 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   setMessages: (messages) => set({ messages }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
   setLoadedConversation: (id, messages, navigate) => {
-    set({ conversationId: id, messages, pending: false });
+    set({ conversationId: id, messages, pending: false, fetchLoading: false });
     if (navigate) {
       navigate();
     }
   },
+  fetchConversation: async (id) => {
+    const currentId = get().conversationId;
+
+    // 如果已经是当前会话，不需要重新加载
+    if (currentId === id) {
+      return;
+    }
+
+    set({ fetchLoading: true });
+
+    try {
+      const messages = await fetchConversationMessages(id);
+      set({
+        conversationId: id,
+        messages,
+        fetchLoading: false,
+        pending: false,
+      });
+    } catch (error) {
+      console.error("Failed to load conversation:", error);
+      set({ fetchLoading: false });
+      throw error;
+    }
+  },
+  setFetchLoading: (loading) => set({ fetchLoading: loading }),
   setConversation: async (nextConversationId) => {
     const previousId = get().conversationId;
 
@@ -95,7 +123,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return { ...state, conversationId: nextConversationId, messages: [] };
     });
 
-    if (!nextConversationId || nextConversationId === "new") {
+    if (!nextConversationId) {
       return;
     }
 
@@ -105,7 +133,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const requestId = get().latestSelectRequestId + 1;
-    set({ latestSelectRequestId: requestId });
+    set({ latestSelectRequestId: requestId, fetchLoading: true });
 
     try {
       const normalized = await fetchConversationMessages(nextConversationId);
@@ -118,13 +146,14 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         messages: normalized,
         conversationId: nextConversationId,
         pending: false,
+        fetchLoading: false,
       });
       return true;
     } catch (error) {
       console.error("[Conversations] Failed to load messages", error);
-      set({ pending: false });
+      set({ pending: false, fetchLoading: false });
       if (get().latestSelectRequestId === requestId) {
-        set({ conversationId: "new", messages: [], pending: false });
+        set({ conversationId: null, messages: [], pending: false });
       }
       return false;
     }
@@ -134,8 +163,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       messages: [],
       input: "",
       pending: false,
+      fetchLoading: false,
       pendingAttachments: [],
-      conversationId: "new",
+      conversationId: null,
       chatClient: null,
       searchEnabled: true,
     }),
@@ -432,7 +462,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   setCurrentModel: (model) => {
     set({ currentModel: model });
   },
-  sendMessage: async (router) => {
+  sendMessage: async (navigate) => {
     const input = get().input;
     const trimmed = input.trim();
     const attachments = get().pendingAttachments;
@@ -613,7 +643,10 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       },
     });
 
-    if (currentConversationId === "new" && router) {
+    const isLoggedIn = Boolean(navigate);
+    const hasConversation = Boolean(currentConversationId);
+
+    if (!hasConversation && isLoggedIn) {
       const newId = generateConversationId();
       currentConversationId = newId;
 
@@ -626,7 +659,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         pendingAttachments: [],
       });
 
-      router.push(`/c/${newId}`);
+      navigate?.(`/c/${newId}`);
     } else {
       set({
         messages: nextMessages,
@@ -648,5 +681,5 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
 export const useIsNewChat = () =>
   useChatStore(
-    (state) => state.conversationId === "new" && state.messages.length === 0
+    (state) => state.conversationId === null && state.messages.length === 0
   );
