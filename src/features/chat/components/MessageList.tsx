@@ -15,10 +15,9 @@ export function MessageList({
 }: MessageListProps) {
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
-  const setConversation = useChatStore((state) => state.setConversation);
-  const setLoadedConversation = useChatStore(
-    (state) => state.setLoadedConversation
-  );
+  const setMessages = useChatStore((state) => state.setMessages);
+  const setConversationId = useChatStore((state) => state.setConversationId);
+  const fetchConversation = useChatStore((state) => state.fetchConversation);
   const currentConversationId = useChatStore((state) => state.conversationId);
 
   useEffect(() => {
@@ -27,19 +26,21 @@ export function MessageList({
     }
 
     if (initialMessages && initialMessages.length > 0) {
-      setLoadedConversation(conversationId, initialMessages);
+      setMessages(initialMessages);
+      setConversationId(conversationId);
       return;
     }
 
     if (currentConversationId !== conversationId) {
-      void setConversation(conversationId);
+      void fetchConversation(conversationId);
     }
   }, [
     conversationId,
     initialMessages,
     currentConversationId,
-    setConversation,
-    setLoadedConversation,
+    fetchConversation,
+    setMessages,
+    setConversationId,
   ]);
 
   return (

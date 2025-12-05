@@ -5,10 +5,7 @@ import {
   ResearchItem,
   ToolProgress,
 } from "@/src/features/chat/types/chat";
-import {
-  ChatModelId,
-  DEFAULT_CHAT_MODEL_ID,
-} from "@/src/features/model/lib/openrouter";
+import { ChatModelId } from "@/src/features/model/lib/openrouter";
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,
@@ -28,7 +25,6 @@ export type ChatState = {
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
   conversationId: string | null;
-  latestSelectRequestId: number;
   searchEnabled: boolean;
 };
 
@@ -41,12 +37,7 @@ type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
 export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
-  setConversation: (id: string | null) => Promise<boolean | void>;
-  setLoadedConversation: (
-    id: string,
-    messages: Message[],
-    navigate?: () => void
-  ) => void;
+  setConversationId: (id: string | null) => void;
   fetchConversation: (id: string) => Promise<void>;
   setFetchLoading: (loading: boolean) => void;
   clear: () => void;
@@ -70,20 +61,14 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   pending: false,
   fetchLoading: false,
   chatClient: null,
-  currentModel: DEFAULT_CHAT_MODEL_ID,
+  currentModel: "",
   pendingAttachments: [],
   conversationId: null,
-  latestSelectRequestId: 0,
   searchEnabled: true,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
+  setConversationId: (id) => set({ conversationId: id }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
-  setLoadedConversation: (id, messages, navigate) => {
-    set({ conversationId: id, messages, pending: false, fetchLoading: false });
-    if (navigate) {
-      navigate();
-    }
-  },
   fetchConversation: async (id) => {
     const currentId = get().conversationId;
 
@@ -109,55 +94,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
   },
   setFetchLoading: (loading) => set({ fetchLoading: loading }),
-  setConversation: async (nextConversationId) => {
-    const previousId = get().conversationId;
-
-    if (previousId === nextConversationId) {
-      return;
-    }
-
-    set((state) => {
-      if (state.conversationId === nextConversationId) {
-        return state;
-      }
-      return { ...state, conversationId: nextConversationId, messages: [] };
-    });
-
-    if (!nextConversationId) {
-      return;
-    }
-
-    const { chatClient } = get();
-    if (chatClient) {
-      chatClient.abort();
-    }
-
-    const requestId = get().latestSelectRequestId + 1;
-    set({ latestSelectRequestId: requestId, fetchLoading: true });
-
-    try {
-      const normalized = await fetchConversationMessages(nextConversationId);
-
-      if (get().latestSelectRequestId !== requestId) {
-        return false;
-      }
-
-      set({
-        messages: normalized,
-        conversationId: nextConversationId,
-        pending: false,
-        fetchLoading: false,
-      });
-      return true;
-    } catch (error) {
-      console.error("[Conversations] Failed to load messages", error);
-      set({ pending: false, fetchLoading: false });
-      if (get().latestSelectRequestId === requestId) {
-        set({ conversationId: null, messages: [], pending: false });
-      }
-      return false;
-    }
-  },
   clear: () =>
     set({
       messages: [],
@@ -466,14 +402,19 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     const input = get().input;
     const trimmed = input.trim();
     const attachments = get().pendingAttachments;
+    const selectedModel = get().currentModel;
+
     if (get().pending) {
       return;
     }
     if (!trimmed && attachments.length === 0) {
       return;
     }
+    if (!selectedModel) {
+      alert("请先选择模型");
+      return;
+    }
 
-    const selectedModel = get().currentModel;
     const searchEnabled = get().searchEnabled;
     let currentConversationId = get().conversationId;
     const existingMessages = get().messages;

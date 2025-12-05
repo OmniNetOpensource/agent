@@ -18,9 +18,9 @@ type ModelOption = {
 };
 
 const MODELS: ModelOption[] = [
-  { id: "openai/gpt-5.1-codex-mini", label: "轻舟" },
+  { id: "x-ai/grok-4.1-fast", label: "轻舟" },
   { id: "google/gemini-3-pro-preview", label: "博学" },
-  { id: "deepseek/deepseek-v3.2-speciale", label: "中国做题家" },
+  { id: "deepseek/deepseek-v3.2", label: "中国做题家" },
   { id: "anthropic/claude-opus-4.5", label: "娴雅" },
 ];
 
@@ -30,7 +30,7 @@ export function ModelSelector() {
   const [isOpen, setIsOpen] = useState(false);
 
   const currentModelLabel =
-    MODELS.find((m) => m.id === currentModel)?.label || currentModel;
+    MODELS.find((m) => m.id === currentModel)?.label ?? "";
 
   useEffect(() => {
     if (!currentModel && MODELS.length > 0) {
@@ -62,7 +62,7 @@ export function ModelSelector() {
 
       <PopoverContent
         align="start"
-        className="min-w-[240px] max-w-[calc(100vw-2rem)] p-1.5"
+        className="w-48 max-w-[calc(100vw-2rem)] p-1.5"
       >
         <div className="flex flex-col gap-1 px-1 py-1">
           {MODELS.map((model) => (

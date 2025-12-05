@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { callToolByName, toolSpecs } from "@/src/shared/lib/tools";
 import type { OpenRouter } from "@openrouter/sdk";
 import {
-  DEFAULT_CHAT_MODEL_ID,
   getOpenRouterClient,
   getOpenRouterHeaders,
   isSupportedChatModel,
@@ -53,7 +52,6 @@ type ChatSendMethod = {
   ) => Promise<AsyncIterable<StreamChunk>>;
 };
 
-const DEFAULT_MODEL = DEFAULT_CHAT_MODEL_ID;
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
@@ -86,7 +84,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const requestedModel = isSupportedChatModel(model) ? model : DEFAULT_MODEL;
+    if (!isSupportedChatModel(model)) {
+      return NextResponse.json(
+        { reply: "Invalid or missing model" },
+        { status: 400 }
+      );
+    }
+
+    const requestedModel = model;
 
     const isGeminiModel = requestedModel.toLowerCase().includes("gemini");
 

@@ -27,6 +27,7 @@ export function Composer() {
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
   const pendingAttachments = useChatStore((state) => state.pendingAttachments);
+  const currentModel = useChatStore((state) => state.currentModel);
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
@@ -39,8 +40,12 @@ export function Composer() {
     const trimmed = input.trim();
     const hasContent = trimmed.length > 0;
     const hasAttachment = pendingAttachments.length > 0;
+    const hasModel = !!currentModel;
 
-    if (pending || (!hasContent && !hasAttachment)) {
+    if (pending || (!hasContent && !hasAttachment) || !hasModel) {
+      if (!hasModel) {
+        alert("请先选择模型");
+      }
       return;
     }
 
@@ -106,7 +111,8 @@ export function Composer() {
 
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
-  const sendDisabled = pending ? false : !hasText && !hasAttachments;
+  const hasModel = !!currentModel;
+  const sendDisabled = pending ? false : (!hasText && !hasAttachments) || !hasModel;
   const isNewchat = useIsNewChat();
 
   const formClassName = isNewchat

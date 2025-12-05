@@ -47,9 +47,8 @@ export function ConversationItem({
 
   const messagesRef = useRef<Message[] | null>(null);
   const fetchPromiseRef = useRef<Promise<Message[]> | null>(null);
-  const setLoadedConversation = useChatStore(
-    (state) => state.setLoadedConversation
-  );
+  const setMessages = useChatStore((state) => state.setMessages);
+  const setConversationId = useChatStore((state) => state.setConversationId);
   const fetchConversation = useChatStore((state) => state.fetchConversation);
   const setFetchLoading = useChatStore((state) => state.setFetchLoading);
   const pending = useChatStore((state) => state.pending);
@@ -85,9 +84,10 @@ export function ConversationItem({
 
     // If we have prefetched data, use it immediately
     if (messagesRef.current) {
-      setLoadedConversation(conversation.id, messagesRef.current, () => {
-        router.push(`/c/${conversation.id}`);
-      });
+      setMessages(messagesRef.current);
+      setConversationId(conversation.id);
+      setFetchLoading(false);
+      router.push(`/c/${conversation.id}`);
       return;
     }
 
@@ -96,11 +96,13 @@ export function ConversationItem({
       setFetchLoading(true);
       try {
         const messages = await fetchPromiseRef.current;
-        setLoadedConversation(conversation.id, messages, () => {
-          router.push(`/c/${conversation.id}`);
-        });
+        setMessages(messages);
+        setConversationId(conversation.id);
+        setFetchLoading(false);
+        router.push(`/c/${conversation.id}`);
         return;
       } catch {
+        setFetchLoading(false);
         // If prefetch fails, fall through to use fetchConversation
       }
     }
@@ -124,9 +126,6 @@ export function ConversationItem({
         isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
       }`}
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--surface-muted) text-sm font-semibold text-foreground">
-        {title.slice(0, 1).toUpperCase()}
-      </div>
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-foreground">
           {title}
