@@ -1,3 +1,5 @@
+"use client";
+
 import type { Tool } from "@/src/features/chat/types/chat";
 import Markdown from "@/src/shared/components/Markdown";
 import { Search, Zap, ExternalLink, Globe, ChevronRight } from "lucide-react";

@@ -1,9 +1,13 @@
 import type { DbMessage } from "@/types/conversation";
 import type { Message } from "@/src/features/chat/types/chat";
 
-export async function fetchConversationMessages(id: string): Promise<Message[]> {
+export async function fetchConversationMessages(
+  id: string,
+  signal?: AbortSignal
+): Promise<Message[]> {
   const response = await fetch(`/api/conversations/${id}/messages`, {
     cache: "no-cache",
+    signal,
   });
 
   if (!response.ok) {

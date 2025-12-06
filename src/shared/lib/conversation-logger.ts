@@ -1,0 +1,80 @@
+import fs from "fs";
+import path from "path";
+
+export type ConversationLogger = {
+  log: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+};
+
+const LOG_BASE_DIR = path.join(process.cwd(), "logs", "conversations");
+
+const ensureLogDirectory = () => {
+  try {
+    if (!fs.existsSync(LOG_BASE_DIR)) {
+      fs.mkdirSync(LOG_BASE_DIR, { recursive: true });
+    }
+  } catch (error) {
+    console.error("[ConversationLogger] Failed to ensure log directory:", error);
+  }
+};
+
+const normalizeConversationId = (conversationId: string | null | undefined) => {
+  const rawId =
+    typeof conversationId === "string" && conversationId.trim().length > 0
+      ? conversationId
+      : `session_${Date.now()}`;
+
+  return rawId.replace(/[^a-zA-Z0-9_-]/g, "_");
+};
+
+const safeSerialize = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    try {
+      return String(value);
+    } catch {
+      return "[Unserializable]";
+    }
+  }
+};
+
+export const createConversationLogger = (
+  conversationId: string | null | undefined
+): ConversationLogger => {
+  ensureLogDirectory();
+
+  const safeId = normalizeConversationId(conversationId);
+  const filePath = path.join(LOG_BASE_DIR, `${safeId}.log`);
+
+  const appendLine = (level: "INFO" | "ERROR", args: unknown[]) => {
+    const timestamp = new Date().toISOString();
+    const text = args.map(safeSerialize).join(" ");
+    const line = `[${timestamp}] [${level}] ${text}\n`;
+
+    try {
+      fs.appendFile(filePath, line, (err) => {
+        if (err) {
+          console.error("[ConversationLogger] Failed to write log:", err);
+        }
+      });
+    } catch (error) {
+      console.error("[ConversationLogger] Unexpected logging error:", error);
+    }
+  };
+
+  return {
+    log: (...args: unknown[]) => {
+      appendLine("INFO", args);
+      console.log(...args);
+    },
+    error: (...args: unknown[]) => {
+      appendLine("ERROR", args);
+      console.error(...args);
+    },
+  };
+};
+

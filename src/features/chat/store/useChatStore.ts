@@ -13,14 +13,12 @@ import {
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
-import { fetchConversationMessages } from "@/src/features/chat/lib/api";
 import { ChatClient } from "@/src/features/chat/lib/chat-client";
 
 export type ChatState = {
   messages: Message[];
   input: string;
   pending: boolean;
-  fetchLoading: boolean;
   chatClient: ChatClient | null;
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
@@ -38,7 +36,6 @@ export type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
   setConversationId: (id: string | null) => void;
-  fetchConversation: (id: string) => Promise<void>;
   clear: () => void;
   addAttachments: (files: File[]) => Promise<void>;
   removeAttachment: (id: string) => void;
@@ -58,7 +55,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
   input: "",
   pending: false,
-  fetchLoading: false,
   chatClient: null,
   currentModel: "",
   pendingAttachments: [],
@@ -68,36 +64,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   setMessages: (messages) => set({ messages }),
   setConversationId: (id) => set({ conversationId: id }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
-  fetchConversation: async (id) => {
-    const currentId = get().conversationId;
-
-    // 如果已经是当前会话，不需要重新加载
-    if (currentId === id) {
-      return;
-    }
-
-    set({ fetchLoading: true });
-
-    try {
-      const messages = await fetchConversationMessages(id);
-      set({
-        conversationId: id,
-        messages,
-        fetchLoading: false,
-        pending: false,
-      });
-    } catch (error) {
-      console.error("Failed to load conversation:", error);
-      set({ fetchLoading: false });
-      throw error;
-    }
-  },
   clear: () =>
     set({
       messages: [],
       input: "",
       pending: false,
-      fetchLoading: false,
       pendingAttachments: [],
       conversationId: null,
       chatClient: null,

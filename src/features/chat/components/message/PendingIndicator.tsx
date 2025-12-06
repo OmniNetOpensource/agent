@@ -1,3 +1,5 @@
+"use client";
+
 export function PendingIndicator() {
   return (
     <div className="flex justify-start">

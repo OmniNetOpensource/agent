@@ -1,3 +1,5 @@
+"use client";
+
 import { memo, useState } from "react";
 import { Brain, ChevronRight } from "lucide-react";
 import Markdown from "@/src/shared/components/Markdown";

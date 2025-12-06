@@ -1,3 +1,5 @@
+"use client";
+
 import { memo, useState } from "react";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";

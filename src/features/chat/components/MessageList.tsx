@@ -1,47 +1,12 @@
-import { useEffect } from "react";
+"use client";
+
 import { MessageItem } from "./message/MessageItem";
 import { PendingIndicator } from "./message/PendingIndicator";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import type { Message } from "@/src/features/chat/types/chat";
 
-type MessageListProps = {
-  conversationId?: string;
-  initialMessages?: Message[];
-};
-
-export function MessageList({
-  conversationId,
-  initialMessages,
-}: MessageListProps) {
+export function MessageList() {
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
-  const setMessages = useChatStore((state) => state.setMessages);
-  const setConversationId = useChatStore((state) => state.setConversationId);
-  const fetchConversation = useChatStore((state) => state.fetchConversation);
-  const currentConversationId = useChatStore((state) => state.conversationId);
-
-  useEffect(() => {
-    if (!conversationId) {
-      return;
-    }
-
-    if (initialMessages && initialMessages.length > 0) {
-      setMessages(initialMessages);
-      setConversationId(conversationId);
-      return;
-    }
-
-    if (currentConversationId !== conversationId) {
-      void fetchConversation(conversationId);
-    }
-  }, [
-    conversationId,
-    initialMessages,
-    currentConversationId,
-    fetchConversation,
-    setMessages,
-    setConversationId,
-  ]);
 
   return (
     <div className="h-full w-full overflow-y-auto">

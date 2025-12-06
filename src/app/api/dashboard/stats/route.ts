@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
 import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { DashboardStatsResponse } from "@/src/features/dashboard/types";
 
-export async function GET(request: Request) {
+export async function GET() {
   if (!hasSupabaseConfig()) {
     return NextResponse.json(
       { error: "Supabase is not configured", userMessageCount: 0 },
@@ -38,8 +38,7 @@ export async function GET(request: Request) {
   }
 
   const conversationIds =
-    conversations?.map((conversation) => conversation.id).filter(Boolean) ??
-    [];
+    conversations?.map((conversation) => conversation.id).filter(Boolean) ?? [];
 
   if (conversationIds.length === 0) {
     const payload: DashboardStatsResponse = {
@@ -71,4 +70,3 @@ export async function GET(request: Request) {
 
   return NextResponse.json(payload);
 }
-

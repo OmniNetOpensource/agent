@@ -107,7 +107,7 @@ function MobileSidebarWrapper({
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useMobileStore((state) => state.isMobile);
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
 
   if (isMobile) {
     return (

@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { use } from "react";
 import { Composer } from "@/src/features/chat/components/Composer";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { MessageList } from "@/src/features/chat/components/MessageList";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { Spinner } from "@/components/ui/spinner";
+import { useConversationLoader } from "@/src/features/chat/hooks/useConversationLoader";
 
 type Props = {
   params: Promise<{ conversationId: string }>;
@@ -14,44 +13,9 @@ type Props = {
 
 export default function ConversationPage({ params }: Props) {
   const { conversationId } = use(params);
-  const router = useRouter();
+  const { isLoading } = useConversationLoader(conversationId);
 
-  const currentConversationId = useChatStore((state) => state.conversationId);
-  const fetchLoading = useChatStore((state) => state.fetchLoading);
-  const fetchConversation = useChatStore((state) => state.fetchConversation);
-
-  useEffect(() => {
-    if (!conversationId) {
-      return;
-    }
-
-    // 当前会话已经是这个 ID 时，不再重复拉取
-    if (currentConversationId === conversationId) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const run = async () => {
-      try {
-        await fetchConversation(conversationId);
-        if (cancelled) return;
-      } catch (error) {
-        if (cancelled) return;
-        // 拉取失败，一律跳转到 404 页面
-        console.error("Failed to load conversation:", error);
-        router.replace("/404");
-      }
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [conversationId, currentConversationId, fetchConversation, router]);
-
-  if (fetchLoading) {
+  if (isLoading) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center">
         <div className="flex flex-col items-center gap-3">

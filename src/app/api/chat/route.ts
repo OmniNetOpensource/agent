@@ -27,6 +27,10 @@ import {
   SavedMessageIds,
   saveMessages,
 } from "./repository";
+import {
+  ConversationLogger,
+  createConversationLogger,
+} from "@/src/shared/lib/conversation-logger";
 
 type StreamChunk = {
   choices?: Array<{
@@ -55,9 +59,13 @@ type ChatSendMethod = {
 const encoder = new TextEncoder();
 
 export async function POST(req: Request) {
+  let logger: ConversationLogger | null = null;
+
   try {
     const { conversationHistory, conversationId, model, searchEnabled } =
       (await req.json()) as ChatRequest;
+
+    logger = createConversationLogger(conversationId ?? null);
 
     if (
       !Array.isArray(conversationHistory) ||
@@ -98,12 +106,12 @@ export async function POST(req: Request) {
     const tools = searchEnabled === false || isGeminiModel ? [] : toolSpecs;
 
     if (isGeminiModel && searchEnabled !== false) {
-      console.log(
+      logger?.log(
         "[Chat-API] Detected Gemini model, disabling tools to avoid missing reasoning details / thought_signature errors."
       );
     }
 
-    console.log(
+    logger?.log(
       "[Chat-API] Tools loaded:",
       tools.length,
       tools
@@ -135,7 +143,7 @@ export async function POST(req: Request) {
         error: authError,
       } = await supabase.auth.getUser();
       if (authError) {
-        console.error("[Chat-API] Supabase auth error:", authError.message);
+        logger?.error("[Chat-API] Supabase auth error:", authError.message);
       }
       supabaseUser = user ?? null;
     }
@@ -171,7 +179,7 @@ export async function POST(req: Request) {
       ...toChatMessages(history),
     ];
 
-    console.log(`[Chat-API] Using model: ${requestedModel}`);
+    logger?.log("[Chat-API] Using model:", requestedModel);
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -277,8 +285,10 @@ export async function POST(req: Request) {
         try {
           while (iteration < maxIterations) {
             iteration++;
-            console.log(
-              `[Chat-API] Iteration ${iteration}, messages:`,
+            logger?.log(
+              "[Chat-API] Iteration",
+              iteration,
+              "messages:",
               currentMessages.length
             );
 
@@ -306,10 +316,7 @@ export async function POST(req: Request) {
             let finishedWithStop = false;
 
             for await (const chunk of completion as AsyncIterable<StreamChunk>) {
-              console.log(
-                "[Chat-API] OpenRouter chunk:",
-                JSON.stringify(chunk)
-              );
+              logger?.log("[Chat-API] OpenRouter chunk:", chunk);
               const delta = chunk?.choices?.[0]?.delta;
               const finishReason = chunk?.choices?.[0]?.finishReason as
                 | string
@@ -370,13 +377,13 @@ export async function POST(req: Request) {
               }
 
               if (finishReason === "stop") {
-                console.log("[Chat-API] Stream finished with stop");
+                logger?.log("[Chat-API] Stream finished with stop");
                 finishedWithStop = true;
                 break;
               }
 
               if (finishReason === "tool_calls" && toolCalls.length > 0) {
-                console.log(
+                logger?.log(
                   "[Chat-API] Stream finished with tool_calls:",
                   toolCalls.length
                 );
@@ -391,7 +398,7 @@ export async function POST(req: Request) {
             }
 
             if (toolCalls.length === 0) {
-              console.log("[Chat-API] No tool calls, ending");
+              logger?.log("[Chat-API] No tool calls, ending");
               finalAssistantMessage = assistantMessage;
               closeStream();
               break;
@@ -426,85 +433,97 @@ export async function POST(req: Request) {
               );
             }
 
-            console.log("[Chat-API] Executing", toolCalls.length, "tool calls");
-            for (const toolCall of toolCalls) {
-              if (toolCall.type !== "function") continue;
+            logger?.log("[Chat-API] Executing", toolCalls.length, "tool calls");
+            const toolResults = await Promise.all(
+              toolCalls.map(async (toolCall) => {
+                if (toolCall.type !== "function") return null;
 
-              const toolName = toolCall.function.name;
-              const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+                const toolName = toolCall.function.name;
+                const toolArgs = JSON.parse(
+                  toolCall.function.arguments || "{}"
+                );
 
-              console.log(
-                "[Chat-API] Calling tool:",
-                toolName,
-                "with args:",
-                toolArgs
-              );
+                logger?.log(
+                  "[Chat-API] Calling tool:",
+                  toolName,
+                  "with args:",
+                  toolArgs
+                );
 
-              const toolCallData = {
-                type: "tool_call",
-                tool: toolName,
-                args: toolArgs,
-              };
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(toolCallData)}\n\n`)
-              );
-              ensureToolItem(toolName, toolArgs);
+                const toolCallData = {
+                  type: "tool_call",
+                  tool: toolName,
+                  args: toolArgs,
+                };
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify(toolCallData)}\n\n`)
+                );
+                ensureToolItem(toolName, toolArgs);
 
-              const result = await callToolByName(
-                toolName,
-                toolArgs,
-                (progress: ToolProgressUpdate) => {
-                  const toolProgressData = {
-                    type: "tool_progress",
-                    tool: toolName,
-                    ...progress,
-                  };
-                  controller.enqueue(
-                    encoder.encode(
-                      `data: ${JSON.stringify(toolProgressData)}\n\n`
-                    )
-                  );
-                  appendToolProgress(toolName, {
-                    stage: progress.stage,
-                    message: String(progress.message ?? ""),
-                    receivedBytes: progress.receivedBytes,
-                    totalBytes: progress.totalBytes,
-                  });
-                }
-              );
+                const result = await callToolByName(
+                  toolName,
+                  toolArgs,
+                  (progress: ToolProgressUpdate) => {
+                    const toolProgressData = {
+                      type: "tool_progress",
+                      tool: toolName,
+                      ...progress,
+                    };
+                    controller.enqueue(
+                      encoder.encode(
+                        `data: ${JSON.stringify(toolProgressData)}\n\n`
+                      )
+                    );
+                    appendToolProgress(toolName, {
+                      stage: progress.stage,
+                      message: String(progress.message ?? ""),
+                      receivedBytes: progress.receivedBytes,
+                      totalBytes: progress.totalBytes,
+                    });
+                  }
+                );
 
-              const toolResultData = {
-                type: "tool_result",
-                tool: toolName,
-                result: result,
-              };
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(toolResultData)}\n\n`)
-              );
+                const toolResultData = {
+                  type: "tool_result",
+                  tool: toolName,
+                  result: result,
+                };
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify(toolResultData)}\n\n`)
+                );
 
-              const normalizedResult =
-                typeof result === "string"
-                  ? result
-                  : (() => {
-                      try {
-                        return JSON.stringify(result);
-                      } catch {
-                        return String(result);
-                      }
-                    })();
+                const normalizedResult =
+                  typeof result === "string"
+                    ? result
+                    : (() => {
+                        try {
+                          return JSON.stringify(result);
+                        } catch {
+                          return String(result);
+                        }
+                      })();
 
-              appendToolResult(toolName, normalizedResult);
+                appendToolResult(toolName, normalizedResult);
 
+                return {
+                  toolCallId: toolCall.id,
+                  result,
+                };
+              })
+            );
+
+            for (const toolResult of toolResults) {
+              if (!toolResult) continue;
               currentMessages.push({
                 role: "tool",
-                toolCallId: toolCall.id,
-                content: result,
+                toolCallId: toolResult.toolCallId,
+                content: toolResult.result,
               });
             }
           }
 
           if (iteration >= maxIterations && !streamClosed) {
-            console.log("[Chat-API] Max iterations reached");
+            logger?.log("[Chat-API] Max iterations reached");
             const data = {
               type: "error",
               message: "[已达到最大工具调用次数限制]",
@@ -542,7 +561,7 @@ export async function POST(req: Request) {
 
           closeStream();
         } catch (error) {
-          console.error("[Chat-API] Error:", error);
+          logger?.error("[Chat-API] Error:", error);
           if (!streamClosed) {
             const errorMessage =
               error instanceof Error ? error.message : String(error);
@@ -555,7 +574,7 @@ export async function POST(req: Request) {
                 encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
               );
             } catch (enqueueError) {
-              console.error(
+              logger?.error(
                 "[Chat-API] Failed to enqueue error message:",
                 enqueueError
               );
@@ -574,7 +593,11 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("[Chat-API] Top-level error:", error);
+    if (logger) {
+      logger.error("[Chat-API] Top-level error:", error);
+    } else {
+      console.error("[Chat-API] Top-level error:", error);
+    }
     return NextResponse.json(
       { reply: "Unable to process request" },
       { status: 500 }

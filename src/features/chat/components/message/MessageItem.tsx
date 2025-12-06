@@ -1,3 +1,5 @@
+"use client";
+
 import { memo, useState } from "react";
 import Image from "next/image";
 import Markdown from "@/src/shared/components/Markdown";
