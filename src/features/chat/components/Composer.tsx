@@ -21,6 +21,7 @@ import { getModelPermissions } from "@/src/features/model/config";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { toast } from "@/src/shared/toast";
 
 export function Composer() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export function Composer() {
 
     if (pending || (!hasContent && !hasAttachment) || !hasModel) {
       if (!hasModel) {
-        alert("请先选择模型");
+        toast.warning("请先选择模型");
       }
       return;
     }

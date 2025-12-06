@@ -101,6 +101,15 @@
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
 
+  --color-info: #3b82f6; /* Blue 500 */
+  --color-info-foreground: #ffffff;
+
+  --color-success: #10b981; /* Emerald 500 */
+  --color-success-foreground: #ffffff;
+
+  --color-warning: #f59e0b; /* Amber 500 */
+  --color-warning-foreground: #ffffff;
+
   --color-ring: var(--border-hover);
 
   color-scheme: light;

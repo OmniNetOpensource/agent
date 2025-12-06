@@ -15,6 +15,7 @@ import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { ChatClient } from "@/src/features/chat/lib/chat-client";
 import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
+import { toast } from "@/src/shared/toast";
 
 export type ChatState = {
   messages: Message[];
@@ -82,12 +83,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     const { user, loading } = useAuthStore.getState();
 
     if (loading) {
-      alert("正在加载登录状态，请稍后再试。");
+      toast.info("正在加载登录状态，请稍后再试。");
       return;
     }
 
     if (!user) {
-      alert("请先登录后再上传文件。");
+      toast.warning("请先登录后再上传文件。");
       return;
     }
 
@@ -102,7 +103,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     for (const file of items) {
       if (file.size > MAX_ATTACHMENT_SIZE) {
-        alert(
+        toast.warning(
           `文件「${file.name}」超过限制（最大 ${(
             MAX_ATTACHMENT_SIZE /
             (1024 * 1024)
@@ -127,7 +128,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         });
       } catch (error) {
         console.error(`无法上传文件「${file.name}」`, error);
-        alert(`无法上传文件「${file.name}」，请稍后重试。`);
+        toast.error(`无法上传文件「${file.name}」，请稍后重试。`);
       }
     }
 
@@ -400,7 +401,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
     if (!selectedModel) {
-      alert("请先选择模型");
+      toast.warning("请先选择模型");
       return;
     }
 

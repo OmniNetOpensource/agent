@@ -4,6 +4,7 @@ import { Nunito, Geist_Mono } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileProvider } from "@/src/shared/mobile/MobileProvider";
+import { ToastContainer } from "@/components/ui/toast-container";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
@@ -59,7 +60,10 @@ export default function RootLayout({
   } catch (e) {}
 })();`}</Script>
         <MobileProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+            <ToastContainer />
+          </TooltipProvider>
         </MobileProvider>
       </body>
     </html>

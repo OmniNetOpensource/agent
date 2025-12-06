@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/shared/lib/supabase/client";
 import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
+import { toast } from "@/src/shared/toast";
 
 type UseAuthResult = {
   user: User | null;
@@ -66,7 +67,7 @@ export function useAuth(): UseAuthResult {
 
   const signIn = useCallback(async () => {
     if (!supabaseReady || !clientRef.current) {
-      alert("请先配置 Supabase 环境变量后再登录。");
+      toast.error("请先配置 Supabase 环境变量后再登录。");
       return;
     }
 
@@ -89,7 +90,7 @@ export function useAuth(): UseAuthResult {
 
     if (error) {
       console.error("[Auth] Sign-in failed", error.message);
-      alert("登录失败，请稍后重试。");
+      toast.error("登录失败，请稍后重试。");
     }
   }, [supabaseReady]);
 
@@ -100,7 +101,7 @@ export function useAuth(): UseAuthResult {
     const { error } = await clientRef.current.auth.signOut();
     if (error) {
       console.error("[Auth] Sign-out failed", error.message);
-      alert("登出失败，请稍后重试。");
+      toast.error("登出失败，请稍后重试。");
     }
     //setUser(null);
   };
