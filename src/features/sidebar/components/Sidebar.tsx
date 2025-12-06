@@ -19,7 +19,10 @@ function SidebarToggle({
   setIsOpen: (v: boolean) => void;
   isMobile: boolean;
 }) {
-  const handleClick = () => setIsOpen(!isOpen);
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
 
   if (isMobile) {
     return (
@@ -174,8 +177,9 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`relative flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 ${
-        isOpen ? "w-52" : "w-12"
+      onClick={() => setIsOpen(!isOpen)}
+      className={`relative flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cursor-ew-resize ${
+        isOpen ? "w-52" : "w-12 "
       }`}
     >
       <div
@@ -184,6 +188,7 @@ export default function Sidebar() {
       >
         <Link
           href="/app"
+          onClick={(e) => e.stopPropagation()}
           className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
           aria-label="返回首页"
           style={{
@@ -216,6 +221,7 @@ export default function Sidebar() {
       <div className="pt-16 flex-1 flex flex-col min-h-0">
         <div
           className="pb-4 shrink-0 flex transition-all duration-500"
+          onClick={(e) => e.stopPropagation()}
           style={{
             paddingLeft: isOpen ? 12 : 4,
             paddingRight: isOpen ? 12 : 4,
@@ -244,7 +250,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="shrink-0">
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <ProfileMenu isCollapsed={!isOpen} />
         </div>
       </div>

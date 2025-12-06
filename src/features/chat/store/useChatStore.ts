@@ -569,7 +569,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         pendingAttachments: [],
       });
 
-      navigate?.(`/c/${newId}`);
+      navigate?.(`/app/c/${newId}`);
     } else {
       set({
         messages: nextMessages,

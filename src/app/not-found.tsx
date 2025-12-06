@@ -7,7 +7,7 @@ export default function NotFound() {
         <h1 className="text-6xl font-bold text-(--text-primary)">404</h1>
         <p className="mt-4 text-lg text-(--text-secondary)">页面不存在</p>
         <Link
-          href="/"
+          href="/app"
           className="mt-6 inline-block rounded-lg bg-(--accent) px-6 py-2 text-white transition-opacity hover:opacity-90"
         >
           返回首页
@@ -16,4 +16,3 @@ export default function NotFound() {
     </div>
   );
 }
-
