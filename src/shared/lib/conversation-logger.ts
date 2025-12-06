@@ -45,12 +45,20 @@ const safeSerialize = (value: unknown): string => {
 export const createConversationLogger = (
   conversationId: string | null | undefined
 ): ConversationLogger => {
-  ensureLogDirectory();
+  const shouldWriteToFile = process.env.NODE_ENV !== "production";
+
+  if (shouldWriteToFile) {
+    ensureLogDirectory();
+  }
 
   const safeId = normalizeConversationId(conversationId);
   const filePath = path.join(LOG_BASE_DIR, `${safeId}.log`);
 
   const appendLine = (level: "INFO" | "ERROR", args: unknown[]) => {
+    if (!shouldWriteToFile) {
+      return;
+    }
+
     const timestamp = new Date().toISOString();
     const text = args.map(safeSerialize).join(" ");
     const line = `[${timestamp}] [${level}] ${text}\n`;
@@ -77,4 +85,3 @@ export const createConversationLogger = (
     },
   };
 };
-
