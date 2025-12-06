@@ -9,11 +9,12 @@ import { ChatModelId } from "@/src/features/model/lib/openrouter";
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,
-  readFileAsDataUrl,
+  uploadFileToStorage,
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { ChatClient } from "@/src/features/chat/lib/chat-client";
+import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
 
 export type ChatState = {
   messages: Message[];
@@ -22,6 +23,7 @@ export type ChatState = {
   chatClient: ChatClient | null;
   currentModel: ChatModelId;
   pendingAttachments: Attachment[];
+  uploading: boolean;
   conversationId: string | null;
   searchEnabled: boolean;
 };
@@ -58,6 +60,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   chatClient: null,
   currentModel: "",
   pendingAttachments: [],
+  uploading: false,
   conversationId: null,
   searchEnabled: true,
   setInput: (value) => set({ input: value }),
@@ -70,15 +73,30 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       input: "",
       pending: false,
       pendingAttachments: [],
+      uploading: false,
       conversationId: null,
       chatClient: null,
       searchEnabled: true,
     }),
   addAttachments: async (files) => {
+    const { user, loading } = useAuthStore.getState();
+
+    if (loading) {
+      alert("正在加载登录状态，请稍后再试。");
+      return;
+    }
+
+    if (!user) {
+      alert("请先登录后再上传文件。");
+      return;
+    }
+
     const items = Array.from(files || []);
     if (items.length === 0) {
       return;
     }
+
+    set({ uploading: true });
 
     const attachments: Attachment[] = [];
 
@@ -94,8 +112,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       }
 
       try {
-        const dataUrl = await readFileAsDataUrl(file);
         const mimeType = file.type || "application/octet-stream";
+        const url = await uploadFileToStorage(file, user.id);
         attachments.push({
           id:
             typeof crypto !== "undefined" && crypto.randomUUID
@@ -105,21 +123,23 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
           name: file.name,
           size: file.size,
           mimeType,
-          dataUrl,
+          url,
         });
       } catch (error) {
-        console.error(`无法读取文件「${file.name}」`, error);
-        alert(`无法读取文件「${file.name}」，请重试。`);
+        console.error(`无法上传文件「${file.name}」`, error);
+        alert(`无法上传文件「${file.name}」，请稍后重试。`);
       }
     }
 
     if (attachments.length === 0) {
+      set({ uploading: false });
       return;
     }
 
     // 将新附件追加到现有待发送附件列表中
     set((state) => ({
       pendingAttachments: [...state.pendingAttachments, ...attachments],
+      uploading: false,
     }));
   },
   removeAttachment: (id) =>

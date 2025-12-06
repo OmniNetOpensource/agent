@@ -9,7 +9,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Globe, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import {
   useChatStore,
@@ -27,6 +27,7 @@ export function Composer() {
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
   const pendingAttachments = useChatStore((state) => state.pendingAttachments);
+  const uploading = useChatStore((state) => state.uploading);
   const currentModel = useChatStore((state) => state.currentModel);
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
@@ -99,6 +100,10 @@ export function Composer() {
   }, [input]);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (uploading) {
+      return;
+    }
+
     const files = event.target.files;
     if (!files || files.length === 0) {
       return;
@@ -112,7 +117,9 @@ export function Composer() {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const hasModel = !!currentModel;
-  const sendDisabled = pending ? false : (!hasText && !hasAttachments) || !hasModel;
+  const sendDisabled = pending
+    ? false
+    : (!hasText && !hasAttachments) || !hasModel || uploading;
   const isNewchat = useIsNewChat();
 
   const formClassName = isNewchat
@@ -135,7 +142,7 @@ export function Composer() {
               attachment.kind === "image" ? (
                 <div key={attachment.id} className="group relative">
                   <Image
-                    src={attachment.dataUrl}
+                    src={attachment.url}
                     alt={attachment.name}
                     width={80}
                     height={80}
@@ -265,10 +272,15 @@ export function Composer() {
               variant="ghost"
               size="sm"
               onClick={handlePickFiles}
-              title="添加附件"
-              className="h-7 gap-1.5 rounded-full px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+              title={uploading ? "正在上传附件..." : "添加附件"}
+              disabled={uploading}
+              className="h-7 gap-1.5 rounded-full px-2 text-xs font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Paperclip className="h-3.5 w-3.5" />
+              {uploading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Paperclip className="h-3.5 w-3.5" />
+              )}
             </Button>
           </div>
           <ModelSelector />

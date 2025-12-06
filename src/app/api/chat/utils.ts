@@ -73,28 +73,26 @@ export const toChatMessages = (history: Message[]): ChatMessage[] =>
           });
         } else if (block.type === "attachments") {
           for (const att of block.attachments) {
-            const base64Data = att.dataUrl.split(",")[1] || att.dataUrl;
+            const source = att.url;
+
+            if (!source) {
+              continue;
+            }
 
             if (att.kind === "image") {
               contentParts.push({
                 type: "image_url",
-                imageUrl: { url: att.dataUrl },
+                imageUrl: { url: source },
               });
             } else if (att.kind === "video") {
               contentParts.push({
                 type: "video_url",
-                videoUrl: { url: att.dataUrl },
-              });
-            } else if (att.kind === "audio") {
-              const format = att.mimeType.split("/")[1]?.split(";")[0] || "wav";
-              contentParts.push({
-                type: "input_audio",
-                inputAudio: { data: base64Data, format },
+                videoUrl: { url: source },
               });
             } else {
               contentParts.push({
                 type: "file",
-                file: { filename: att.name, fileData: att.dataUrl },
+                file: { filename: att.name, fileData: source },
               });
             }
           }

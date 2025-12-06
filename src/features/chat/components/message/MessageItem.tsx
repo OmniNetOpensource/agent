@@ -104,14 +104,15 @@ export const MessageItem = memo(function MessageItem({
                       attachment.kind === "image" ? (
                         <div
                           key={attachment.id}
-                          className="relative max-w-full overflow-hidden rounded-xl"
+                          className="relative h-20 w-20 overflow-hidden rounded-xl"
                         >
                           <Image
-                            src={attachment.dataUrl}
+                            src={attachment.url}
                             alt={attachment.name}
-                            width={400}
-                            height={300}
-                            className="max-h-[300px] w-auto rounded-xl object-contain"
+                            width={80}
+                            height={80}
+                            className="h-full w-full rounded-xl object-cover"
+                            unoptimized
                           />
                         </div>
                       ) : (

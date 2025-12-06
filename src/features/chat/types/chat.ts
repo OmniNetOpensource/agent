@@ -30,7 +30,7 @@ export type Attachment = {
   name: string;
   size: number;
   mimeType: string;
-  dataUrl: string;
+  url: string;
 };
 
 export type ChatContentPart =
