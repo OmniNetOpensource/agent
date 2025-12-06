@@ -6,6 +6,7 @@ import {
   getOpenRouterHeaders,
   isSupportedChatModel,
 } from "@/src/features/model/lib/openrouter";
+import { getModelPermissions } from "@/src/features/model/config";
 import type {
   Message,
   ResearchItem,
@@ -102,12 +103,25 @@ export async function POST(req: Request) {
     const requestedModel = model;
 
     const isGeminiModel = requestedModel.toLowerCase().includes("gemini");
+    const modelPermissions = getModelPermissions(requestedModel);
+    const canSearch = modelPermissions?.canSearch ?? true;
 
-    const tools = searchEnabled === false || isGeminiModel ? [] : toolSpecs;
+    // Disable tools if:
+    // 1. User explicitly disabled search
+    // 2. Model is Gemini (legacy check)
+    // 3. Model doesn't support search
+    const tools =
+      searchEnabled === false || isGeminiModel || !canSearch ? [] : toolSpecs;
 
     if (isGeminiModel && searchEnabled !== false) {
       logger?.log(
         "[Chat-API] Detected Gemini model, disabling tools to avoid missing reasoning details / thought_signature errors."
+      );
+    }
+
+    if (!canSearch && searchEnabled !== false) {
+      logger?.log(
+        `[Chat-API] Model "${requestedModel}" does not support search, disabling tools.`
       );
     }
 

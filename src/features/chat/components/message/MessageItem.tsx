@@ -99,12 +99,12 @@ export const MessageItem = memo(function MessageItem({
 
               if (block.type === "attachments") {
                 return (
-                  <div key={blockKey} className="flex flex-wrap gap-3">
+                  <div key={blockKey} className="flex gap-3 overflow-x-auto">
                     {block.attachments.map((attachment) =>
                       attachment.kind === "image" ? (
                         <div
                           key={attachment.id}
-                          className="relative h-20 w-20 overflow-hidden rounded-xl"
+                          className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl"
                         >
                           <Image
                             src={attachment.url}
@@ -118,7 +118,7 @@ export const MessageItem = memo(function MessageItem({
                       ) : (
                         <div
                           key={attachment.id}
-                          className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border bg-card px-3 py-2"
+                          className="flex w-[220px] shrink-0 items-center gap-3 rounded-xl border bg-card px-3 py-2"
                         >
                           <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-background text-muted-foreground">
                             <Paperclip className="h-5 w-5" />

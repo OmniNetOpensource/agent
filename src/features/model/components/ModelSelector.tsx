@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import { ChatModelId } from "@/src/features/model/lib/openrouter";
+import { MODEL_CONFIGS } from "@/src/features/model/config";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -12,29 +12,17 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-type ModelOption = {
-  id: ChatModelId;
-  label: string;
-};
-
-const MODELS: ModelOption[] = [
-  { id: "x-ai/grok-4.1-fast", label: "轻舟" },
-  { id: "google/gemini-3-pro-preview", label: "博学" },
-  { id: "deepseek/deepseek-v3.2", label: "中国做题家" },
-  { id: "anthropic/claude-opus-4.5", label: "娴雅" },
-];
-
 export function ModelSelector() {
   const currentModel = useChatStore((state) => state.currentModel);
   const setCurrentModel = useChatStore((state) => state.setCurrentModel);
   const [isOpen, setIsOpen] = useState(false);
 
   const currentModelLabel =
-    MODELS.find((m) => m.id === currentModel)?.label ?? "";
+    MODEL_CONFIGS.find((m) => m.id === currentModel)?.label ?? "";
 
   useEffect(() => {
-    if (!currentModel && MODELS.length > 0) {
-      setCurrentModel(MODELS[0].id);
+    if (!currentModel && MODEL_CONFIGS.length > 0) {
+      setCurrentModel(MODEL_CONFIGS[0].id);
     }
   }, [currentModel, setCurrentModel]);
 
@@ -65,7 +53,7 @@ export function ModelSelector() {
         className="w-48 max-w-[calc(100vw-2rem)] p-1.5"
       >
         <div className="flex flex-col gap-1 px-1 py-1">
-          {MODELS.map((model) => (
+          {MODEL_CONFIGS.map((model) => (
             <button
               key={model.id}
               onClick={() => {

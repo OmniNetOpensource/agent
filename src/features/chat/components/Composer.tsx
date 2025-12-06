@@ -17,6 +17,7 @@ import {
 } from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { ModelSelector } from "@/src/features/model/components/ModelSelector";
+import { getModelPermissions } from "@/src/features/model/config";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -99,8 +100,22 @@ export function Composer() {
     adjustTextareaHeight();
   }, [input]);
 
+  // Get model permissions
+  const modelPermissions = currentModel
+    ? getModelPermissions(currentModel)
+    : undefined;
+  const canUpload = modelPermissions?.canUpload ?? true;
+  const canSearch = modelPermissions?.canSearch ?? true;
+
+  // Force searchEnabled to false if model doesn't support search
+  useEffect(() => {
+    if (!canSearch && searchEnabled) {
+      setSearchEnabled(false);
+    }
+  }, [canSearch, searchEnabled, setSearchEnabled]);
+
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (uploading) {
+    if (uploading || !canUpload) {
       return;
     }
 
@@ -117,9 +132,14 @@ export function Composer() {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const hasModel = !!currentModel;
+  // Disable send if model doesn't allow uploads but attachments exist
+  const hasInvalidAttachments = hasAttachments && !canUpload;
   const sendDisabled = pending
     ? false
-    : (!hasText && !hasAttachments) || !hasModel || uploading;
+    : (!hasText && !hasAttachments) ||
+      !hasModel ||
+      uploading ||
+      hasInvalidAttachments;
   const isNewchat = useIsNewChat();
 
   const formClassName = isNewchat
@@ -138,6 +158,11 @@ export function Composer() {
       <div className="relative flex w-full flex-col gap-1 rounded-3xl border bg-card p-2 shadow-lg transition-all focus-within:border-ring focus-within:shadow-xl">
         {hasAttachments && (
           <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0">
+            {hasInvalidAttachments && (
+              <div className="w-full rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                当前模型不支持上传附件，请先移除附件或切换模型
+              </div>
+            )}
             {pendingAttachments.map((attachment) =>
               attachment.kind === "image" ? (
                 <div key={attachment.id} className="group relative">
@@ -246,42 +271,63 @@ export function Composer() {
 
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setSearchEnabled(!searchEnabled)}
-              title="开启后，模型会自主决定是否搜索"
-              className={cn(
-                "group h-7 gap-1.5 rounded-full px-2 text-xs font-medium",
-                searchEnabled
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+            <span
+              title={
+                canSearch
+                  ? "开启后，模型会自主决定是否搜索"
+                  : "当前模型不支持搜索功能"
+              }
             >
-              <Globe
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchEnabled(!searchEnabled)}
+                disabled={!canSearch}
                 className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  searchEnabled ? "scale-110" : "group-hover:scale-110"
+                  "group h-7 gap-1.5 rounded-full px-2 text-xs font-medium",
+                  !canSearch &&
+                    "cursor-not-allowed opacity-50 hover:text-muted-foreground",
+                  canSearch &&
+                    (searchEnabled
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-muted-foreground hover:text-foreground")
                 )}
-              />
-              <span>联网</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handlePickFiles}
-              title={uploading ? "正在上传附件..." : "添加附件"}
-              disabled={uploading}
-              className="h-7 gap-1.5 rounded-full px-2 text-xs font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Globe
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    canSearch &&
+                      (searchEnabled ? "scale-110" : "group-hover:scale-110")
+                  )}
+                />
+                <span>联网</span>
+              </Button>
+            </span>
+            <span
+              title={
+                uploading
+                  ? "正在上传附件..."
+                  : !canUpload
+                  ? "当前模型不支持上传附件"
+                  : "添加附件"
+              }
             >
-              {uploading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Paperclip className="h-3.5 w-3.5" />
-              )}
-            </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handlePickFiles}
+                disabled={uploading || !canUpload}
+                className="h-7 gap-1.5 rounded-full px-2 text-xs font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Paperclip className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </span>
           </div>
           <ModelSelector />
         </div>
