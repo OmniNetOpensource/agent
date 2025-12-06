@@ -117,7 +117,7 @@ export default function Sidebar() {
           <div className="flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/80 backdrop-blur-md">
             <div className="flex items-center justify-between px-3 h-14 shrink-0">
               <Link
-                href="/"
+                href="/app"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
                 aria-label="返回首页"
               >
@@ -183,7 +183,7 @@ export default function Sidebar() {
         style={{ paddingLeft: isOpen ? 12 : 4, paddingRight: isOpen ? 12 : 4 }}
       >
         <Link
-          href="/"
+          href="/app"
           className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
           aria-label="返回首页"
           style={{

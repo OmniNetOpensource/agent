@@ -25,7 +25,7 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
         return;
       }
     }
-    router.push("/");
+    router.push("/app");
     clear();
     resetPreview();
   };
@@ -43,7 +43,10 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
       </span>
       <span
         className="overflow-hidden whitespace-nowrap text-sm font-medium transition-all duration-500"
-        style={{ width: isCollapsed ? 0 : "auto", opacity: isCollapsed ? 0 : 1 }}
+        style={{
+          width: isCollapsed ? 0 : "auto",
+          opacity: isCollapsed ? 0 : 1,
+        }}
       >
         新对话
       </span>

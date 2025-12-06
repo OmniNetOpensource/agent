@@ -56,7 +56,7 @@ export function ConversationItem({
       }
     }
 
-    router.push(`/c/${conversation.id}`);
+    router.push(`/app/c/${conversation.id}`);
   };
 
   return (

@@ -32,9 +32,9 @@ export default function DashboardPage() {
         }
 
         if (!response.ok) {
-          const data = (await response.json().catch(() => null)) as
-            | { error?: string }
-            | null;
+          const data = (await response.json().catch(() => null)) as {
+            error?: string;
+          } | null;
           if (!isMounted) return;
           setError(data?.error ?? "加载统计数据失败");
           setStats(null);
@@ -117,4 +117,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
