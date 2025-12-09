@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { callToolByName, toolSpecs } from "@/src/shared/lib/tools";
-import type { OpenRouter } from "@openrouter/sdk";
 import {
-  getOpenRouterClient,
-  getOpenRouterHeaders,
   isSupportedChatModel,
+  streamChatCompletion,
+  parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
 import { getModelPermissions } from "@/src/features/chat/lib/model-config";
 import type {
@@ -32,30 +31,6 @@ import {
   ConversationLogger,
   createConversationLogger,
 } from "@/src/shared/lib/conversation-logger";
-
-type StreamChunk = {
-  choices?: Array<{
-    delta?: {
-      content?: string;
-      reasoning?: string;
-      toolCalls?: StreamToolCall[];
-    };
-    finishReason?: string | null;
-  }>;
-};
-
-// Type for OpenRouter SDK's chat.send method (SDK types may be incomplete)
-type ChatSendMethod = {
-  send: (
-    params: {
-      model: string;
-      messages: ChatMessage[];
-      tools?: unknown[];
-      stream: boolean;
-    },
-    options?: { headers?: Record<string, string> }
-  ) => Promise<AsyncIterable<StreamChunk>>;
-};
 
 const encoder = new TextEncoder();
 
@@ -136,15 +111,6 @@ export async function POST(req: Request) {
         )
         .join(", ")
     );
-
-    let openRouterClient: OpenRouter;
-    try {
-      openRouterClient = getOpenRouterClient();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Missing OPENROUTER_API_KEY";
-      return NextResponse.json({ reply: message }, { status: 500 });
-    }
 
     const supabase = hasSupabaseConfig()
       ? await createSupabaseServerClient()
@@ -306,19 +272,30 @@ export async function POST(req: Request) {
               currentMessages.length
             );
 
-            const completion = await (
-              openRouterClient.chat as ChatSendMethod
-            ).send(
-              {
+            let stream: ReadableStream<Uint8Array>;
+            try {
+              stream = await streamChatCompletion({
                 model: requestedModel,
                 messages: currentMessages,
                 tools: tools.length > 0 ? tools : undefined,
-                stream: true,
-              },
-              {
-                headers: getOpenRouterHeaders(),
-              }
-            );
+              });
+            } catch (error) {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : "Failed to start chat completion";
+              logger?.error("[Chat-API] Stream error:", error);
+              const errorData = {
+                type: "error",
+                message: `错误：${message}`,
+              };
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
+              );
+              closeStream();
+              break;
+            }
+
             let assistantMessage = "";
             let currentReasoning = "";
             const toolCalls: Array<{
@@ -329,7 +306,7 @@ export async function POST(req: Request) {
             let currentToolCallIndex = -1;
             let finishedWithStop = false;
 
-            for await (const chunk of completion as AsyncIterable<StreamChunk>) {
+            for await (const chunk of parseSSEStream(stream)) {
               logger?.log("[Chat-API] OpenRouter chunk:", chunk);
               const delta = chunk?.choices?.[0]?.delta;
               const finishReason = chunk?.choices?.[0]?.finishReason as
@@ -359,8 +336,8 @@ export async function POST(req: Request) {
                 );
               }
 
-              if (delta?.toolCalls) {
-                for (const toolCall of delta.toolCalls as StreamToolCall[]) {
+              if (delta?.tool_calls) {
+                for (const toolCall of delta.tool_calls as StreamToolCall[]) {
                   if (
                     toolCall.index !== undefined &&
                     toolCall.index !== currentToolCallIndex
@@ -568,9 +545,11 @@ export async function POST(req: Request) {
               conversationId: activeConversationId,
               updated_at: new Date().toISOString(),
             };
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
-            );
+            if (!streamClosed) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
+              );
+            }
           }
 
           closeStream();

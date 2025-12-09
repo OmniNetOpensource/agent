@@ -14,7 +14,10 @@ const ensureLogDirectory = () => {
       fs.mkdirSync(LOG_BASE_DIR, { recursive: true });
     }
   } catch (error) {
-    console.error("[ConversationLogger] Failed to ensure log directory:", error);
+    console.error(
+      "[ConversationLogger] Failed to ensure log directory:",
+      error
+    );
   }
 };
 
@@ -31,6 +34,23 @@ const safeSerialize = (value: unknown): string => {
   if (typeof value === "string") {
     return value;
   }
+
+  if (value instanceof Error) {
+    const errorInfo = {
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+      // @ts-ignore
+      cause: (value as any).cause,
+      ...value,
+    };
+    try {
+      return JSON.stringify(errorInfo);
+    } catch {
+      return `[Error: ${value.message}]`;
+    }
+  }
+
   try {
     return JSON.stringify(value);
   } catch {

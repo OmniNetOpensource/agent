@@ -1,4 +1,6 @@
 import { OpenRouter } from "@openrouter/sdk";
+import type { ChatMessage } from "@/src/app/api/chat/utils";
+import type { StreamToolCall } from "@/src/app/api/chat/utils";
 
 export function isSupportedChatModel(
   value: string | undefined | null
@@ -31,3 +33,92 @@ export function getOpenRouterClient() {
   });
 }
 
+export type StreamChunk = {
+  choices?: Array<{
+    delta?: {
+      content?: string;
+      reasoning?: string;
+      tool_calls?: StreamToolCall[];
+    };
+    finishReason?: string | null;
+  }>;
+};
+
+export async function streamChatCompletion(params: {
+  model: string;
+  messages: ChatMessage[];
+  tools?: unknown[];
+}): Promise<ReadableStream<Uint8Array>> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing OPENROUTER_API_KEY");
+  }
+
+  // 转换消息格式以符合 OpenAI API 标准 (驼峰 -> 下划线)
+  const messages = params.messages.map((msg) => {
+    const { toolCalls, toolCallId, ...rest } = msg;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newMsg: any = { ...rest };
+
+    if (toolCalls) {
+      newMsg.tool_calls = toolCalls.map((tc) => ({
+        id: tc.id,
+        type: tc.type,
+        function: tc.function,
+      }));
+    }
+
+    if (toolCallId) {
+      newMsg.tool_call_id = toolCallId;
+    }
+
+    return newMsg;
+  });
+
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      ...getOpenRouterHeaders(),
+    },
+    body: JSON.stringify({ ...params, messages, stream: true }),
+  });
+
+  if (!response.ok || !response.body) {
+    throw new Error(`OpenRouter API error: ${response.status}`);
+  }
+  return response.body;
+}
+
+export async function* parseSSEStream(
+  stream: ReadableStream<Uint8Array>
+): AsyncGenerator<StreamChunk> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ") && line !== "data: [DONE]") {
+          try {
+            yield JSON.parse(line.slice(6));
+          } catch (e) {
+            // Skip invalid JSON lines
+            console.error("Failed to parse SSE line:", line, e);
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}

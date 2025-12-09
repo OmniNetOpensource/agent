@@ -42,6 +42,14 @@ export const MODEL_CONFIGS: ModelConfig[] = [
       canSearch: true,
     },
   },
+  {
+    id: "openai/gpt-5.1-codex-mini",
+    label: "普通人",
+    permissions: {
+      canUpload: true,
+      canSearch: true,
+    },
+  },
 ];
 
 const modelConfigMap = new Map<string, ModelConfig>(
