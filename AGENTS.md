@@ -192,7 +192,7 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 
 ## File Locations Reference
 
-- Main entry: [src/app/(app)/page.tsx](src/app/(app)/page.tsx)
+- Main entry: [src/app/(app)/page.tsx](<src/app/(app)/page.tsx>)
 - Chat API: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
 - Chat UI: [src/features/chat/components/](src/features/chat/components/)
 - Chat store: [src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)
@@ -209,4 +209,4 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 - Take time with implementation; be detailed
 - Don't run pnpm unless necessary
 - frontend style need to fit in the current project's style
-- write plan first . when i say go, you could just edit without my permission
+- write plan first .不要说可选，告诉我你的确定的计划. when i say go, you could just edit without my permission.

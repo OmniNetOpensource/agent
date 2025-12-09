@@ -5,7 +5,6 @@ import {
   ResearchItem,
   ToolProgress,
 } from "@/src/features/chat/types/chat";
-import { ChatModelId } from "@/src/features/model/lib/openrouter";
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,
@@ -22,7 +21,7 @@ export type ChatState = {
   input: string;
   pending: boolean;
   chatClient: ChatClient | null;
-  currentModel: ChatModelId;
+  currentModel: string;
   pendingAttachments: Attachment[];
   uploading: boolean;
   conversationId: string | null;
@@ -45,7 +44,7 @@ export type ChatActions = {
   appendToAssistant: (addition: AssistantAddition) => void;
   sendMessage: (navigate?: (path: string) => void) => Promise<void>;
   stop: () => void;
-  setCurrentModel: (model: ChatModelId) => void;
+  setCurrentModel: (model: string) => void;
   setSearchEnabled: (enabled: boolean) => void;
 };
 

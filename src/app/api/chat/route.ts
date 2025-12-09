@@ -5,8 +5,8 @@ import {
   getOpenRouterClient,
   getOpenRouterHeaders,
   isSupportedChatModel,
-} from "@/src/features/model/lib/openrouter";
-import { getModelPermissions } from "@/src/features/model/config";
+} from "@/src/shared/lib/openrouter/server";
+import { getModelPermissions } from "@/src/features/chat/lib/model-config";
 import type {
   Message,
   ResearchItem,

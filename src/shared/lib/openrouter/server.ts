@@ -1,10 +1,8 @@
 import { OpenRouter } from "@openrouter/sdk";
 
-export type ChatModelId = string;
-
 export function isSupportedChatModel(
   value: string | undefined | null
-): value is ChatModelId {
+): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
@@ -32,3 +30,4 @@ export function getOpenRouterClient() {
     serverURL: OPENROUTER_BASE_URL,
   });
 }
+

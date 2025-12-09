@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import { MODEL_CONFIGS } from "@/src/features/model/config";
+import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -76,3 +76,4 @@ export function ModelSelector() {
     </Popover>
   );
 }
+

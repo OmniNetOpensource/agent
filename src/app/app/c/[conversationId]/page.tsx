@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { Composer } from "@/src/features/chat/components/Composer";
+import { Composer } from "@/src/features/chat/components/composer/Composer";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { Spinner } from "@/components/ui/spinner";

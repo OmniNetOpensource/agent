@@ -1,12 +1,10 @@
-import { ChatModelId } from "./lib/openrouter";
-
 export type ModelPermission = {
   canUpload: boolean;
   canSearch: boolean;
 };
 
 export type ModelConfig = {
-  id: ChatModelId;
+  id: string;
   label: string;
   permissions: ModelPermission;
 };
@@ -46,16 +44,16 @@ export const MODEL_CONFIGS: ModelConfig[] = [
   },
 ];
 
-const modelConfigMap = new Map<ChatModelId, ModelConfig>(
+const modelConfigMap = new Map<string, ModelConfig>(
   MODEL_CONFIGS.map((config) => [config.id, config])
 );
 
-export function getModelConfig(modelId: ChatModelId): ModelConfig | undefined {
+export function getModelConfig(modelId: string): ModelConfig | undefined {
   return modelConfigMap.get(modelId);
 }
 
 export function getModelPermissions(
-  modelId: ChatModelId
+  modelId: string
 ): ModelPermission | undefined {
   const config = getModelConfig(modelId);
   return config?.permissions;
