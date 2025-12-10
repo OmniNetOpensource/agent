@@ -17,6 +17,7 @@ import {
 } from "@/src/features/chat/store/useChatStore";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { ModelSelector } from "./ModelSelector";
+import { CustomInstructionButton } from "./CustomInstructionButton";
 import { getModelPermissions } from "@/src/features/chat/lib/model-config";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -159,7 +160,7 @@ export function Composer() {
       className={formClassName}
     >
       {!isNewchat && !isAtBottom && (
-        <div className="mb-2 flex w-full justify-center">
+        <div className="mb-2 flex w-full justify-end pr-1">
           <Button
             type="button"
             variant="secondary"
@@ -347,7 +348,10 @@ export function Composer() {
               </Button>
             </span>
           </div>
-          <ModelSelector />
+          <div className="flex items-center gap-1">
+            <CustomInstructionButton />
+            <ModelSelector />
+          </div>
         </div>
       </div>
     </form>

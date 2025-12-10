@@ -38,8 +38,13 @@ export async function POST(req: Request) {
   let logger: ConversationLogger | null = null;
 
   try {
-    const { conversationHistory, conversationId, model, searchEnabled } =
-      (await req.json()) as ChatRequest;
+    const {
+      conversationHistory,
+      conversationId,
+      model,
+      searchEnabled,
+      systemInstruction,
+    } = (await req.json()) as ChatRequest;
 
     logger = createConversationLogger(conversationId ?? null);
 
@@ -155,7 +160,10 @@ export async function POST(req: Request) {
     }
 
     const messages: ChatMessage[] = [
-      { role: "system", content: buildSystemPrompt(searchEnabled) },
+      {
+        role: "system",
+        content: buildSystemPrompt(searchEnabled, systemInstruction),
+      },
       ...toChatMessages(history),
     ];
 

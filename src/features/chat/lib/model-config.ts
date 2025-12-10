@@ -19,7 +19,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     },
   },
   {
-    id: "google/gemini-3-pro-preview",
+    id: "google/gemini-2.5-flash",
     label: "博学",
     permissions: {
       canUpload: true,
@@ -35,7 +35,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     },
   },
   {
-    id: "anthropic/claude-sonnet-4.5",
+    id: "anthropic/claude-haiku-4.5",
     label: "娴雅",
     permissions: {
       canUpload: true,

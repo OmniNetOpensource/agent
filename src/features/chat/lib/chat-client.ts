@@ -16,7 +16,8 @@ export class ChatClient {
     messages: Message[],
     model: string,
     conversationId: string | null,
-    searchEnabled?: boolean
+    searchEnabled?: boolean,
+    systemInstruction?: string
   ) {
     this.abortController = new AbortController();
 
@@ -30,6 +31,7 @@ export class ChatClient {
           conversationId: conversationId ?? null,
           model,
           searchEnabled,
+          systemInstruction,
         }),
       });
 

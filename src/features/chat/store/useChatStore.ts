@@ -28,6 +28,7 @@ export type ChatState = {
   searchEnabled: boolean;
   isAtBottom: boolean;
   scrollToBottomHandler: (() => void) | null;
+  systemInstruction: string;
 };
 
 type ToolLifecycleUpdate =
@@ -51,6 +52,7 @@ export type ChatActions = {
   setIsAtBottom: (value: boolean) => void;
   registerScrollToBottom: (fn: (() => void) | null) => void;
   scrollToBottom: () => void;
+  setSystemInstruction: (instruction: string) => void;
 };
 
 export const generateConversationId = () =>
@@ -70,10 +72,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   searchEnabled: true,
   isAtBottom: true,
   scrollToBottomHandler: null,
+  systemInstruction: "",
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   setConversationId: (id) => set({ conversationId: id }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
+  setSystemInstruction: (instruction) => set({ systemInstruction: instruction }),
   clear: () =>
     set({
       messages: [],
@@ -422,6 +426,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const searchEnabled = get().searchEnabled;
+    const systemInstruction = get().systemInstruction;
     let currentConversationId = get().conversationId;
     const existingMessages = get().messages;
 
@@ -621,7 +626,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       nextMessages,
       selectedModel,
       currentConversationId,
-      searchEnabled
+      searchEnabled,
+      systemInstruction
     );
   },
 }));

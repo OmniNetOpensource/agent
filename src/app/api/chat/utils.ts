@@ -21,7 +21,10 @@ export type ChatMessage = {
   reasoning?: string;
 };
 
-export const buildSystemPrompt = (searchEnabled: boolean = true) => {
+export const buildSystemPrompt = (
+  searchEnabled: boolean = true,
+  customInstruction?: string
+) => {
   const now = new Date();
   const localDate = now.toLocaleString("zh-CN", {
     year: "numeric",
@@ -34,15 +37,24 @@ export const buildSystemPrompt = (searchEnabled: boolean = true) => {
   });
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   
-  const basePrompt = `
+  let prompt = `
 今天的日期和时间是：${localDate} (时区: ${timezone})
 `;
 
-  if (!searchEnabled) {
-    return basePrompt;
+  const trimmedInstruction = customInstruction?.trim();
+
+  if (trimmedInstruction) {
+    prompt += `
+# 用户自定义指令
+${trimmedInstruction}
+`;
   }
 
-  return `${basePrompt}
+  if (!searchEnabled) {
+    return prompt;
+  }
+
+  return `${prompt}
 # 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
 
 # 什么时候不需要搜索：已知的知识

@@ -53,4 +53,5 @@ export type ChatRequest = {
   conversationId?: string | null;
   model?: string;
   searchEnabled?: boolean;
+  systemInstruction?: string;
 };
