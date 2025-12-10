@@ -50,7 +50,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           );
         }
         return (
-          <div className="px-4 py-2 text-xs text-destructive font-mono border-l-2 border-destructive bg-muted">
+          <div className="px-4 py-2 text-xs text-destructive font-mono bg-muted">
             Missing UI for tool: <strong>{toolName}</strong>
           </div>
         );
@@ -72,7 +72,7 @@ export const ResearchBlock = memo(function ResearchBlock({
     <Collapsible
       open={isExpanded}
       onOpenChange={setIsExpanded}
-      className="my-2 overflow-hidden rounded-lg border bg-background"
+      className="my-2 overflow-hidden rounded-lg bg-background"
     >
       <CollapsibleTrigger
         className={cn(
@@ -122,7 +122,7 @@ export const ResearchBlock = memo(function ResearchBlock({
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="max-h-[500px] overflow-y-auto overscroll-contain border-t bg-muted/50">
+        <div className="max-h-[500px] overflow-y-auto overscroll-contain bg-muted/50">
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
             return (

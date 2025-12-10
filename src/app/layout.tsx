@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import { Nunito, Geist_Mono } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { MobileProvider } from "@/src/shared/mobile/MobileProvider";
+import { MobileProvider } from "@/src/shared/mobile/MobileContext";
 import { ToastContainer } from "@/components/ui/toast-container";
 import "./globals.css";
 import "katex/dist/katex.min.css";
@@ -26,11 +27,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const userAgent = headersList.get("user-agent") || "";
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      userAgent
+    );
+
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <head>
@@ -59,7 +67,7 @@ export default function RootLayout({
     dark ? c.add('dark') : c.remove('dark');
   } catch (e) {}
 })();`}</Script>
-        <MobileProvider>
+        <MobileProvider initialIsMobile={isMobile}>
           <TooltipProvider>
             {children}
             <ToastContainer />

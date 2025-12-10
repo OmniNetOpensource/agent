@@ -37,12 +37,11 @@ const safeSerialize = (value: unknown): string => {
 
   if (value instanceof Error) {
     const errorInfo = {
+      ...value, // 1. 先展开其他可能的自定义属性
       name: value.name,
       message: value.message,
       stack: value.stack,
-      // @ts-ignore
-      cause: (value as any).cause,
-      ...value,
+      cause: (value as { cause?: unknown }).cause, // 2. 使用更安全的类型断言替代 any
     };
     try {
       return JSON.stringify(errorInfo);

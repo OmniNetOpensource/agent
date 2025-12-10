@@ -102,8 +102,8 @@ function SearchResultCard({
       rel="noreferrer noopener"
       className={cn(
         "group relative flex w-60 shrink-0 flex-col gap-2 rounded-lg p-3 transition-all duration-300 ease-out",
-        "bg-card border",
-        "hover:-translate-y-1 hover:shadow-sm hover:border-ring"
+        "bg-card",
+        "hover:-translate-y-1"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -152,7 +152,7 @@ function SearchResultCard({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end pt-2 mt-auto border-t border-(--border-subtle)">
+      <div className="flex items-center justify-end pt-2 mt-auto">
         <div className="flex items-center gap-1 text-(--text-tertiary) group-hover:text-(--color-brand) transition-colors">
           <span className="text-[9px] font-medium">VISIT</span>
           <ExternalLink className="h-2.5 w-2.5" />
@@ -173,9 +173,18 @@ type BraveSearchProps = {
 export function BraveSearch({ tool }: BraveSearchProps) {
   const { result } = getToolLifecycle(tool);
   const query =
-    typeof tool.call.args.query === "string" ? tool.call.args.query : "Unknown query";
+    typeof tool.call.args.query === "string"
+      ? tool.call.args.query
+      : "Unknown query";
   const braveResults = result ? parseBraveSearchResults(result.result) : null;
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // 检测是否是错误信息
+  const isError =
+    result?.result &&
+    (result.result.startsWith("Brave Search API error:") ||
+      result.result.startsWith("Brave Search error:") ||
+      result.result.startsWith("Error:"));
 
   return (
     <div className="px-3 py-2">
@@ -192,8 +201,8 @@ export function BraveSearch({ tool }: BraveSearchProps) {
         </div>
       )}
 
-      {/* Results State */}
-      {braveResults ? (
+      {/* Results State - 无论成功还是错误都显示标题栏 */}
+      {result && (
         <div className="space-y-2">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -201,9 +210,7 @@ export function BraveSearch({ tool }: BraveSearchProps) {
           >
             <div className="flex items-center gap-2 text-xs font-medium text-(--text-tertiary) group-hover:text-(--text-secondary) transition-colors">
               <Zap className="h-3 w-3 text-foreground" />
-              <span>
-                Search Results: {query}
-              </span>
+              <span>Search Results: {query}</span>
             </div>
             <ChevronRight
               className={cn(
@@ -212,40 +219,46 @@ export function BraveSearch({ tool }: BraveSearchProps) {
               )}
             />
           </button>
-          
+
           {isExpanded && (
             <>
-              {braveResults.length > 0 ? (
-                <div className="overflow-x-auto bg-(--surface-muted) rounded-lg border border-(--border-subtle) p-2 relative group/scroll">
+              {braveResults && braveResults.length > 0 ? (
+                <div className="relative bg-(--surface-muted) rounded-lg group/scroll">
                   {/* Scroll indicators */}
-                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
-                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none" />
+                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none rounded-l-lg" />
+                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none rounded-r-lg" />
 
-                  <div className="flex gap-2 w-max pb-1">
-                    {braveResults.map((result, index) => (
-                      <SearchResultCard
-                        key={`${result.url}-${index}`}
-                        title={result.title}
-                        url={result.url}
-                        description={result.description}
-                        delay={index * 90}
-                      />
-                    ))}
+                  <div className="overflow-x-auto p-2">
+                    <div className="flex gap-2 w-max pb-1">
+                      {braveResults.map((result, index) => (
+                        <SearchResultCard
+                          key={`${result.url}-${index}`}
+                          title={result.title}
+                          url={result.url}
+                          description={result.description}
+                          delay={index * 90}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-lg border border-(--border-subtle) bg-(--surface-muted) p-3 text-center text-xs text-(--text-tertiary)">
+              ) : braveResults && braveResults.length === 0 ? (
+                <div className="rounded-lg bg-(--surface-muted) p-3 text-center text-xs text-(--text-tertiary)">
                   No results found
+                </div>
+              ) : isError ? (
+                <div className="rounded-lg bg-(--surface-muted) p-3 text-xs text-destructive">
+                  <Markdown content={result.result} />
+                </div>
+              ) : (
+                <div className="overflow-x-auto bg-(--surface-muted) p-3 text-xs rounded-lg text-(--text-secondary)">
+                  <Markdown content={result.result} />
                 </div>
               )}
             </>
           )}
         </div>
-      ) : result ? (
-        <div className="overflow-x-auto bg-(--surface-muted) p-3 text-xs rounded-lg border border-(--border-subtle) text-(--text-secondary)">
-          <Markdown content={result.result} />
-        </div>
-      ) : null}
+      )}
     </div>
   );
 }

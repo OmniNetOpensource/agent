@@ -8,7 +8,7 @@ import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { ConversationList } from "./history/ConversationList";
 import { ProfileMenu } from "./profile/ProfileMenu";
 import { NewChatButton } from "./NewChatButton";
-import { useMobileStore } from "@/src/shared/mobile/useMobileStore";
+import { useIsMobile } from "@/src/shared/mobile/MobileContext";
 
 function SidebarToggle({
   isOpen,
@@ -109,7 +109,7 @@ function MobileSidebarWrapper({
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useMobileStore((state) => state.isMobile);
+  const isMobile = useIsMobile();
   const { user } = useAuth();
 
   if (isMobile) {

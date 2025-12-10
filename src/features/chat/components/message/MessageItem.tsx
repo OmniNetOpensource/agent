@@ -70,9 +70,7 @@ export const MessageItem = memo(function MessageItem({
       key={`${message.role}-${index}`}
       className={cn(
         "flex flex-col space-y-2",
-        isUser
-          ? "ml-auto max-w-[90%] sm:max-w-[85%]"
-          : "mr-auto w-full max-w-[95%]"
+        isUser ? "ml-auto max-w-[90%] sm:max-w-[85%]" : "mr-auto w-full"
       )}
     >
       <div

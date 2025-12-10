@@ -22,8 +22,20 @@ export type ChatMessage = {
 };
 
 export const buildSystemPrompt = (searchEnabled: boolean = true) => {
+  const now = new Date();
+  const localDate = now.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short",
+  });
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
   const basePrompt = `
-今天的日期是：${new Date().toISOString().slice(0, 10)}
+今天的日期和时间是：${localDate} (时区: ${timezone})
 `;
 
   if (!searchEnabled) {
