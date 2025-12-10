@@ -1,36 +1,94 @@
 import { create } from "zustand";
 import type { Conversation } from "@/types/conversation";
+import {
+  localDB,
+  type LocalConversation,
+} from "@/src/shared/lib/indexed-db";
 
 type ConversationsState = {
   conversations: Conversation[];
   conversationsLoading: boolean;
-  hasFetched: boolean;
+  hasFetchedRemote: boolean;
+  hasLoadedLocal: boolean;
 };
 
 type ConversationsActions = {
   addConversation: (conversation: Conversation) => void;
   setConversations: (conversations: Conversation[]) => void;
   fetchConversations: () => Promise<void>;
+  loadLocalConversations: () => Promise<void>;
+  clearLocal: () => Promise<void>;
 };
+
+const mergeAndSortConversations = (
+  existing: Conversation[],
+  incoming: Conversation[]
+): Conversation[] => {
+  const map = new Map<string, Conversation>();
+
+  for (const conv of existing) {
+    map.set(conv.id, conv);
+  }
+
+  for (const conv of incoming) {
+    map.set(conv.id, conv);
+  }
+
+  const merged = Array.from(map.values());
+  merged.sort((a, b) => {
+    if (!a.updated_at && !b.updated_at) return 0;
+    if (!a.updated_at) return 1;
+    if (!b.updated_at) return -1;
+    return b.updated_at.localeCompare(a.updated_at);
+  });
+
+  return merged;
+};
+
+const mapLocalToConversation = (
+  local: LocalConversation
+): Conversation => ({
+  id: local.id,
+  title: local.title,
+  created_at: local.created_at,
+  updated_at: local.updated_at,
+  user_id: "",
+  source: "local",
+});
 
 export const useConversationsStore = create<
   ConversationsState & ConversationsActions
->((set) => ({
+>((set, get) => ({
   conversations: [],
   conversationsLoading: false,
-  hasFetched: false,
+  hasFetchedRemote: false,
+  hasLoadedLocal: false,
+
   addConversation: (conversation) =>
     set((state) => {
+      const source: Conversation["source"] =
+        conversation.source ?? (conversation.user_id ? "remote" : "local");
+
+      const next: Conversation = { ...conversation, source };
       const filtered = state.conversations.filter(
-        (item) => item.id !== conversation.id
+        (item) => item.id !== next.id
       );
-      return { conversations: [conversation, ...filtered] };
+
+      const merged = mergeAndSortConversations(filtered, [next]);
+      return { conversations: merged };
     }),
-  setConversations: (conversations) => set({ conversations }),
+
+  setConversations: (conversations) =>
+    set((state) => ({
+      conversations: mergeAndSortConversations(state.conversations, [
+        ...conversations,
+      ]),
+    })),
+
   fetchConversations: async () => {
     let skip = false;
     set((state) => {
-      if (state.hasFetched || state.conversationsLoading) {
+      if (state.hasFetchedRemote || state.conversationsLoading) {
         skip = true;
         return state;
       }
@@ -46,9 +104,21 @@ export const useConversationsStore = create<
       const res = await fetch("/api/conversations?limit=10");
       const data = await res.json();
 
-      if (data?.conversations) {
+      if (Array.isArray(data?.conversations)) {
         fetched = true;
-        set({ conversations: data.conversations, hasFetched: true });
+        const remoteConversations: Conversation[] = data.conversations.map(
+          (conv: Conversation) => ({
+            ...conv,
+            source: "remote",
+          })
+        );
+        set((state) => ({
+          conversations: mergeAndSortConversations(
+            state.conversations,
+            remoteConversations
+          ),
+          hasFetchedRemote: true,
+        }));
       }
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
@@ -56,8 +126,46 @@ export const useConversationsStore = create<
       set((state) => ({
         ...state,
         conversationsLoading: false,
-        hasFetched: state.hasFetched || fetched,
+        hasFetchedRemote: state.hasFetchedRemote || fetched,
       }));
     }
+  },
+
+  loadLocalConversations: async () => {
+    const { hasLoadedLocal } = get();
+    if (hasLoadedLocal) {
+      return;
+    }
+
+    try {
+      const localConversations = await localDB.getConversations();
+      const mapped: Conversation[] = localConversations.map(
+        mapLocalToConversation
+      );
+
+      set((state) => ({
+        conversations: mergeAndSortConversations(state.conversations, mapped),
+        hasLoadedLocal: true,
+      }));
+    } catch (error) {
+      console.error("Failed to load local conversations:", error);
+      set((state) => ({ ...state, hasLoadedLocal: true }));
+    }
+  },
+
+  clearLocal: async () => {
+    try {
+      await localDB.clearAll();
+    } catch (error) {
+      console.error("Failed to clear local conversations:", error);
+    }
+
+    set((state) => ({
+      ...state,
+      conversations: state.conversations.filter(
+        (conversation) => conversation.source !== "local"
+      ),
+      hasLoadedLocal: true,
+    }));
   },
 }));

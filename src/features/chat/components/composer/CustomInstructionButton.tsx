@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -20,13 +20,14 @@ export function CustomInstructionButton() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(systemInstruction);
 
-  useEffect(() => {
-    if (open) {
+  const hasInstruction = systemInstruction.trim().length > 0;
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
       setDraft(systemInstruction);
     }
-  }, [open, systemInstruction]);
-
-  const hasInstruction = systemInstruction.trim().length > 0;
+    setOpen(nextOpen);
+  };
 
   const handleConfirm = () => {
     setSystemInstruction(draft.trim());
@@ -39,7 +40,7 @@ export function CustomInstructionButton() {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           type="button"

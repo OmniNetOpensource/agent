@@ -6,7 +6,11 @@ import type { DashboardStatsResponse } from "@/src/features/dashboard/types";
 export async function GET() {
   if (!hasSupabaseConfig()) {
     return NextResponse.json(
-      { error: "Supabase is not configured", userMessageCount: 0 },
+      {
+        error: "Supabase is not configured",
+        userMessageCount: 0,
+        conversationCount: 0,
+      },
       { status: 500 }
     );
   }
@@ -43,6 +47,7 @@ export async function GET() {
   if (conversationIds.length === 0) {
     const payload: DashboardStatsResponse = {
       userMessageCount: 0,
+      conversationCount: 0,
     };
     return NextResponse.json(payload);
   }
@@ -66,6 +71,7 @@ export async function GET() {
 
   const payload: DashboardStatsResponse = {
     userMessageCount: count ?? 0,
+    conversationCount: conversationIds.length,
   };
 
   return NextResponse.json(payload);

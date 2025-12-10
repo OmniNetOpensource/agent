@@ -1,21 +1,11 @@
 "use client";
 
-import {
-  ChangeEvent,
-  FormEvent,
-  KeyboardEvent,
-  useEffect,
-  useRef,
-} from "react";
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
-import {
-  useChatStore,
-  useIsNewChat,
-} from "@/src/features/chat/store/useChatStore";
-import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { useChatStore, useIsNewChat } from "@/src/features/chat/store/useChatStore";
 import { ModelSelector } from "./ModelSelector";
 import { CustomInstructionButton } from "./CustomInstructionButton";
 import { getModelPermissions } from "@/src/features/chat/lib/model-config";
@@ -26,7 +16,6 @@ import { toast } from "@/src/shared/toast";
 
 export function Composer() {
   const router = useRouter();
-  const { user } = useAuth();
   const input = useChatStore((state) => state.input);
   const pending = useChatStore((state) => state.pending);
   const pendingAttachments = useChatStore((state) => state.pendingAttachments);
@@ -55,7 +44,7 @@ export function Composer() {
       return;
     }
 
-    await sendMessage(user ? (path) => router.push(path) : undefined);
+    await sendMessage((path) => router.push(path));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

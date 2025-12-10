@@ -158,13 +158,12 @@ export default function Sidebar() {
 
             <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
               <div className="flex h-full flex-col gap-3">
-                {user ? (
-                  <ConversationList />
-                ) : (
-                  <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
-                    登录后可保存并查看历史记录，未登录仅在当前页临时存储。
+                {!user && (
+                  <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-3 text-xs text-(--text-tertiary)">
+                    登录后可将历史记录保存至云端，未登录时仅保存在本地浏览器。
                   </div>
                 )}
+                <ConversationList />
               </div>
             </div>
 
@@ -240,13 +239,12 @@ export default function Sidebar() {
               !isOpen ? "opacity-0 invisible" : "opacity-100 visible"
             }`}
           >
-            {user ? (
-              <ConversationList />
-            ) : (
-              <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-xs text-(--text-tertiary)">
-                登录后可保存并查看历史记录，未登录仅在当前页临时存储。
+            {!user && (
+              <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-3 text-xs text-(--text-tertiary)">
+                登录后可将历史记录保存至云端，未登录时仅保存在本地浏览器。
               </div>
             )}
+            <ConversationList />
           </div>
         </div>
 

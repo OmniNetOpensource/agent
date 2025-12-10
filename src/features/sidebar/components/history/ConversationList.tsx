@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
+import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { ConversationItem } from "./ConversationItem";
 
 export function ConversationList() {
@@ -14,17 +15,33 @@ export function ConversationList() {
   const fetchConversations = useConversationsStore(
     (state) => state.fetchConversations
   );
-  const hasFetched = useConversationsStore((state) => state.hasFetched);
+  const loadLocalConversations = useConversationsStore(
+    (state) => state.loadLocalConversations
+  );
+  const hasFetchedRemote = useConversationsStore(
+    (state) => state.hasFetchedRemote
+  );
+  const hasLoadedLocal = useConversationsStore(
+    (state) => state.hasLoadedLocal
+  );
   const activeConversationId = useChatStore((state) => state.conversationId);
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (hasFetched) {
+    void loadLocalConversations();
+  }, [loadLocalConversations]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    if (hasFetchedRemote) {
       return;
     }
     void fetchConversations();
-  }, [fetchConversations, hasFetched]);
+  }, [fetchConversations, hasFetchedRemote, user]);
 
-  if (conversationsLoading) {
+  if (conversationsLoading && !hasFetchedRemote) {
     return (
       <div className="flex items-center justify-center py-6 text-(--text-tertiary)">
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -33,10 +50,10 @@ export function ConversationList() {
     );
   }
 
-  if (!conversations.length) {
+  if (!conversations.length && hasLoadedLocal && (!user || hasFetchedRemote)) {
     return (
       <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-center text-xs text-(--text-tertiary)">
-        登录后，历史会话会显示在这里。
+        暂无会话，发送第一条消息后会自动出现在这里。
       </div>
     );
   }

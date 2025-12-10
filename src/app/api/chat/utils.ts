@@ -36,7 +36,7 @@ export const buildSystemPrompt = (
     timeZoneName: "short",
   });
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  
+
   let prompt = `
 今天的日期和时间是：${localDate} (时区: ${timezone})
 `;
@@ -62,22 +62,6 @@ ${trimmedInstruction}
 - 搜索工具使用技法：多次组合不同关键词进行多次搜索
 - 获取更详细的信息：fetch 特定网页
 `;
-};
-
-export const buildConversationTitle = (message: Message) => {
-  const text = message.blocks
-    .filter((b) => b.type === "content")
-    .map((b) => b.content)
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!text) {
-    return "新会话";
-  }
-
-  const normalized = text.replace(/\r?\n/g, " ").trim();
-  return normalized.length > 50 ? `${normalized.slice(0, 50)}...` : normalized;
 };
 
 export const toChatMessages = (history: Message[]): ChatMessage[] =>

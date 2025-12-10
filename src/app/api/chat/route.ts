@@ -31,8 +31,14 @@ import {
   ConversationLogger,
   createConversationLogger,
 } from "@/src/shared/lib/conversation-logger";
+import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 
 const encoder = new TextEncoder();
+
+const generateConversationId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 export async function POST(req: Request) {
   let logger: ConversationLogger | null = null;
@@ -148,7 +154,10 @@ export async function POST(req: Request) {
       blocks: Array.isArray(message.blocks) ? message.blocks : [],
     }));
 
-    if (supabaseUser && supabase && activeConversationId) {
+    if (supabaseUser && supabase) {
+      if (!activeConversationId) {
+        activeConversationId = generateConversationId();
+      }
       const result = await ensureConversation(
         supabase,
         supabaseUser,
@@ -157,6 +166,19 @@ export async function POST(req: Request) {
       );
       activeConversationId = result.conversationId;
       conversationCreatedEvent = result.event;
+    } else if (!activeConversationId) {
+      const newId = generateConversationId();
+      activeConversationId = newId;
+      const title = buildConversationTitle(latestUserMessage);
+      const now = new Date().toISOString();
+      conversationCreatedEvent = {
+        type: "conversation_created",
+        conversationId: newId,
+        title,
+        user_id: "",
+        created_at: now,
+        updated_at: now,
+      };
     }
 
     const messages: ChatMessage[] = [
@@ -410,6 +432,7 @@ export async function POST(req: Request) {
               reasoning: currentReasoning || undefined,
             });
 
+            // Authenticated users: save to Supabase
             if (supabaseUser && supabase && activeConversationId) {
               const partialAssistantBlocks = buildAssistantBlocks(
                 researchItems,
@@ -422,6 +445,10 @@ export async function POST(req: Request) {
                 partialAssistantBlocks,
                 messageIds
               );
+            }
+
+            // All users: send conversation_updated event
+            if (activeConversationId) {
               const updatedEvent = {
                 type: "conversation_updated",
                 conversationId: activeConversationId,
@@ -540,6 +567,7 @@ export async function POST(req: Request) {
             finalAssistantMessage
           );
 
+          // Authenticated users: save to Supabase
           if (supabaseUser && supabase && activeConversationId) {
             await saveMessages(
               supabase,
@@ -548,16 +576,18 @@ export async function POST(req: Request) {
               assistantBlocks,
               messageIds
             );
+          }
+
+          // All users: send conversation_updated event
+          if (activeConversationId && !streamClosed) {
             const updatedEvent = {
               type: "conversation_updated",
               conversationId: activeConversationId,
               updated_at: new Date().toISOString(),
             };
-            if (!streamClosed) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
-              );
-            }
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
+            );
           }
 
           closeStream();

@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { ContentBlock, Message } from "@/src/features/chat/types/chat";
-import { buildConversationTitle } from "./utils";
+import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 
 export type SavedMessageIds = {
   userMessageId: string | null;

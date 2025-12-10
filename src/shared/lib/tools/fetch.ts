@@ -31,9 +31,10 @@ export const parseFetchUrlArgs = (args: unknown): FetchUrlArgs => {
 
 const PROGRESS_CHUNK_BYTES = 50 * 1024;
 const PROGRESS_INTERVAL_MS = 500;
+// 添加最大内容长度限制 (约 50k 字符)
+const MAX_CONTENT_LENGTH = 50000;
 
-const formatKilobytes = (bytes: number) =>
-  (bytes / 1024).toFixed(1);
+const formatKilobytes = (bytes: number) => (bytes / 1024).toFixed(1);
 
 const emitProgress = async (
   onProgress: ToolProgressCallback | undefined,
@@ -136,15 +137,18 @@ const fetchUrl: ToolHandler = async (args, onProgress) => {
     const jinaResponse = await fetch(jinaUrl);
 
     if (jinaResponse.ok) {
-      const jinaText = await readStreamWithProgress(
-        jinaResponse,
-        onProgress
-      );
+      const jinaText = await readStreamWithProgress(jinaResponse, onProgress);
       console.error(
         "[Tools:fetch_url] Jina AI Reader success, text length:",
         jinaText.length,
         "bytes"
       );
+
+      // 检查 Jina 返回的内容长度
+      if (jinaText.length > MAX_CONTENT_LENGTH) {
+        return `[系统提示: 抓取的内容过长 (长度: ${jinaText.length} 字符)，已省略不返回。请尝试查阅摘要或使用更具体的搜索词。]`;
+      }
+
       return jinaText;
     } else {
       console.error(
@@ -208,6 +212,12 @@ const fetchUrl: ToolHandler = async (args, onProgress) => {
           "[Tools:fetch_url] JSON response length:",
           jsonText.length
         );
+
+        // 检查 JSON 内容长度
+        if (jsonText.length > MAX_CONTENT_LENGTH) {
+          return `[系统提示: JSON 内容过长 (长度: ${jsonText.length} 字符)，已省略不返回。]`;
+        }
+
         return jsonText;
       } catch (error) {
         console.error("[Tools:fetch_url] JSON parse error:", error);
@@ -227,6 +237,12 @@ const fetchUrl: ToolHandler = async (args, onProgress) => {
       cleaned.length,
       "bytes"
     );
+
+    // 检查清理后的文本长度
+    if (cleaned.length > MAX_CONTENT_LENGTH) {
+      return `[系统提示: 网页内容过长 (长度: ${cleaned.length} 字符)，已省略不返回。请尝试查阅摘要或使用更具体的搜索词。]`;
+    }
+
     return cleaned;
   } catch (error) {
     console.error(

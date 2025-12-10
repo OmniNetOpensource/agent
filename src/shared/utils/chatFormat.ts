@@ -14,3 +14,22 @@ export function prettyPrintArgs(args: Record<string, unknown>): string {
     return "{}";
   }
 }
+
+// 对话标题生成逻辑，供本地/云端统一使用
+import type { Message } from "@/src/features/chat/types/chat";
+
+export const buildConversationTitle = (message: Message) => {
+  const text = message.blocks
+    .filter((b) => b.type === "content")
+    .map((b) => b.content)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) {
+    return "新会话";
+  }
+
+  const normalized = text.replace(/\r?\n/g, " ").trim();
+  return normalized.length > 50 ? `${normalized.slice(0, 50)}...` : normalized;
+};
