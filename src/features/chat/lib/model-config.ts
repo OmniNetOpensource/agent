@@ -23,7 +23,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     label: "博学",
     permissions: {
       canUpload: true,
-      canSearch: false,
+      canSearch: true,
     },
   },
   {
@@ -35,7 +35,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     },
   },
   {
-    id: "anthropic/claude-opus-4.5",
+    id: "anthropic/claude-sonnet-4.5",
     label: "娴雅",
     permissions: {
       canUpload: true,

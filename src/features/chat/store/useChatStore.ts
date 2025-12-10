@@ -26,6 +26,8 @@ export type ChatState = {
   uploading: boolean;
   conversationId: string | null;
   searchEnabled: boolean;
+  isAtBottom: boolean;
+  scrollToBottomHandler: (() => void) | null;
 };
 
 type ToolLifecycleUpdate =
@@ -46,6 +48,9 @@ export type ChatActions = {
   stop: () => void;
   setCurrentModel: (model: string) => void;
   setSearchEnabled: (enabled: boolean) => void;
+  setIsAtBottom: (value: boolean) => void;
+  registerScrollToBottom: (fn: (() => void) | null) => void;
+  scrollToBottom: () => void;
 };
 
 export const generateConversationId = () =>
@@ -63,6 +68,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   uploading: false,
   conversationId: null,
   searchEnabled: true,
+  isAtBottom: true,
+  scrollToBottomHandler: null,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   setConversationId: (id) => set({ conversationId: id }),
@@ -77,7 +84,17 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       conversationId: null,
       chatClient: null,
       searchEnabled: true,
+      isAtBottom: true,
+      scrollToBottomHandler: null,
     }),
+  setIsAtBottom: (value) => set({ isAtBottom: value }),
+  registerScrollToBottom: (fn) => set({ scrollToBottomHandler: fn }),
+  scrollToBottom: () => {
+    const handler = get().scrollToBottomHandler;
+    if (handler) {
+      handler();
+    }
+  },
   addAttachments: async (files) => {
     const { user, loading } = useAuthStore.getState();
 

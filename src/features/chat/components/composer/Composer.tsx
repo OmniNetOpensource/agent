@@ -9,7 +9,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import {
   useChatStore,
@@ -38,6 +38,8 @@ export function Composer() {
   const setSearchEnabled = useChatStore((state) => state.setSearchEnabled);
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
+  const isAtBottom = useChatStore((state) => state.isAtBottom);
+  const scrollToBottom = useChatStore((state) => state.scrollToBottom);
 
   const submitMessage = async () => {
     const trimmed = input.trim();
@@ -156,6 +158,21 @@ export function Composer() {
       onSubmit={handleSubmit}
       className={formClassName}
     >
+      {!isNewchat && !isAtBottom && (
+        <div className="mb-2 flex w-full justify-center">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={scrollToBottom}
+            className="flex items-center gap-1 rounded-full px-3 py-1 text-xs shadow-md"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+            <span>回到底部</span>
+          </Button>
+        </div>
+      )}
+
       <div className="relative flex w-full flex-col gap-1 rounded-3xl border bg-card p-2 shadow-lg transition-all focus-within:border-ring focus-within:shadow-xl">
         {hasAttachments && (
           <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0">

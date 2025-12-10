@@ -122,7 +122,7 @@ export default function CodeBlock({
       <div
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          "sticky top-0 z-10 flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-accent transition-all duration-200 ease-in-out",
+          "sticky top-0 z-10 flex cursor-pointer items-center justify-between bg-transparent px-4 py-2 hover:bg-accent transition-all duration-75 ease-in-out",
           isCollapsed ? "rounded-lg" : "rounded-t-lg"
         )}
       >
@@ -197,14 +197,14 @@ export default function CodeBlock({
       {/* Code area */}
       <div
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-in-out",
+          "grid transition-[grid-template-rows] duration-75 ease-in-out",
           isCollapsed ? "grid-rows-[0fr]" : "grid-rows-[1fr]"
         )}
       >
         <pre
           className={cn(
             className,
-            "overflow-hidden overflow-x-auto rounded-none bg-transparent text-sm transition-[padding] duration-600 ease-in-out",
+            "overflow-hidden overflow-x-auto rounded-none bg-transparent text-sm transition-[padding] duration-75 ease-in-out",
             isCollapsed ? "py-0 px-4" : "p-4"
           )}
         >
