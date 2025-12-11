@@ -53,7 +53,6 @@ const mapLocalToConversation = (
   created_at: local.created_at,
   updated_at: local.updated_at,
   user_id: "",
-  source: "local",
 });
 
 export const useConversationsStore = create<
@@ -66,10 +65,7 @@ export const useConversationsStore = create<
 
   addConversation: (conversation) =>
     set((state) => {
-      const source: Conversation["source"] =
-        conversation.source ?? (conversation.user_id ? "remote" : "local");
-
-      const next: Conversation = { ...conversation, source };
+      const next: Conversation = { ...conversation };
       const filtered = state.conversations.filter(
         (item) => item.id !== next.id
       );
@@ -163,7 +159,7 @@ export const useConversationsStore = create<
     set((state) => ({
       ...state,
       conversations: state.conversations.filter(
-        (conversation) => conversation.source !== "local"
+        (conversation) => conversation.user_id
       ),
       hasLoadedLocal: true,
     }));

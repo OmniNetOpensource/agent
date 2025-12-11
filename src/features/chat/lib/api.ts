@@ -15,6 +15,7 @@ export async function fetchConversationMessages(
   }
 
   const data = (await response.json()) as { messages?: DbMessage[] };
+
   const normalized: Message[] = (data.messages ?? []).map((msg) => ({
     role: msg.role,
     blocks: Array.isArray(msg.blocks)
