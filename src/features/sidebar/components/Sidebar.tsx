@@ -110,7 +110,7 @@ function MobileSidebarWrapper({
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   if (isMobile) {
     return (
@@ -158,7 +158,7 @@ export default function Sidebar() {
 
             <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
               <div className="flex h-full flex-col gap-3">
-                {!user && (
+                {!user && !loading && (
                   <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-3 text-xs text-(--text-tertiary)">
                     登录后可将历史记录保存至云端，未登录时仅保存在本地浏览器。
                   </div>
@@ -239,7 +239,7 @@ export default function Sidebar() {
               !isOpen ? "opacity-0 invisible" : "opacity-100 visible"
             }`}
           >
-            {!user && (
+            {!user && !loading && (
               <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-3 text-xs text-(--text-tertiary)">
                 登录后可将历史记录保存至云端，未登录时仅保存在本地浏览器。
               </div>

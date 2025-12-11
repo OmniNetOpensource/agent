@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Nunito, Geist_Mono } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,10 +38,30 @@ export default async function RootLayout({
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       userAgent
     );
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get("theme")?.value;
+  const initialThemeClass = themeCookie === "dark" ? "dark" : "";
 
   return (
-    <html lang="en" suppressHydrationWarning={true}>
+    <html
+      lang="en"
+      className={initialThemeClass}
+      suppressHydrationWarning={true}
+    >
       <head>
+        <Script id="theme-init" strategy="beforeInteractive">{`
+(function () {
+  try {
+    var cookieMatch = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+    var cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+    var ls = window.localStorage.getItem('theme');
+    var stored = cookieTheme || ls;
+    var m = window.matchMedia('(prefers-color-scheme: dark)');
+    var dark = stored ? stored === 'dark' : m.matches;
+    var c = document.documentElement.classList;
+    dark ? c.add('dark') : c.remove('dark');
+  } catch (e) {}
+})();`}</Script>
         {process.env.NODE_ENV === "development" && (
           <>
             <Script
@@ -57,16 +77,6 @@ export default async function RootLayout({
         )}
       </head>
       <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
-        <Script id="theme-init" strategy="beforeInteractive">{`
-(function () {
-  try {
-    var ls = window.localStorage.getItem('theme');
-    var m = window.matchMedia('(prefers-color-scheme: dark)');
-    var dark = ls ? ls === 'dark' : m.matches;
-    var c = document.documentElement.classList;
-    dark ? c.add('dark') : c.remove('dark');
-  } catch (e) {}
-})();`}</Script>
         <MobileProvider initialIsMobile={isMobile}>
           <TooltipProvider>
             {children}

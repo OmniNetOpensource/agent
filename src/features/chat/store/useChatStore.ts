@@ -17,6 +17,7 @@ import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
 import { toast } from "@/src/shared/toast";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
+import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
 
 export type ChatState = {
   messages: Message[];
@@ -67,7 +68,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   input: "",
   pending: false,
   chatClient: null,
-  currentModel: "",
+  currentModel: MODEL_CONFIGS[0]?.id ?? "",
   pendingAttachments: [],
   uploading: false,
   conversationId: null,

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
-import { BarChart3, Loader2, LogIn, Settings, User2 } from "lucide-react";
+import { BarChart3, Loader2, LogIn, User2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,26 +31,17 @@ const getDisplayName = (user: User) =>
   "用户";
 
 export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
-  const { user, signIn, signOut, loading, supabaseReady } = useAuth();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { user, signIn, loading, supabaseReady } = useAuth();
 
-  const displayName = user ? getDisplayName(user) : "Guest";
+  const isLoadingUser = loading && !user;
+  const displayName = user
+    ? getDisplayName(user)
+    : isLoadingUser
+    ? "正在获取登录状态..."
+    : "Guest";
   const avatarUrl = user ? getAvatarUrl(user) : undefined;
-  const subtitle = user?.email || "游客模式";
+  const subtitle = user?.email || (isLoadingUser ? "请稍候" : "游客模式");
   const buttonDisabled = loading || !supabaseReady;
-
-  const handleOpenSettings = () => {
-    setSettingsOpen(true);
-  };
-
-  const handleCloseSettings = () => {
-    setSettingsOpen(false);
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    setSettingsOpen(false);
-  };
 
   const handleSignIn = async () => {
     if (buttonDisabled) return;
@@ -154,10 +144,7 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
 
               <DropdownMenuSeparator />
 
-              <DropdownMenuItem onClick={handleOpenSettings}>
-                <Settings className="h-4 w-4" />
-                设置
-              </DropdownMenuItem>
+              <SettingsModal />
 
               <DropdownMenuItem asChild>
                 <Link href="/dashboard">
@@ -166,7 +153,7 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                 </Link>
               </DropdownMenuItem>
 
-              {!user && (
+              {!user && !isLoadingUser && (
                 <DropdownMenuItem
                   onClick={handleSignIn}
                   disabled={buttonDisabled}
@@ -190,16 +177,6 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <SettingsModal
-            open={settingsOpen}
-            onClose={handleCloseSettings}
-            hasUser={!!user}
-            onSignOut={user ? handleSignOut : undefined}
-            onSignIn={!user ? signIn : undefined}
-            authLoading={loading}
-            supabaseReady={supabaseReady}
-          />
         </div>
       </div>
     </div>

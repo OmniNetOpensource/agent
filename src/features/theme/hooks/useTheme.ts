@@ -17,6 +17,11 @@ const applyHtmlClass = (theme: Theme) => {
   }
 };
 
+const setThemeCookie = (theme: Theme) => {
+  if (typeof document === "undefined") return;
+  document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+};
+
 const getSystemTheme = (): Theme => {
   if (typeof window === "undefined") {
     return "light";
@@ -44,6 +49,7 @@ export function useTheme() {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(THEME_STORAGE_KEY, next);
     }
+    setThemeCookie(next);
 
     applyHtmlClass(next);
   };
@@ -53,5 +59,5 @@ export function useTheme() {
     setTheme(next);
   };
 
-  return { theme, toggleTheme, setTheme } as const;
+  return { theme, toggleTheme } as const;
 }
