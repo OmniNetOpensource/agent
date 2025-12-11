@@ -54,7 +54,7 @@ export function MessageList() {
       });
     };
 
-    registerScrollToBottom(() => scrollToBottom("smooth"));
+    registerScrollToBottom(() => scrollToBottom("auto"));
 
     return () => {
       registerScrollToBottom(null);
