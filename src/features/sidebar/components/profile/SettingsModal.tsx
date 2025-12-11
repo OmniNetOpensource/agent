@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { flushSync } from "react-dom";
-import { LogIn, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { LogIn, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import {
@@ -13,10 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
-export function SettingsModal() {
-  const [open, setOpen] = useState(false);
+type SettingsModalProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
   const { user, signIn, signOut, loading, supabaseReady } = useAuth();
 
@@ -26,7 +28,7 @@ export function SettingsModal() {
   const handleSignOut = async () => {
     if (!hasUser) return;
     await signOut();
-    setOpen(false);
+    onOpenChange(false);
   };
 
   const handleSignIn = async () => {
@@ -76,87 +78,80 @@ export function SettingsModal() {
   };
 
   return (
-    <>
-      <DropdownMenuItem onClick={() => setOpen(true)}>
-        <Settings className="h-4 w-4" />
-        设置
-      </DropdownMenuItem>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="h-[50vh] w-[50vw] min-w-[320px] max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>设置</DialogTitle>
+        </DialogHeader>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="h-[50vh] w-[50vw] min-w-[320px] max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>设置</DialogTitle>
-          </DialogHeader>
-
-          <div className="flex h-[calc(100%-3rem)] flex-col justify-between">
-            <div className="space-y-6">
-              {/* Appearance Section */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  外观
-                </h3>
-                <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background text-foreground shadow-sm ring-1 ring-border">
-                      {theme === "dark" ? (
-                        <Sun className="h-4 w-4" />
-                      ) : (
-                        <Moon className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">
-                        深色模式
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {theme === "dark" ? "已开启" : "已关闭"}
-                      </span>
-                    </div>
+        <div className="flex h-[calc(100%-3rem)] flex-col justify-between">
+          <div className="space-y-6">
+            {/* Appearance Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                外观
+              </h3>
+              <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background text-foreground shadow-sm ring-1 ring-border">
+                    {theme === "dark" ? (
+                      <Sun className="h-4 w-4" />
+                    ) : (
+                      <Moon className="h-4 w-4" />
+                    )}
                   </div>
-                  <Switch
-                    checked={theme === "dark"}
-                    onClick={handleThemeToggle}
-                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground">
+                      深色模式
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {theme === "dark" ? "已开启" : "已关闭"}
+                    </span>
+                  </div>
                 </div>
+                <Switch
+                  checked={theme === "dark"}
+                  onClick={handleThemeToggle}
+                />
               </div>
             </div>
-
-            <div className="flex gap-3">
-              {!hasUser && (
-                <Button
-                  variant="outline"
-                  onClick={handleSignIn}
-                  disabled={authLoading || !supabaseReady}
-                  className="self-start"
-                >
-                  {authLoading ? (
-                    <>
-                      <LogIn className="h-4 w-4 animate-spin" />
-                      正在登录...
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="h-4 w-4" />
-                      使用 Google 登录
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {hasUser && (
-                <Button
-                  variant="outline"
-                  onClick={handleSignOut}
-                  className="self-start"
-                >
-                  <LogOut className="h-4 w-4" />
-                  退出登录
-                </Button>
-              )}
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+
+          <div className="flex gap-3">
+            {!hasUser && (
+              <Button
+                variant="outline"
+                onClick={handleSignIn}
+                disabled={authLoading || !supabaseReady}
+                className="self-start"
+              >
+                {authLoading ? (
+                  <>
+                    <LogIn className="h-4 w-4 animate-spin" />
+                    正在登录...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4" />
+                    使用 Google 登录
+                  </>
+                )}
+              </Button>
+            )}
+
+            {hasUser && (
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+                className="self-start"
+              >
+                <LogOut className="h-4 w-4" />
+                退出登录
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,15 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
-import { BarChart3, Loader2, LogIn, User2 } from "lucide-react";
+import { BarChart3, Loader2, LogIn, Settings, User2 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import { SettingsModal } from "./SettingsModal";
@@ -30,8 +29,12 @@ const getDisplayName = (user: User) =>
   user.email ||
   "用户";
 
+const menuItemClass =
+  "flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground [&_svg]:size-4";
+
 export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
   const { user, signIn, loading, supabaseReady } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const isLoadingUser = loading && !user;
   const displayName = user
@@ -61,8 +64,8 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
           className="relative transition-all duration-500 mx-auto"
           style={{ width: isCollapsed ? "auto" : "100%" }}
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
                 className="flex cursor-pointer items-center gap-3 text-sm transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
@@ -109,11 +112,11 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                   </span>
                 </span>
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
+            </PopoverTrigger>
+            <PopoverContent
               side="top"
               align="start"
-              className="min-w-[220px]"
+              className="min-w-[220px] p-1"
             >
               <div className="flex items-center gap-1.5 px-2 py-1.5">
                 <Avatar className="h-5 w-5">
@@ -142,22 +145,28 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                 </div>
               </div>
 
-              <DropdownMenuSeparator />
+              <div className="bg-border -mx-1 my-1 h-px" />
 
-              <SettingsModal />
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className={menuItemClass}
+              >
+                <Settings className="h-4 w-4" />
+                设置
+              </button>
 
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard">
-                  <BarChart3 className="h-4 w-4" />
-                  Dashboard / 数据面板
-                </Link>
-              </DropdownMenuItem>
+              <Link href="/dashboard" className={menuItemClass}>
+                <BarChart3 className="h-4 w-4" />
+                Dashboard / 数据面板
+              </Link>
 
               {!user && !isLoadingUser && (
-                <DropdownMenuItem
+                <button
+                  type="button"
                   onClick={handleSignIn}
                   disabled={buttonDisabled}
-                  className="flex items-center gap-2 text-sm"
+                  className={`${menuItemClass} data-disabled:pointer-events-none data-disabled:opacity-50`}
                 >
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-muted ring-1 ring-border">
                     <span className="text-xs font-bold">G</span>
@@ -173,10 +182,12 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                       使用 Google 登录
                     </span>
                   )}
-                </DropdownMenuItem>
+                </button>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </PopoverContent>
+          </Popover>
+
+          <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
         </div>
       </div>
     </div>
