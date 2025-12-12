@@ -114,7 +114,7 @@ const FetchTerminal: React.FC<FetchTerminalProps> = ({
   };
 
   return (
-    <div className="w-full font-mono text-xs sm:text-sm my-2 relative group">
+    <div className="w-full font-mono text-xs sm:text-sm relative group">
       <div className="bg-(--surface-muted) rounded-lg overflow-hidden relative z-[var(--z-card-inner)] transition-colors duration-300">
         <div
           onClick={onToggle}
@@ -228,7 +228,7 @@ export function FetchUrl({ tool }: FetchUrlProps) {
     : "pending";
 
   return (
-    <div className="px-4">
+    <div className="px-3 py-2">
       <FetchTerminal url={url} status={status} progress={progress} />
     </div>
   );

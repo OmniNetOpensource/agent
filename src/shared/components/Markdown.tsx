@@ -40,7 +40,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h1
       {...props}
       className={cn(
-        "mt-6 mb-3 text-lg font-semibold leading-tight text-foreground",
+        "mt-6 mb-3 last:mb-0 text-lg font-semibold leading-tight text-foreground",
         className
       )}
     />
@@ -49,7 +49,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h2
       {...props}
       className={cn(
-        "mt-5 mb-3 text-base font-semibold leading-tight text-foreground",
+        "mt-5 mb-3 last:mb-0 text-base font-semibold leading-tight text-foreground",
         className
       )}
     />
@@ -58,7 +58,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h3
       {...props}
       className={cn(
-        "mt-4 mb-2 text-sm font-semibold text-foreground",
+        "mt-4 mb-2 last:mb-0 text-sm font-semibold text-foreground",
         className
       )}
     />
@@ -66,20 +66,26 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
   h4: ({ className, ...props }) => (
     <h4
       {...props}
-      className={cn("mt-3 mb-2 text-sm font-medium text-foreground", className)}
+      className={cn(
+        "mt-3 mb-2 last:mb-0 text-sm font-medium text-foreground",
+        className
+      )}
     />
   ),
   p: ({ className, ...props }) => (
     <p
       {...props}
-      className={cn("mb-3 leading-relaxed text-(--text-secondary)", className)}
+      className={cn(
+        "mb-3 last:mb-0 leading-relaxed text-(--text-secondary)",
+        className
+      )}
     />
   ),
   ul: ({ className, ...props }) => (
     <ul
       {...props}
       className={cn(
-        "mb-3 ml-4 list-disc space-y-2 text-(--text-secondary)",
+        "mb-3 last:mb-0 ml-4 list-disc space-y-2 text-(--text-secondary)",
         className
       )}
     />
@@ -88,7 +94,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <ol
       {...props}
       className={cn(
-        "mb-3 ml-4 list-decimal space-y-2 text-(--text-secondary)",
+        "mb-3 last:mb-0 ml-4 list-decimal space-y-2 text-(--text-secondary)",
         className
       )}
     />
@@ -100,13 +106,16 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <blockquote
       {...props}
       className={cn(
-        "my-3 border-l-2 border-(--border-subtle) pl-3 text-(--text-secondary) italic",
+        "my-3 last:mb-0 border-l-2 border-(--border-subtle) pl-3 text-(--text-secondary) italic",
         className
       )}
     />
   ),
   hr: ({ className, ...props }) => (
-    <hr {...props} className={cn("my-4 border-(--border-subtle)", className)} />
+    <hr
+      {...props}
+      className={cn("my-4 last:mb-0 border-(--border-subtle)", className)}
+    />
   ),
   strong: ({ className, ...props }) => (
     <strong

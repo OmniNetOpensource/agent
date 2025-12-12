@@ -26,13 +26,15 @@
   --text-tertiary: #a1a1aa;
   --text-code: #18181b;
 
-  --color-primary: #18181b;
-  --color-primary-hover: #27272a;
-  --color-accent: #71717a;
+  --color-primary: hsl(80, 50%, 90%);
+  --color-primary-hover: hsl(80, 50%, 85%);
+  --color-secondary: hsl(80, 50%, 10%);
+  --color-tertiary: hsl(140, 80%, 20%);
+  --color-accent: hsl(20, 80%, 20%);
 
-  --button-primary-bg: #18181b;
-  --button-primary-text: #ffffff;
-  --button-primary-hover: #27272a;
+  --button-primary-bg: var(--color-primary);
+  --button-primary-text: var(--color-secondary);
+  --button-primary-hover: var(--color-primary-hover);
 
   --button-secondary-bg: rgba(255, 255, 255, 0.6);
   --button-secondary-border: rgba(0, 0, 0, 0.08);
@@ -198,9 +200,11 @@ html.dark {
   --text-tertiary: #71717a;
   --text-code: #e4e4e7;
 
-  --color-primary: #ffffff;
-  --color-primary-hover: #e4e4e7;
-  --color-accent: #a1a1aa;
+  --color-primary: hsl(80, 50%, 10%);
+  --color-primary-hover: hsl(80, 50%, 15%);
+  --color-secondary: hsl(80, 50%, 90%);
+  --color-tertiary: hsl(140, 80%, 80%);
+  --color-accent: hsl(20, 80%, 80%);
 
   /* Awwwards Palette - Dark Mode Vibrancy */
   --color-brand: #818cf8; /* Indigo 400 */
@@ -215,9 +219,9 @@ html.dark {
   --color-info: #60a5fa; /* Blue 400 */
   --color-info-foreground: #1e3a8a;
 
-  --button-primary-bg: #ffffff;
-  --button-primary-text: #09090b;
-  --button-primary-hover: #e4e4e7;
+  --button-primary-bg: var(--color-primary);
+  --button-primary-text: var(--color-secondary);
+  --button-primary-hover: var(--color-primary-hover);
 
   --button-secondary-bg: rgba(255, 255, 255, 0.05);
   --button-secondary-border: rgba(255, 255, 255, 0.1);
