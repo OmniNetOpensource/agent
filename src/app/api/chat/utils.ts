@@ -90,17 +90,17 @@ export const toChatMessages = (history: Message[]): ChatMessage[] =>
             if (att.kind === "image") {
               contentParts.push({
                 type: "image_url",
-                imageUrl: { url: source },
+                image_url: { url: source },
               });
             } else if (att.kind === "video") {
               contentParts.push({
                 type: "video_url",
-                videoUrl: { url: source },
+                video_url: { url: source },
               });
             } else {
               contentParts.push({
                 type: "file",
-                file: { filename: att.name, fileData: source },
+                file: { filename: att.name, file_data: source },
               });
             }
           }

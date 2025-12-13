@@ -2,6 +2,7 @@
 
 import {
   ChangeEvent,
+  ClipboardEvent,
   FormEvent,
   KeyboardEvent,
   useEffect,
@@ -106,6 +107,47 @@ export function Composer() {
     : undefined;
   const canUpload = modelPermissions?.canUpload ?? true;
   const canSearch = modelPermissions?.canSearch ?? true;
+
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) {
+      return;
+    }
+
+    const pastedFiles: File[] = [];
+
+    if (clipboardData.files?.length) {
+      pastedFiles.push(...Array.from(clipboardData.files));
+    } else if (clipboardData.items?.length) {
+      for (const item of Array.from(clipboardData.items)) {
+        if (item.kind !== "file") {
+          continue;
+        }
+        const file = item.getAsFile();
+        if (file) {
+          pastedFiles.push(file);
+        }
+      }
+    }
+
+    if (pastedFiles.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (!canUpload) {
+      toast.warning("当前模型不支持上传附件");
+      return;
+    }
+
+    if (uploading) {
+      toast.info("正在上传附件，请稍后再试。");
+      return;
+    }
+
+    void addAttachments(pastedFiles);
+  };
 
   // Force searchEnabled to false if model doesn't support search
   useEffect(() => {
@@ -238,6 +280,7 @@ export function Composer() {
               setInput(event.target.value);
             }}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             rows={1}
             placeholder="输入您的消息..."
             className="min-h-10 max-h-[200px] flex-1 resize-none border-0 bg-transparent py-2.5 text-sm focus-visible:ring-0 sm:text-base"

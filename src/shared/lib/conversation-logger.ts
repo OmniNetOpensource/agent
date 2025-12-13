@@ -2,8 +2,7 @@ import fs from "fs";
 import path from "path";
 
 export type ConversationLogger = {
-  log: (...args: unknown[]) => void;
-  error: (...args: unknown[]) => void;
+  log: (category: string, message: string, data?: unknown) => void;
 };
 
 const LOG_BASE_DIR = path.join(process.cwd(), "logs", "conversations");
@@ -13,11 +12,8 @@ const ensureLogDirectory = () => {
     if (!fs.existsSync(LOG_BASE_DIR)) {
       fs.mkdirSync(LOG_BASE_DIR, { recursive: true });
     }
-  } catch (error) {
-    console.error(
-      "[ConversationLogger] Failed to ensure log directory:",
-      error
-    );
+  } catch {
+    // Silently fail - directory creation errors are non-critical
   }
 };
 
@@ -28,6 +24,24 @@ const normalizeConversationId = (conversationId: string | null | undefined) => {
       : `session_${Date.now()}`;
 
   return rawId.replace(/[^a-zA-Z0-9_-]/g, "_");
+};
+
+const formatTimestamp = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
+  const timezoneOffset = -date.getTimezoneOffset();
+  const offsetHours = String(
+    Math.floor(Math.abs(timezoneOffset) / 60)
+  ).padStart(2, "0");
+  const offsetMinutes = String(Math.abs(timezoneOffset) % 60).padStart(2, "0");
+  const offsetSign = timezoneOffset >= 0 ? "+" : "-";
+
+  return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}-${milliseconds}${offsetSign}${offsetHours}${offsetMinutes}`;
 };
 
 const safeSerialize = (value: unknown): string => {
@@ -44,14 +58,14 @@ const safeSerialize = (value: unknown): string => {
       cause: (value as { cause?: unknown }).cause, // 2. 使用更安全的类型断言替代 any
     };
     try {
-      return JSON.stringify(errorInfo);
+      return JSON.stringify(errorInfo, null, 2);
     } catch {
       return `[Error: ${value.message}]`;
     }
   }
 
   try {
-    return JSON.stringify(value);
+    return JSON.stringify(value, null, 2);
   } catch {
     try {
       return String(value);
@@ -65,42 +79,44 @@ export const createConversationLogger = (
   conversationId: string | null | undefined
 ): ConversationLogger => {
   const shouldWriteToFile = process.env.NODE_ENV !== "production";
+  const creationTime = new Date();
+  const timestampPrefix = formatTimestamp(creationTime);
 
   if (shouldWriteToFile) {
     ensureLogDirectory();
   }
 
   const safeId = normalizeConversationId(conversationId);
-  const filePath = path.join(LOG_BASE_DIR, `${safeId}.log`);
+  const filePath = path.join(LOG_BASE_DIR, `${timestampPrefix}_${safeId}.log`);
 
-  const appendLine = (level: "INFO" | "ERROR", args: unknown[]) => {
+  const appendLine = (category: string, message: string, data?: unknown) => {
     if (!shouldWriteToFile) {
       return;
     }
 
     const timestamp = new Date().toISOString();
-    const text = args.map(safeSerialize).join(" ");
-    const line = `[${timestamp}] [${level}] ${text}\n`;
+    let line = `[${timestamp}] [${category}] ${message}`;
+
+    if (data !== undefined) {
+      const serializedData = safeSerialize(data);
+      line += `\n${serializedData}`;
+    }
+
+    line += "\n";
 
     try {
-      fs.appendFile(filePath, line, (err) => {
-        if (err) {
-          console.error("[ConversationLogger] Failed to write log:", err);
-        }
+      fs.appendFile(filePath, line, () => {
+        // Silently fail - log write errors are non-critical
       });
-    } catch (error) {
-      console.error("[ConversationLogger] Unexpected logging error:", error);
+    } catch {
+      // Silently fail - logging errors should not crash the application
     }
   };
 
   return {
-    log: (...args: unknown[]) => {
-      appendLine("INFO", args);
-      console.log(...args);
-    },
-    error: (...args: unknown[]) => {
-      appendLine("ERROR", args);
-      console.error(...args);
+    log: (category: string, message: string, data?: unknown) => {
+      appendLine(category, message, data);
+      // console.log(`[${category}]`, message, data);
     },
   };
 };

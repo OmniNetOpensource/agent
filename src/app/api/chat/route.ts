@@ -54,6 +54,14 @@ export async function POST(req: Request) {
 
     logger = createConversationLogger(conversationId ?? null);
 
+    logger?.log("FRONTEND", "Received chat request", {
+      conversationId,
+      model,
+      searchEnabled,
+      hasSystemInstruction: !!systemInstruction,
+      messageCount: conversationHistory.length,
+    });
+
     if (
       !Array.isArray(conversationHistory) ||
       conversationHistory.length === 0
@@ -101,26 +109,26 @@ export async function POST(req: Request) {
 
     if (isGeminiModel && searchEnabled !== false) {
       logger?.log(
-        "[Chat-API] Detected Gemini model, disabling tools to avoid missing reasoning details / thought_signature errors."
+        "MODEL",
+        "Detected Gemini model, disabling tools to avoid missing reasoning details / thought_signature errors."
       );
     }
 
     if (!canSearch && searchEnabled !== false) {
       logger?.log(
-        `[Chat-API] Model "${requestedModel}" does not support search, disabling tools.`
+        "MODEL",
+        `Model "${requestedModel}" does not support search, disabling tools.`
       );
     }
 
     logger?.log(
-      "[Chat-API] Tools loaded:",
-      tools.length,
-      tools
-        .map(
-          (tool) =>
-            (tool as { type: "function"; function: { name: string } }).function
-              .name
-        )
-        .join(", ")
+      "TOOLS",
+      `Tools loaded: ${tools.length}`,
+      tools.map(
+        (tool) =>
+          (tool as { type: "function"; function: { name: string } }).function
+            .name
+      )
     );
 
     const supabase = hasSupabaseConfig()
@@ -129,12 +137,20 @@ export async function POST(req: Request) {
 
     let supabaseUser: { id: string } | null = null;
     if (supabase) {
+      logger?.log("DATABASE", "Authenticating user with Supabase");
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
       if (authError) {
-        logger?.error("[Chat-API] Supabase auth error:", authError.message);
+        logger?.log("DATABASE", "Supabase auth error", {
+          error: authError.message,
+          code: authError.status,
+        });
+      } else {
+        logger?.log("DATABASE", "User authenticated", {
+          userId: user?.id ?? null,
+        });
       }
       supabaseUser = user ?? null;
     }
@@ -157,7 +173,14 @@ export async function POST(req: Request) {
     if (supabaseUser && supabase) {
       if (!activeConversationId) {
         activeConversationId = generateConversationId();
+        logger?.log("DATABASE", "Generated new conversation ID", {
+          conversationId: activeConversationId,
+        });
       }
+      logger?.log("DATABASE", "Ensuring conversation exists", {
+        conversationId: activeConversationId,
+        userId: supabaseUser.id,
+      });
       const result = await ensureConversation(
         supabase,
         supabaseUser,
@@ -166,6 +189,13 @@ export async function POST(req: Request) {
       );
       activeConversationId = result.conversationId;
       conversationCreatedEvent = result.event;
+      if (result.event) {
+        logger?.log("DATABASE", "Conversation created", result.event);
+      } else {
+        logger?.log("DATABASE", "Conversation already exists", {
+          conversationId: result.conversationId,
+        });
+      }
     } else if (!activeConversationId) {
       const newId = generateConversationId();
       activeConversationId = newId;
@@ -179,6 +209,11 @@ export async function POST(req: Request) {
         created_at: now,
         updated_at: now,
       };
+      logger?.log(
+        "LOCAL",
+        "Created local conversation",
+        conversationCreatedEvent
+      );
     }
 
     const messages: ChatMessage[] = [
@@ -189,7 +224,7 @@ export async function POST(req: Request) {
       ...toChatMessages(history),
     ];
 
-    logger?.log("[Chat-API] Using model:", requestedModel);
+    logger?.log("MODEL", "Using model", { model: requestedModel });
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -206,17 +241,26 @@ export async function POST(req: Request) {
           assistantCreatedAt: null,
         };
 
+        const sendToClient = (eventType: string, data: unknown) => {
+          const eventData =
+            typeof data === "object" && data !== null && !Array.isArray(data)
+              ? { type: eventType, ...data }
+              : { type: eventType, data };
+          const line = `data: ${JSON.stringify(eventData)}\n\n`;
+          controller.enqueue(encoder.encode(line));
+          logger?.log("FRONTEND", `Sent SSE event: ${eventType}`, eventData);
+        };
+
         if (conversationCreatedEvent) {
-          controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify(conversationCreatedEvent)}\n\n`
-            )
-          );
+          sendToClient("conversation_created", conversationCreatedEvent);
         }
 
         // Authenticated users: pre-save latest user message so conversations never stay empty.
         if (supabaseUser && supabase && activeConversationId) {
           try {
+            logger?.log("DATABASE", "Pre-saving user message", {
+              conversationId: activeConversationId,
+            });
             await saveMessages(
               supabase,
               activeConversationId,
@@ -224,10 +268,16 @@ export async function POST(req: Request) {
               [],
               messageIds
             );
+            logger?.log("DATABASE", "User message pre-saved", {
+              userMessageId: messageIds.userMessageId,
+            });
           } catch (error) {
-            logger?.error(
-              "[Chat-API] Failed to pre-save user message:",
-              error
+            logger?.log(
+              "DATABASE",
+              "Failed to pre-save user message",
+              error instanceof Error
+                ? { message: error.message, stack: error.stack }
+                : error
             );
           }
         }
@@ -315,33 +365,38 @@ export async function POST(req: Request) {
         try {
           while (iteration < maxIterations) {
             iteration++;
-            logger?.log(
-              "[Chat-API] Iteration",
-              iteration,
-              "messages:",
-              currentMessages.length
-            );
+            logger?.log("ITERATION", `Starting iteration ${iteration}`, {
+              messageCount: currentMessages.length,
+            });
 
             let stream: ReadableStream<Uint8Array>;
             try {
-              stream = await streamChatCompletion({
+              const requestPayload = {
                 model: requestedModel,
                 messages: currentMessages,
                 tools: tools.length > 0 ? tools : undefined,
-              });
+              };
+              logger?.log(
+                "OPENROUTER",
+                "Sending chat completion request",
+                requestPayload
+              );
+              stream = await streamChatCompletion(requestPayload);
+              logger?.log("OPENROUTER", "Chat completion stream started");
             } catch (error) {
               const message =
                 error instanceof Error
                   ? error.message
                   : "Failed to start chat completion";
-              logger?.error("[Chat-API] Stream error:", error);
-              const errorData = {
-                type: "error",
+              logger?.log("OPENROUTER", "Stream error", {
+                error:
+                  error instanceof Error
+                    ? { message: error.message, stack: error.stack }
+                    : error,
+              });
+              sendToClient("error", {
                 message: `错误：${message}`,
-              };
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
-              );
+              });
               closeStream();
               break;
             }
@@ -357,7 +412,7 @@ export async function POST(req: Request) {
             let finishedWithStop = false;
 
             for await (const chunk of parseSSEStream(stream)) {
-              logger?.log("[Chat-API] OpenRouter chunk:", chunk);
+              logger?.log("OPENROUTER", "Received chunk", chunk);
               const delta = chunk?.choices?.[0]?.delta;
               const finishReason = chunk?.choices?.[0]?.finishReason as
                 | string
@@ -366,24 +421,16 @@ export async function POST(req: Request) {
               if (delta?.reasoning) {
                 currentReasoning += delta.reasoning;
                 appendThinking(delta.reasoning);
-                const data = {
-                  type: "thinking",
+                sendToClient("thinking", {
                   content: delta.reasoning,
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-                );
+                });
               }
 
               if (delta?.content) {
                 assistantMessage += delta.content;
-                const data = {
-                  type: "content",
+                sendToClient("content", {
                   content: delta.content,
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-                );
+                });
               }
 
               if (delta?.tool_calls) {
@@ -418,28 +465,37 @@ export async function POST(req: Request) {
               }
 
               if (finishReason === "stop") {
-                logger?.log("[Chat-API] Stream finished with stop");
+                logger?.log("OPENROUTER", "Stream finished with stop");
                 finishedWithStop = true;
                 break;
               }
 
               if (finishReason === "tool_calls" && toolCalls.length > 0) {
                 logger?.log(
-                  "[Chat-API] Stream finished with tool_calls:",
-                  toolCalls.length
+                  "OPENROUTER",
+                  `Stream finished with tool_calls: ${toolCalls.length}`,
+                  {
+                    toolCalls: toolCalls.map((tc) => ({
+                      name: tc.function.name,
+                      id: tc.id,
+                    })),
+                  }
                 );
                 break;
               }
             }
 
             if (finishedWithStop) {
+              logger?.log("OPENROUTER", "Conversation completed", {
+                messageLength: assistantMessage.length,
+              });
               finalAssistantMessage = assistantMessage;
               closeStream();
               break;
             }
 
             if (toolCalls.length === 0) {
-              logger?.log("[Chat-API] No tool calls, ending");
+              logger?.log("OPENROUTER", "No tool calls, ending conversation");
               finalAssistantMessage = assistantMessage;
               closeStream();
               break;
@@ -458,6 +514,10 @@ export async function POST(req: Request) {
                 researchItems,
                 assistantMessage || null
               );
+              logger?.log("DATABASE", "Saving partial assistant message", {
+                conversationId: activeConversationId,
+                blockCount: partialAssistantBlocks.length,
+              });
               await saveMessages(
                 supabase,
                 activeConversationId,
@@ -465,21 +525,26 @@ export async function POST(req: Request) {
                 partialAssistantBlocks,
                 messageIds
               );
+              logger?.log("DATABASE", "Partial assistant message saved", {
+                assistantMessageId: messageIds.assistantMessageId,
+              });
             }
 
             // All users: send conversation_updated event
             if (activeConversationId) {
               const updatedEvent = {
-                type: "conversation_updated",
                 conversationId: activeConversationId,
                 updated_at: new Date().toISOString(),
               };
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
-              );
+              sendToClient("conversation_updated", updatedEvent);
             }
 
-            logger?.log("[Chat-API] Executing", toolCalls.length, "tool calls");
+            logger?.log("TOOLS", `Executing ${toolCalls.length} tool calls`, {
+              toolCalls: toolCalls.map((tc) => ({
+                name: tc.function.name,
+                id: tc.id,
+              })),
+            });
             const toolResults = await Promise.all(
               toolCalls.map(async (toolCall) => {
                 if (toolCall.type !== "function") return null;
@@ -493,65 +558,61 @@ export async function POST(req: Request) {
                   if (parsed && typeof parsed === "object") {
                     toolArgs = parsed as Record<string, unknown>;
                   }
+                  logger?.log(
+                    "TOOLS",
+                    `Parsed tool arguments for ${toolName}`,
+                    {
+                      toolName,
+                      args: toolArgs,
+                    }
+                  );
                 } catch (error) {
                   const message =
                     error instanceof Error ? error.message : String(error);
-                  logger?.error(
-                    "[Chat-API] Failed to parse tool arguments:",
-                    toolName,
-                    message
+                  logger?.log(
+                    "TOOLS",
+                    `Failed to parse tool arguments for ${toolName}`,
+                    {
+                      toolName,
+                      error: message,
+                      rawArguments: toolCall.function.arguments,
+                    }
                   );
-                  const errorData = {
-                    type: "error",
+                  sendToClient("error", {
                     message: `工具参数解析失败(${toolName})，已使用空参数。`,
-                  };
-                  try {
-                    controller.enqueue(
-                      encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
-                    );
-                  } catch (enqueueError) {
-                    logger?.error(
-                      "[Chat-API] Failed to enqueue tool parse error:",
-                      enqueueError
-                    );
-                  }
+                  });
                   appendToolProgress(toolName, {
                     stage: "parse_error",
                     message,
                   });
                 }
 
-                logger?.log(
-                  "[Chat-API] Calling tool:",
+                logger?.log("TOOLS", `Calling tool: ${toolName}`, {
                   toolName,
-                  "with args:",
-                  toolArgs
-                );
+                  args: toolArgs,
+                });
 
-                const toolCallData = {
-                  type: "tool_call",
+                sendToClient("tool_call", {
                   tool: toolName,
                   args: toolArgs,
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(toolCallData)}\n\n`)
-                );
+                });
                 ensureToolItem(toolName, toolArgs);
 
                 const result = await callToolByName(
                   toolName,
                   toolArgs,
                   (progress: ToolProgressUpdate) => {
-                    const toolProgressData = {
-                      type: "tool_progress",
+                    logger?.log("TOOLS", `Tool progress: ${toolName}`, {
+                      toolName,
+                      stage: progress.stage,
+                      message: progress.message,
+                      receivedBytes: progress.receivedBytes,
+                      totalBytes: progress.totalBytes,
+                    });
+                    sendToClient("tool_progress", {
                       tool: toolName,
                       ...progress,
-                    };
-                    controller.enqueue(
-                      encoder.encode(
-                        `data: ${JSON.stringify(toolProgressData)}\n\n`
-                      )
-                    );
+                    });
                     appendToolProgress(toolName, {
                       stage: progress.stage,
                       message: String(progress.message ?? ""),
@@ -561,14 +622,21 @@ export async function POST(req: Request) {
                   }
                 );
 
-                const toolResultData = {
-                  type: "tool_result",
+                logger?.log("TOOLS", `Tool completed: ${toolName}`, {
+                  toolName,
+                  resultLength:
+                    typeof result === "string"
+                      ? result.length
+                      : JSON.stringify(result).length,
+                  resultPreview:
+                    typeof result === "string"
+                      ? result.substring(0, 200)
+                      : JSON.stringify(result).substring(0, 200),
+                });
+                sendToClient("tool_result", {
                   tool: toolName,
                   result: result,
-                };
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(toolResultData)}\n\n`)
-                );
+                });
 
                 const normalizedResult =
                   typeof result === "string"
@@ -601,14 +669,13 @@ export async function POST(req: Request) {
           }
 
           if (iteration >= maxIterations && !streamClosed) {
-            logger?.log("[Chat-API] Max iterations reached");
-            const data = {
-              type: "error",
+            logger?.log("ITERATION", "Max iterations reached", {
+              maxIterations,
+              iteration,
+            });
+            sendToClient("error", {
               message: "[已达到最大工具调用次数限制]",
-            };
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-            );
+            });
             finalAssistantMessage =
               finalAssistantMessage ?? "\n\n[已达到最大工具调用次数限制]";
             closeStream();
@@ -621,6 +688,10 @@ export async function POST(req: Request) {
 
           // Authenticated users: save to Supabase
           if (supabaseUser && supabase && activeConversationId) {
+            logger?.log("DATABASE", "Saving final assistant message", {
+              conversationId: activeConversationId,
+              blockCount: assistantBlocks.length,
+            });
             await saveMessages(
               supabase,
               activeConversationId,
@@ -628,39 +699,45 @@ export async function POST(req: Request) {
               assistantBlocks,
               messageIds
             );
+            logger?.log("DATABASE", "Final assistant message saved", {
+              assistantMessageId: messageIds.assistantMessageId,
+            });
           }
 
           // All users: send conversation_updated event
           if (activeConversationId && !streamClosed) {
             const updatedEvent = {
-              type: "conversation_updated",
               conversationId: activeConversationId,
               updated_at: new Date().toISOString(),
             };
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(updatedEvent)}\n\n`)
-            );
+            sendToClient("conversation_updated", updatedEvent);
           }
 
           closeStream();
         } catch (error) {
-          logger?.error("[Chat-API] Error:", error);
+          logger?.log("ERROR", "Stream processing error", {
+            error:
+              error instanceof Error
+                ? { message: error.message, stack: error.stack }
+                : error,
+          });
           if (!streamClosed) {
             const errorMessage =
               error instanceof Error ? error.message : String(error);
-            const errorData = {
-              type: "error",
-              message: `错误：${errorMessage}`,
-            };
             try {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
-              );
+              sendToClient("error", {
+                message: `错误：${errorMessage}`,
+              });
             } catch (enqueueError) {
-              logger?.error(
-                "[Chat-API] Failed to enqueue error message:",
-                enqueueError
-              );
+              logger?.log("ERROR", "Failed to enqueue error message", {
+                error:
+                  enqueueError instanceof Error
+                    ? {
+                        message: enqueueError.message,
+                        stack: enqueueError.stack,
+                      }
+                    : enqueueError,
+              });
             }
             closeStream();
           }
@@ -677,9 +754,14 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     if (logger) {
-      logger.error("[Chat-API] Top-level error:", error);
+      logger.log("ERROR", "Top-level error", {
+        error:
+          error instanceof Error
+            ? { message: error.message, stack: error.stack }
+            : error,
+      });
     } else {
-      console.error("[Chat-API] Top-level error:", error);
+      // console.error("[Chat-API] Top-level error:", error);
     }
     return NextResponse.json(
       { reply: "Unable to process request" },
