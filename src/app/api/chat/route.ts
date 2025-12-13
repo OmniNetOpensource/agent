@@ -202,6 +202,8 @@ export async function POST(req: Request) {
         const messageIds: SavedMessageIds = {
           userMessageId: null,
           assistantMessageId: null,
+          userCreatedAt: null,
+          assistantCreatedAt: null,
         };
 
         if (conversationCreatedEvent) {
@@ -210,6 +212,24 @@ export async function POST(req: Request) {
               `data: ${JSON.stringify(conversationCreatedEvent)}\n\n`
             )
           );
+        }
+
+        // Authenticated users: pre-save latest user message so conversations never stay empty.
+        if (supabaseUser && supabase && activeConversationId) {
+          try {
+            await saveMessages(
+              supabase,
+              activeConversationId,
+              latestUserMessage,
+              [],
+              messageIds
+            );
+          } catch (error) {
+            logger?.error(
+              "[Chat-API] Failed to pre-save user message:",
+              error
+            );
+          }
         }
 
         const closeStream = () => {
@@ -465,9 +485,41 @@ export async function POST(req: Request) {
                 if (toolCall.type !== "function") return null;
 
                 const toolName = toolCall.function.name;
-                const toolArgs = JSON.parse(
-                  toolCall.function.arguments || "{}"
-                );
+                let toolArgs: Record<string, unknown> = {};
+                try {
+                  const parsed = JSON.parse(
+                    toolCall.function.arguments || "{}"
+                  );
+                  if (parsed && typeof parsed === "object") {
+                    toolArgs = parsed as Record<string, unknown>;
+                  }
+                } catch (error) {
+                  const message =
+                    error instanceof Error ? error.message : String(error);
+                  logger?.error(
+                    "[Chat-API] Failed to parse tool arguments:",
+                    toolName,
+                    message
+                  );
+                  const errorData = {
+                    type: "error",
+                    message: `工具参数解析失败(${toolName})，已使用空参数。`,
+                  };
+                  try {
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`)
+                    );
+                  } catch (enqueueError) {
+                    logger?.error(
+                      "[Chat-API] Failed to enqueue tool parse error:",
+                      enqueueError
+                    );
+                  }
+                  appendToolProgress(toolName, {
+                    stage: "parse_error",
+                    message,
+                  });
+                }
 
                 logger?.log(
                   "[Chat-API] Calling tool:",

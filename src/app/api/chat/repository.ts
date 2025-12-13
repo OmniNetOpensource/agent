@@ -5,6 +5,8 @@ import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 export type SavedMessageIds = {
   userMessageId: string | null;
   assistantMessageId: string | null;
+  userCreatedAt: string | null;
+  assistantCreatedAt: string | null;
 };
 
 export type ConversationCreatedEvent = {
@@ -28,12 +30,18 @@ export const saveMessages = async (
   assistantBlocks: ContentBlock[],
   messageIds: SavedMessageIds
 ) => {
+  const now = new Date().toISOString();
   const nextIds: SavedMessageIds = {
     userMessageId: messageIds.userMessageId ?? generateMessageId(),
     assistantMessageId:
       assistantBlocks.length > 0
         ? messageIds.assistantMessageId ?? generateMessageId()
         : messageIds.assistantMessageId,
+    userCreatedAt: messageIds.userCreatedAt ?? now,
+    assistantCreatedAt:
+      assistantBlocks.length > 0
+        ? messageIds.assistantCreatedAt ?? now
+        : messageIds.assistantCreatedAt,
   };
 
   const rows = [
@@ -42,6 +50,7 @@ export const saveMessages = async (
       conversation_id: conversationId,
       role: "user",
       blocks: userMessage.blocks,
+      created_at: nextIds.userCreatedAt,
     },
   ];
 
@@ -51,6 +60,7 @@ export const saveMessages = async (
       conversation_id: conversationId,
       role: "assistant",
       blocks: assistantBlocks,
+      created_at: nextIds.assistantCreatedAt,
     });
   }
 
@@ -59,23 +69,30 @@ export const saveMessages = async (
     .upsert(rows, { onConflict: "id" });
 
   if (upsertError) {
-    console.error("[Chat-API] Failed to save messages:", upsertError.message);
+    console.error("[Chat-API] Failed to save messages:", {
+      conversationId,
+      userMessageId: nextIds.userMessageId,
+      assistantMessageId: nextIds.assistantMessageId,
+      error: upsertError.message,
+    });
   }
 
   const { error: updateError } = await supabase
     .from("conversations")
-    .update({ updated_at: new Date().toISOString() })
+    .update({ updated_at: now })
     .eq("id", conversationId);
 
   if (updateError) {
-    console.error(
-      "[Chat-API] Failed to update conversation timestamp:",
-      updateError.message
-    );
+    console.error("[Chat-API] Failed to update conversation timestamp:", {
+      conversationId,
+      error: updateError.message,
+    });
   }
 
   messageIds.userMessageId = nextIds.userMessageId;
   messageIds.assistantMessageId = nextIds.assistantMessageId ?? null;
+  messageIds.userCreatedAt = nextIds.userCreatedAt;
+  messageIds.assistantCreatedAt = nextIds.assistantCreatedAt ?? null;
 };
 
 export const ensureConversation = async (

@@ -176,7 +176,18 @@ export default function Sidebar() {
 
   return (
     <aside
-      onClick={() => setIsOpen(!isOpen)}
+      onClick={(e) => {
+        const target = e.target;
+        if (
+          target instanceof Element &&
+          target.closest(
+            "button, a, input, textarea, select, [role='button']"
+          )
+        ) {
+          return;
+        }
+        setIsOpen(!isOpen);
+      }}
       className={`relative flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cursor-ew-resize ${
         isOpen ? "w-52" : "w-12 "
       }`}

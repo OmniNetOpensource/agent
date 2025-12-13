@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import reactHooks from "eslint-plugin-react-hooks";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -14,9 +15,11 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   {
+    plugins: {
+      "react-hooks": reactHooks,
+    },
     rules: {
-      // 允许 useEffect 等 hooks 的依赖数组为空或缺少依赖
-      "react-hooks/exhaustive-deps": "off",
+      ...reactHooks.configs.recommended.rules,
     },
   },
 ]);

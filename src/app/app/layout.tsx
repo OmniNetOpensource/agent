@@ -1,11 +1,7 @@
 import { Header } from "@/src/features/chat/components/Header";
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen w-screen bg-background text-foreground">
       <Sidebar />

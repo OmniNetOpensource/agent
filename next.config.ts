@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns,
   },
+  reactCompiler: true,
 };
 
 export default nextConfig;

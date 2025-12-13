@@ -29,9 +29,8 @@ export type ChatState = {
   uploading: boolean;
   conversationId: string | null;
   searchEnabled: boolean;
-  isAtBottom: boolean;
-  scrollToBottomHandler: (() => void) | null;
   systemInstruction: string;
+  activeRequestId: string | null;
 };
 
 type ToolLifecycleUpdate =
@@ -52,9 +51,6 @@ export type ChatActions = {
   stop: () => void;
   setCurrentModel: (model: string) => void;
   setSearchEnabled: (enabled: boolean) => void;
-  setIsAtBottom: (value: boolean) => void;
-  registerScrollToBottom: (fn: (() => void) | null) => void;
-  scrollToBottom: () => void;
   setSystemInstruction: (instruction: string) => void;
 };
 
@@ -73,16 +69,19 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   uploading: false,
   conversationId: null,
   searchEnabled: true,
-  isAtBottom: true,
-  scrollToBottomHandler: null,
   systemInstruction: "",
+  activeRequestId: null,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => set({ messages }),
   setConversationId: (id) => set({ conversationId: id }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
   setSystemInstruction: (instruction) =>
     set({ systemInstruction: instruction }),
-  clear: () =>
+  clear: () => {
+    const client = get().chatClient;
+    if (client) {
+      client.abort();
+    }
     set({
       messages: [],
       input: "",
@@ -92,16 +91,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       conversationId: null,
       chatClient: null,
       searchEnabled: true,
-      isAtBottom: true,
-      scrollToBottomHandler: null,
-    }),
-  setIsAtBottom: (value) => set({ isAtBottom: value }),
-  registerScrollToBottom: (fn) => set({ scrollToBottomHandler: fn }),
-  scrollToBottom: () => {
-    const handler = get().scrollToBottomHandler;
-    if (handler) {
-      handler();
-    }
+      activeRequestId: null,
+    });
   },
   addAttachments: async (files) => {
     const { user, loading } = useAuthStore.getState();
@@ -404,10 +395,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   stop: () => {
     const { chatClient } = get();
     if (!chatClient) {
+      set({ pending: false, chatClient: null, activeRequestId: null });
       return;
     }
     chatClient.abort();
-    set({ pending: false, chatClient: null });
+    set({ pending: false, chatClient: null, activeRequestId: null });
   },
   setCurrentModel: (model) => {
     set({ currentModel: model });
@@ -450,12 +442,17 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     const nextMessages = [...existingMessages, userMessage];
 
+    const requestId = generateLocalMessageId();
+
     // Track message IDs for incremental saving
     let localUserMessageId: string | null = null;
     let localAssistantMessageId: string | null = null;
 
     const chatClient = new ChatClient({
       onEvent: (data) => {
+        if (get().activeRequestId !== requestId) {
+          return;
+        }
         if (data.type === "conversation_created") {
           const id =
             typeof data.conversationId === "string"
@@ -652,6 +649,9 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         }
       },
       onError: (error) => {
+        if (get().activeRequestId !== requestId) {
+          return;
+        }
         const message =
           error instanceof Error
             ? error.message
@@ -662,7 +662,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
         });
       },
       onFinish: () => {
-        set({ pending: false, chatClient: null });
+        if (get().activeRequestId !== requestId) {
+          return;
+        }
+
+        set({ pending: false, chatClient: null, activeRequestId: null });
 
         // Unauthenticated users: final save/update
         if (!user && currentConversationId) {
@@ -705,6 +709,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       pending: true,
       chatClient,
       pendingAttachments: [],
+      activeRequestId: requestId,
     });
 
     chatClient.sendMessage(

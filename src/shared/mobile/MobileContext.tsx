@@ -39,7 +39,7 @@ export function MobileProvider({
       cancelAnimationFrame(rafId);
       mediaQuery.removeEventListener("change", handler);
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <MobileContext.Provider value={{ isMobile }}>

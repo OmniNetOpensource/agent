@@ -22,11 +22,18 @@ export function useConversationLoader(conversationId: string | undefined) {
       return;
     }
 
+    const abortController = new AbortController();
+    const { signal } = abortController;
+    let canceled = false;
+
     const load = async () => {
       try {
         // 未登录用户：只从本地读取
         if (!user) {
           const localMessages = await localDB.getMessages(conversationId);
+          if (canceled || signal.aborted) {
+            return;
+          }
           if (!localMessages.length) {
             router.replace("/404");
             return;
@@ -46,6 +53,9 @@ export function useConversationLoader(conversationId: string | undefined) {
               : [],
           }));
 
+          if (canceled || signal.aborted) {
+            return;
+          }
           setConversationId(conversationId);
           setMessages(mapped);
           return;
@@ -53,9 +63,13 @@ export function useConversationLoader(conversationId: string | undefined) {
 
         // 已登录用户：同时查询远端和本地，优先远端，有则用远端，否则退回本地
         const [remoteResult, localResult] = await Promise.allSettled([
-          fetchConversationMessages(conversationId),
+          fetchConversationMessages(conversationId, signal),
           localDB.getMessages(conversationId),
         ]);
+
+        if (canceled || signal.aborted) {
+          return;
+        }
 
         let messagesFromRemote = null as Awaited<
           ReturnType<typeof fetchConversationMessages>
@@ -75,6 +89,9 @@ export function useConversationLoader(conversationId: string | undefined) {
         }
 
         if (messagesFromRemote) {
+          if (canceled || signal.aborted) {
+            return;
+          }
           setConversationId(conversationId);
           setMessages(messagesFromRemote);
           return;
@@ -95,6 +112,9 @@ export function useConversationLoader(conversationId: string | undefined) {
               : [],
           }));
 
+          if (canceled || signal.aborted) {
+            return;
+          }
           setConversationId(conversationId);
           setMessages(mapped);
           return;
@@ -102,6 +122,9 @@ export function useConversationLoader(conversationId: string | undefined) {
 
         router.replace("/404");
       } catch (error) {
+        if (canceled || signal.aborted) {
+          return;
+        }
         if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
@@ -111,7 +134,20 @@ export function useConversationLoader(conversationId: string | undefined) {
     };
 
     void load();
-  }, [authLoading]);
+
+    return () => {
+      canceled = true;
+      abortController.abort();
+    };
+  }, [
+    authLoading,
+    conversationId,
+    currentConversationId,
+    router,
+    setConversationId,
+    setMessages,
+    user,
+  ]);
 
   return { isLoading: conversationId !== currentConversationId };
 }

@@ -103,15 +103,8 @@ export async function POST(req: Request) {
     const createdAt = conv.created_at || new Date().toISOString();
     const updatedAt = conv.updated_at || createdAt;
 
-    conversationRows.push({
-      id: conv.id,
-      user_id: user.id,
-      title: conv.title ?? "新会话",
-      created_at: createdAt,
-      updated_at: updatedAt,
-    });
-
     const messages = Array.isArray(conv.messages) ? conv.messages : [];
+    const beforeCount = messageRows.length;
     for (const msg of messages) {
       if (!msg) continue;
 
@@ -125,6 +118,19 @@ export async function POST(req: Request) {
         created_at: createdAtMsg,
       });
     }
+
+    // Skip syncing conversations that have no messages.
+    if (messageRows.length === beforeCount) {
+      continue;
+    }
+
+    conversationRows.push({
+      id: conv.id,
+      user_id: user.id,
+      title: conv.title ?? "新会话",
+      created_at: createdAt,
+      updated_at: updatedAt,
+    });
   }
 
   if (!conversationRows.length) {
@@ -166,4 +172,3 @@ export async function POST(req: Request) {
     errors: errors.length ? errors : undefined,
   });
 }
-

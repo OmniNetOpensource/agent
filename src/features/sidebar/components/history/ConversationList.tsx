@@ -21,9 +21,7 @@ export function ConversationList() {
   const hasFetchedRemote = useConversationsStore(
     (state) => state.hasFetchedRemote
   );
-  const hasLoadedLocal = useConversationsStore(
-    (state) => state.hasLoadedLocal
-  );
+  const hasLoadedLocal = useConversationsStore((state) => state.hasLoadedLocal);
   const activeConversationId = useChatStore((state) => state.conversationId);
   const { user } = useAuth();
 
