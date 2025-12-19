@@ -31,6 +31,39 @@
           }
         ]
       }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"[console]::beep(1200,200)\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"$raw=[Console]::In.ReadToEnd(); try{$j=$raw|ConvertFrom-Json}catch{$j=$null}; if($j -and ($j.notification_type -eq 'permission_prompt' -or $j.notification_type -eq 'idle_prompt')){[console]::beep(880,250)}\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"[console]::beep(700,120)\""
+          }
+        ]
+      }
     ]
   }
 }

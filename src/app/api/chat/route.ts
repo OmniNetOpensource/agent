@@ -5,7 +5,6 @@ import {
   streamChatCompletion,
   parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
-import { getModelPermissions } from "@/src/features/chat/lib/model-config";
 import type {
   Message,
   ResearchItem,
@@ -96,20 +95,8 @@ export async function POST(req: Request) {
 
     const requestedModel = model;
 
-    const modelPermissions = getModelPermissions(requestedModel);
-    const canSearch = modelPermissions?.canSearch ?? true;
-
-    // Disable tools if:
-    // 1. User explicitly disabled search
-    // 2. Model doesn't support search
-    const tools = searchEnabled === false || !canSearch ? [] : toolSpecs;
-
-    if (!canSearch && searchEnabled !== false) {
-      logger?.log(
-        "MODEL",
-        `Model "${requestedModel}" does not support search, disabling tools.`
-      );
-    }
+    // Disable tools if user explicitly disabled search
+    const tools = searchEnabled === false ? [] : toolSpecs;
 
     logger?.log(
       "TOOLS",

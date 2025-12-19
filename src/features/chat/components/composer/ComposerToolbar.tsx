@@ -18,10 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import {
-  MODEL_CONFIGS,
-  getModelPermissions,
-} from "@/src/features/chat/lib/model-config";
+import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
 
 const MODEL_STORAGE_KEY = "selected-model";
 const SEARCH_ENABLED_STORAGE_KEY = "search-enabled";
@@ -38,13 +35,6 @@ export function ComposerToolbar() {
   const setSystemInstruction = useChatStore(
     (state) => state.setSystemInstruction
   );
-
-  // Model permissions
-  const modelPermissions = currentModel
-    ? getModelPermissions(currentModel)
-    : undefined;
-  const canUpload = modelPermissions?.canUpload ?? true;
-  const canSearch = modelPermissions?.canSearch ?? true;
 
   // Local state
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
@@ -81,11 +71,6 @@ export function ComposerToolbar() {
     }
 
     // --- 搜索功能初始化 ---
-    if (!canSearch) {
-      setSearchEnabled(false);
-      return;
-    }
-
     if (!hasInitializedSearchEnabled.current) {
       hasInitializedSearchEnabled.current = true;
       const stored = window.localStorage.getItem(SEARCH_ENABLED_STORAGE_KEY);
@@ -93,8 +78,7 @@ export function ComposerToolbar() {
         setSearchEnabled(stored === "true");
       }
     }
-    // 把 setCurrentModel、canSearch、setSearchEnabled 作为依赖
-  }, [setCurrentModel, canSearch, setSearchEnabled]);
+  }, [setCurrentModel, setSearchEnabled]);
 
   // Handlers
   const handleSearchToggle = () => {
@@ -106,7 +90,7 @@ export function ComposerToolbar() {
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (uploading || !canUpload) return;
+    if (uploading) return;
 
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -139,34 +123,23 @@ export function ComposerToolbar() {
       {/* Left group: Search & Attachments */}
       <div className="flex items-center gap-1">
         {/* Search toggle */}
-        <span
-          title={
-            canSearch
-              ? "开启后，模型会自主决定是否搜索"
-              : "当前模型不支持搜索功能"
-          }
-        >
+        <span title="开启后，模型会自主决定是否搜索">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={handleSearchToggle}
-            disabled={!canSearch}
             className={cn(
               "group h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
-              !canSearch &&
-                "cursor-not-allowed opacity-50 hover:text-muted-foreground",
-              canSearch &&
-                (searchEnabled
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-muted-foreground hover:text-foreground")
+              searchEnabled
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Globe
               className={cn(
                 "h-3.5 w-3.5 transition-transform",
-                canSearch &&
-                  (searchEnabled ? "scale-110" : "group-hover:scale-110")
+                searchEnabled ? "scale-110" : "group-hover:scale-110"
               )}
             />
             <span>联网</span>
@@ -174,15 +147,7 @@ export function ComposerToolbar() {
         </span>
 
         {/* File picker */}
-        <span
-          title={
-            uploading
-              ? "正在上传附件..."
-              : !canUpload
-              ? "当前模型不支持上传附件"
-              : "添加附件"
-          }
-        >
+        <span title={uploading ? "正在上传附件..." : "添加附件"}>
           <input
             type="file"
             multiple
@@ -196,7 +161,7 @@ export function ComposerToolbar() {
             variant="ghost"
             size="sm"
             onClick={handlePickFiles}
-            disabled={uploading || !canUpload}
+            disabled={uploading}
             className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? (

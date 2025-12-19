@@ -16,7 +16,6 @@ import {
   useIsNewChat,
 } from "@/src/features/chat/store/useChatStore";
 import { ComposerToolbar } from "./ComposerToolbar";
-import { getModelPermissions } from "@/src/features/chat/lib/model-config";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -96,12 +95,6 @@ export function Composer() {
     adjustTextareaHeight();
   }, [input]);
 
-  // Get model permissions
-  const modelPermissions = currentModel
-    ? getModelPermissions(currentModel)
-    : undefined;
-  const canUpload = modelPermissions?.canUpload ?? true;
-
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const clipboardData = event.clipboardData;
     if (!clipboardData) {
@@ -130,11 +123,6 @@ export function Composer() {
 
     event.preventDefault();
 
-    if (!canUpload) {
-      toast.warning("当前模型不支持上传附件");
-      return;
-    }
-
     if (uploading) {
       toast.info("正在上传附件，请稍后再试。");
       return;
@@ -146,14 +134,11 @@ export function Composer() {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const hasModel = !!currentModel;
-  // Disable send if model doesn't allow uploads but attachments exist
-  const hasInvalidAttachments = hasAttachments && !canUpload;
   const sendDisabled = pending
     ? false
     : (!hasText && !hasAttachments) ||
       !hasModel ||
-      uploading ||
-      hasInvalidAttachments;
+      uploading;
   const isNewchat = useIsNewChat();
 
   const formClassName = isNewchat
@@ -172,11 +157,6 @@ export function Composer() {
       <div className="relative flex w-full flex-col gap-1 rounded-3xl border bg-card p-2 shadow-lg transition-all focus-within:border-ring focus-within:shadow-xl">
         {hasAttachments && (
           <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0">
-            {hasInvalidAttachments && (
-              <div className="w-full rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                当前模型不支持上传附件，请先移除附件或切换模型
-              </div>
-            )}
             {pendingAttachments.map((attachment) =>
               attachment.kind === "image" ? (
                 <div key={attachment.id} className="group relative">
