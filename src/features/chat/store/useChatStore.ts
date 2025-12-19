@@ -88,7 +88,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       uploading: false,
       conversationId: null,
       chatClient: null,
-      searchEnabled: true,
       activeRequestId: null,
     });
   },

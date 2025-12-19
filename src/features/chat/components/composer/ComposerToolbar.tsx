@@ -39,9 +39,9 @@ export function ComposerToolbar() {
   // Local state
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [instructionOpen, setInstructionOpen] = useState(false);
-  const [instructionDraft, setInstructionDraft] = useState(systemInstruction);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasInitializedSearchEnabled = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentModelLabel =
     MODEL_CONFIGS.find((m) => m.id === currentModel)?.label ?? "";
@@ -101,21 +101,13 @@ export function ComposerToolbar() {
 
   const handlePickFiles = () => fileInputRef.current?.click();
 
-  const handleInstructionOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      setInstructionDraft(systemInstruction);
+  const handleInstructionChange = (value: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
-    setInstructionOpen(nextOpen);
-  };
-
-  const handleInstructionConfirm = () => {
-    setSystemInstruction(instructionDraft.trim());
-    setInstructionOpen(false);
-  };
-
-  const handleInstructionCancel = () => {
-    setInstructionDraft(systemInstruction);
-    setInstructionOpen(false);
+    debounceTimerRef.current = setTimeout(() => {
+      setSystemInstruction(value.trim());
+    }, 400);
   };
 
   return (
@@ -178,7 +170,7 @@ export function ComposerToolbar() {
         {/* Custom instruction */}
         <Popover
           open={instructionOpen}
-          onOpenChange={handleInstructionOpenChange}
+          onOpenChange={setInstructionOpen}
         >
           <PopoverTrigger asChild>
             <Button
@@ -206,30 +198,11 @@ export function ComposerToolbar() {
               </div>
               <Textarea
                 rows={4}
-                value={instructionDraft}
-                onChange={(event) => setInstructionDraft(event.target.value)}
+                defaultValue={systemInstruction}
+                onChange={(event) => handleInstructionChange(event.target.value)}
                 placeholder="例如：你是一名擅长解释代码的前端导师，回答要简洁、分点。"
                 className="h-32 resize-none overflow-y-auto text-sm"
               />
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={handleInstructionCancel}
-                >
-                  取消
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={handleInstructionConfirm}
-                >
-                  确定
-                </Button>
-              </div>
             </div>
           </PopoverContent>
         </Popover>
