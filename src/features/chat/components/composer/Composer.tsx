@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ChangeEvent,
   ClipboardEvent,
   FormEvent,
   KeyboardEvent,
@@ -10,14 +9,13 @@ import {
 } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import {
   useChatStore,
   useIsNewChat,
 } from "@/src/features/chat/store/useChatStore";
-import { ModelSelector } from "./ModelSelector";
-import { CustomInstructionButton } from "./CustomInstructionButton";
+import { ComposerToolbar } from "./ComposerToolbar";
 import { getModelPermissions } from "@/src/features/chat/lib/model-config";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,8 +32,6 @@ export function Composer() {
   const setInput = useChatStore((state) => state.setInput);
   const addAttachments = useChatStore((state) => state.addAttachments);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
-  const searchEnabled = useChatStore((state) => state.searchEnabled);
-  const setSearchEnabled = useChatStore((state) => state.setSearchEnabled);
   const sendMessage = useChatStore((state) => state.sendMessage);
   const stop = useChatStore((state) => state.stop);
 
@@ -61,7 +57,6 @@ export function Composer() {
   };
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -106,7 +101,6 @@ export function Composer() {
     ? getModelPermissions(currentModel)
     : undefined;
   const canUpload = modelPermissions?.canUpload ?? true;
-  const canSearch = modelPermissions?.canSearch ?? true;
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const clipboardData = event.clipboardData;
@@ -148,28 +142,6 @@ export function Composer() {
 
     void addAttachments(pastedFiles);
   };
-
-  // Force searchEnabled to false if model doesn't support search
-  useEffect(() => {
-    if (!canSearch && searchEnabled) {
-      setSearchEnabled(false);
-    }
-  }, [canSearch, searchEnabled, setSearchEnabled]);
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (uploading || !canUpload) {
-      return;
-    }
-
-    const files = event.target.files;
-    if (!files || files.length === 0) {
-      return;
-    }
-    await addAttachments(Array.from(files));
-    event.target.value = "";
-  };
-
-  const handlePickFiles = () => fileInputRef.current?.click();
 
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
@@ -262,15 +234,6 @@ export function Composer() {
         )}
 
         <div className="flex w-full items-end gap-2">
-          <input
-            type="file"
-            multiple
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*,.pdf,.doc,.docx,.txt,audio/*,video/*"
-            className="hidden"
-          />
-
           <Textarea
             ref={textareaRef}
             id="message-input"
@@ -312,71 +275,7 @@ export function Composer() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-1">
-            <span
-              title={
-                canSearch
-                  ? "开启后，模型会自主决定是否搜索"
-                  : "当前模型不支持搜索功能"
-              }
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchEnabled(!searchEnabled)}
-                disabled={!canSearch}
-                className={cn(
-                  "group h-7 gap-1.5 rounded-full px-2 text-xs font-medium",
-                  !canSearch &&
-                    "cursor-not-allowed opacity-50 hover:text-muted-foreground",
-                  canSearch &&
-                    (searchEnabled
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-muted-foreground hover:text-foreground")
-                )}
-              >
-                <Globe
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    canSearch &&
-                      (searchEnabled ? "scale-110" : "group-hover:scale-110")
-                  )}
-                />
-                <span>联网</span>
-              </Button>
-            </span>
-            <span
-              title={
-                uploading
-                  ? "正在上传附件..."
-                  : !canUpload
-                  ? "当前模型不支持上传附件"
-                  : "添加附件"
-              }
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handlePickFiles}
-                disabled={uploading || !canUpload}
-                className="h-7 gap-1.5 rounded-full px-2 text-xs font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {uploading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Paperclip className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <CustomInstructionButton />
-            <ModelSelector />
-          </div>
-        </div>
+        <ComposerToolbar />
       </div>
     </form>
   );

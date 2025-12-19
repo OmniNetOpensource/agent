@@ -104,7 +104,7 @@ export const createConversationLogger = (): ConversationLogger => {
   return {
     log: (category: string, message: string, data?: unknown) => {
       appendLine(category, message, data);
-      // console.log(`[${category}]`, message, data);
+      console.log(`[${category}]`, message, data);
     },
   };
 };

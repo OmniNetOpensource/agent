@@ -19,8 +19,18 @@
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "shadcn"
-  ],
-  "outputStyle": "default"
+  "enabledMcpjsonServers": ["shadcn"],
+  "outputStyle": "default",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"[console]::beep(1000,300)\""
+          }
+        ]
+      }
+    ]
+  }
 }

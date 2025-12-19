@@ -64,7 +64,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   input: "",
   pending: false,
   chatClient: null,
-  currentModel: MODEL_CONFIGS[0]?.id ?? "",
+  currentModel: "",
   pendingAttachments: [],
   uploading: false,
   conversationId: null,
