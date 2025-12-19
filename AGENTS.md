@@ -241,5 +241,4 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 - Use plain, natural language (avoid jargon)
 - Take time with implementation; be detailed
 - frontend style need to fit in the current project's style
-- write plan first .不要说可选，告诉我你的确定的计划（而不是可选）. when i say go, you could just edit without my permission.
 - 不需要运行 pnpm 或者 npm 等命令

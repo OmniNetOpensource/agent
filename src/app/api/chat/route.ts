@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       systemInstruction,
     } = (await req.json()) as ChatRequest;
 
-    logger = createConversationLogger(conversationId ?? null);
+    logger = createConversationLogger();
 
     logger?.log("FRONTEND", "Received chat request", {
       conversationId,
@@ -96,23 +96,13 @@ export async function POST(req: Request) {
 
     const requestedModel = model;
 
-    const isGeminiModel = requestedModel.toLowerCase().includes("gemini");
     const modelPermissions = getModelPermissions(requestedModel);
     const canSearch = modelPermissions?.canSearch ?? true;
 
     // Disable tools if:
     // 1. User explicitly disabled search
-    // 2. Model is Gemini (legacy check)
-    // 3. Model doesn't support search
-    const tools =
-      searchEnabled === false || isGeminiModel || !canSearch ? [] : toolSpecs;
-
-    if (isGeminiModel && searchEnabled !== false) {
-      logger?.log(
-        "MODEL",
-        "Detected Gemini model, disabling tools to avoid missing reasoning details / thought_signature errors."
-      );
-    }
+    // 2. Model doesn't support search
+    const tools = searchEnabled === false || !canSearch ? [] : toolSpecs;
 
     if (!canSearch && searchEnabled !== false) {
       logger?.log(

@@ -17,15 +17,6 @@ const ensureLogDirectory = () => {
   }
 };
 
-const normalizeConversationId = (conversationId: string | null | undefined) => {
-  const rawId =
-    typeof conversationId === "string" && conversationId.trim().length > 0
-      ? conversationId
-      : `session_${Date.now()}`;
-
-  return rawId.replace(/[^a-zA-Z0-9_-]/g, "_");
-};
-
 const formatTimestamp = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -75,9 +66,7 @@ const safeSerialize = (value: unknown): string => {
   }
 };
 
-export const createConversationLogger = (
-  conversationId: string | null | undefined
-): ConversationLogger => {
+export const createConversationLogger = (): ConversationLogger => {
   const shouldWriteToFile = process.env.NODE_ENV !== "production";
   const creationTime = new Date();
   const timestampPrefix = formatTimestamp(creationTime);
@@ -86,8 +75,7 @@ export const createConversationLogger = (
     ensureLogDirectory();
   }
 
-  const safeId = normalizeConversationId(conversationId);
-  const filePath = path.join(LOG_BASE_DIR, `${timestampPrefix}_${safeId}.log`);
+  const filePath = path.join(LOG_BASE_DIR, `${timestampPrefix}.log`);
 
   const appendLine = (category: string, message: string, data?: unknown) => {
     if (!shouldWriteToFile) {
