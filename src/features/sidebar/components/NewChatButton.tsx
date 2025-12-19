@@ -1,17 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNewChat } from "@/src/features/chat/hooks/useNewChat";
+import { NewChatButton as NewChatLogic } from "@/src/shared/components/NewChatButton";
 
 interface NewChatButtonProps {
   isCollapsed?: boolean;
 }
 
 export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
-  const { handleNewChat } = useNewChat();
-
   return (
     <Button
       asChild
@@ -20,7 +17,7 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
       style={{ width: isCollapsed ? 40 : "100%" }}
       aria-label="新对话"
     >
-      <Link href="/app" onClick={handleNewChat}>
+      <NewChatLogic href="/app">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center">
           <Plus className="h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
         </span>
@@ -33,7 +30,7 @@ export function NewChatButton({ isCollapsed = false }: NewChatButtonProps) {
         >
           新对话
         </span>
-      </Link>
+      </NewChatLogic>
     </Button>
   );
 }
