@@ -11,21 +11,13 @@ import type {
   ToolProgress,
 } from "@/src/features/chat/types/chat";
 import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";
-import { createSupabaseServerClient } from "@/shared/lib/supabase/server";
-import { hasSupabaseConfig } from "@/shared/lib/supabase/config";
 import type { ChatRequest } from "@/src/features/chat/types/chat";
 import {
-  buildAssistantBlocks,
   buildSystemPrompt,
   ChatMessage,
   StreamToolCall,
   toChatMessages,
 } from "./utils";
-import {
-  ensureConversation,
-  SavedMessageIds,
-  saveMessages,
-} from "./repository";
 import {
   ConversationLogger,
   createConversationLogger,
@@ -108,30 +100,6 @@ export async function POST(req: Request) {
       )
     );
 
-    const supabase = hasSupabaseConfig()
-      ? await createSupabaseServerClient()
-      : null;
-
-    let supabaseUser: { id: string } | null = null;
-    if (supabase) {
-      logger?.log("DATABASE", "Authenticating user with Supabase");
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-      if (authError) {
-        logger?.log("DATABASE", "Supabase auth error", {
-          error: authError.message,
-          code: authError.status,
-        });
-      } else {
-        logger?.log("DATABASE", "User authenticated", {
-          userId: user?.id ?? null,
-        });
-      }
-      supabaseUser = user ?? null;
-    }
-
     let activeConversationId = conversationId ?? null;
     let conversationCreatedEvent: {
       type: "conversation_created";
@@ -147,33 +115,7 @@ export async function POST(req: Request) {
       blocks: Array.isArray(message.blocks) ? message.blocks : [],
     }));
 
-    if (supabaseUser && supabase) {
-      if (!activeConversationId) {
-        activeConversationId = generateConversationId();
-        logger?.log("DATABASE", "Generated new conversation ID", {
-          conversationId: activeConversationId,
-        });
-      }
-      logger?.log("DATABASE", "Ensuring conversation exists", {
-        conversationId: activeConversationId,
-        userId: supabaseUser.id,
-      });
-      const result = await ensureConversation(
-        supabase,
-        supabaseUser,
-        activeConversationId,
-        latestUserMessage
-      );
-      activeConversationId = result.conversationId;
-      conversationCreatedEvent = result.event;
-      if (result.event) {
-        logger?.log("DATABASE", "Conversation created", result.event);
-      } else {
-        logger?.log("DATABASE", "Conversation already exists", {
-          conversationId: result.conversationId,
-        });
-      }
-    } else if (!activeConversationId) {
+    if (!activeConversationId) {
       const newId = generateConversationId();
       activeConversationId = newId;
       const title = buildConversationTitle(latestUserMessage);
@@ -211,12 +153,6 @@ export async function POST(req: Request) {
         let iteration = 0;
         let finalAssistantMessage: string | null = null;
         let streamClosed = false;
-        const messageIds: SavedMessageIds = {
-          userMessageId: null,
-          assistantMessageId: null,
-          userCreatedAt: null,
-          assistantCreatedAt: null,
-        };
 
         const sendToClient = (eventType: string, data: unknown) => {
           const eventData =
@@ -230,33 +166,6 @@ export async function POST(req: Request) {
 
         if (conversationCreatedEvent) {
           sendToClient("conversation_created", conversationCreatedEvent);
-        }
-
-        // Authenticated users: pre-save latest user message so conversations never stay empty.
-        if (supabaseUser && supabase && activeConversationId) {
-          try {
-            logger?.log("DATABASE", "Pre-saving user message", {
-              conversationId: activeConversationId,
-            });
-            await saveMessages(
-              supabase,
-              activeConversationId,
-              latestUserMessage,
-              [],
-              messageIds
-            );
-            logger?.log("DATABASE", "User message pre-saved", {
-              userMessageId: messageIds.userMessageId,
-            });
-          } catch (error) {
-            logger?.log(
-              "DATABASE",
-              "Failed to pre-save user message",
-              error instanceof Error
-                ? { message: error.message, stack: error.stack }
-                : error
-            );
-          }
         }
 
         const closeStream = () => {
@@ -485,28 +394,6 @@ export async function POST(req: Request) {
               reasoning: currentReasoning || undefined,
             });
 
-            // Authenticated users: save to Supabase
-            if (supabaseUser && supabase && activeConversationId) {
-              const partialAssistantBlocks = buildAssistantBlocks(
-                researchItems,
-                assistantMessage || null
-              );
-              logger?.log("DATABASE", "Saving partial assistant message", {
-                conversationId: activeConversationId,
-                blockCount: partialAssistantBlocks.length,
-              });
-              await saveMessages(
-                supabase,
-                activeConversationId,
-                latestUserMessage,
-                partialAssistantBlocks,
-                messageIds
-              );
-              logger?.log("DATABASE", "Partial assistant message saved", {
-                assistantMessageId: messageIds.assistantMessageId,
-              });
-            }
-
             // All users: send conversation_updated event
             if (activeConversationId) {
               const updatedEvent = {
@@ -656,29 +543,6 @@ export async function POST(req: Request) {
             finalAssistantMessage =
               finalAssistantMessage ?? "\n\n[已达到最大工具调用次数限制]";
             closeStream();
-          }
-
-          const assistantBlocks = buildAssistantBlocks(
-            researchItems,
-            finalAssistantMessage
-          );
-
-          // Authenticated users: save to Supabase
-          if (supabaseUser && supabase && activeConversationId) {
-            logger?.log("DATABASE", "Saving final assistant message", {
-              conversationId: activeConversationId,
-              blockCount: assistantBlocks.length,
-            });
-            await saveMessages(
-              supabase,
-              activeConversationId,
-              latestUserMessage,
-              assistantBlocks,
-              messageIds
-            );
-            logger?.log("DATABASE", "Final assistant message saved", {
-              assistantMessageId: messageIds.assistantMessageId,
-            });
           }
 
           // All users: send conversation_updated event

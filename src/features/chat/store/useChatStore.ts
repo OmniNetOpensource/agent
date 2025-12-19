@@ -8,16 +8,14 @@ import {
 import {
   MAX_ATTACHMENT_SIZE,
   detectAttachmentKind,
-  uploadFileToStorage,
+  convertFileToBase64,
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { ChatClient } from "@/src/features/chat/lib/chat-client";
-import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
 import { toast } from "@/src/shared/toast";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
-import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
 
 export type ChatState = {
   messages: Message[];
@@ -95,18 +93,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     });
   },
   addAttachments: async (files) => {
-    const { user, loading } = useAuthStore.getState();
-
-    if (loading) {
-      toast.info("正在加载登录状态，请稍后再试。");
-      return;
-    }
-
-    if (!user) {
-      toast.warning("请先登录后再上传文件。");
-      return;
-    }
-
     const items = Array.from(files || []);
     if (items.length === 0) {
       return;
@@ -129,7 +115,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
       try {
         const mimeType = file.type || "application/octet-stream";
-        const url = await uploadFileToStorage(file, user.id);
+        const url = await convertFileToBase64(file);
         attachments.push({
           id:
             typeof crypto !== "undefined" && crypto.randomUUID
@@ -425,7 +411,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     const systemInstruction = get().systemInstruction;
     let currentConversationId = get().conversationId;
     const existingMessages = get().messages;
-    const { user } = useAuthStore.getState();
 
     const userBlocks: ContentBlock[] = [];
     if (trimmed) {
@@ -444,9 +429,56 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     const requestId = generateLocalMessageId();
 
-    // Track message IDs for incremental saving
-    let localUserMessageId: string | null = null;
-    let localAssistantMessageId: string | null = null;
+    const normalizeMessages = (messages: Message[]) =>
+      messages.map((msg) => ({
+        role: msg.role,
+        blocks: Array.isArray(msg.blocks)
+          ? msg.blocks.map((block) => {
+              if (block.type === "research") {
+                return {
+                  ...block,
+                  items: block.items.map((item) => ({ ...item })),
+                };
+              }
+              if (block.type === "attachments") {
+                return {
+                  ...block,
+                  attachments: block.attachments.map((attachment) => ({
+                    ...attachment,
+                  })),
+                };
+              }
+              return { ...block };
+            })
+          : [],
+      }));
+
+    const persistLocalConversation = async (
+      id: string,
+      options?: {
+        title?: string;
+        created_at?: string;
+        updated_at?: string;
+        messages?: Message[];
+      }
+    ) => {
+      const now = options?.updated_at ?? new Date().toISOString();
+      const existing = await localDB.get(id);
+      const messages = normalizeMessages(options?.messages ?? get().messages);
+      const title =
+        options?.title ??
+        existing?.title ??
+        buildConversationTitle(userMessage);
+      const created_at = options?.created_at ?? existing?.created_at ?? now;
+
+      await localDB.save({
+        id,
+        title,
+        messages,
+        created_at,
+        updated_at: now,
+      });
+    };
 
     const chatClient = new ChatClient({
       onEvent: (data) => {
@@ -486,28 +518,16 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
               updated_at,
             });
 
-            if (!user) {
-              const localTitle =
-                existingMessages.length === 0
-                  ? buildConversationTitle(userMessage)
-                  : title;
-              void localDB.saveConversation({
-                id,
-                title: localTitle,
-                created_at,
-                updated_at,
-              });
-
-              // Immediately save user message
-              localUserMessageId = generateLocalMessageId();
-              void localDB.saveMessage({
-                id: localUserMessageId,
-                conversation_id: id,
-                role: "user",
-                blocks: userMessage.blocks,
-                created_at,
-              });
-            }
+            const localTitle =
+              existingMessages.length === 0
+                ? buildConversationTitle(userMessage)
+                : title;
+            void persistLocalConversation(id, {
+              title: localTitle,
+              created_at,
+              updated_at,
+              messages: get().messages,
+            });
 
             navigate?.(`/app/c/${id}`);
           }
@@ -525,34 +545,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
               : new Date().toISOString();
 
           if (id) {
-            // Unauthenticated users: incrementally save assistant message
-            if (!user) {
-              const allMessages = get().messages;
-              const assistant = [...allMessages]
-                .reverse()
-                .find((m) => m.role === "assistant");
-
-              if (assistant) {
-                if (!localAssistantMessageId) {
-                  localAssistantMessageId = generateLocalMessageId();
-                }
-                void localDB.saveMessage({
-                  id: localAssistantMessageId,
-                  conversation_id: id,
-                  role: "assistant",
-                  blocks: assistant.blocks,
-                  created_at: updated_at,
-                });
-              }
-
-              // Update conversation timestamp
-              void (async () => {
-                const existing = await localDB.getConversation(id);
-                if (existing) {
-                  await localDB.saveConversation({ ...existing, updated_at });
-                }
-              })();
-            }
+            void persistLocalConversation(id, { updated_at });
 
             // Update conversations store
             const { conversations, setConversations } =
@@ -668,37 +661,11 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
         set({ pending: false, chatClient: null, activeRequestId: null });
 
-        // Unauthenticated users: final save/update
-        if (!user && currentConversationId) {
+        if (currentConversationId) {
           const now = new Date().toISOString();
-          const allMessages = get().messages;
-          const assistant = [...allMessages]
-            .reverse()
-            .find((m) => m.role === "assistant");
-
-          // If assistant message exists but hasn't been saved yet (no tool calls scenario)
-          if (assistant) {
-            if (!localAssistantMessageId) {
-              localAssistantMessageId = generateLocalMessageId();
-            }
-            void localDB.saveMessage({
-              id: localAssistantMessageId,
-              conversation_id: currentConversationId,
-              role: "assistant",
-              blocks: assistant.blocks,
-              created_at: now,
-            });
-          }
-
-          // Update conversation timestamp
-          void (async () => {
-            const existing = await localDB.getConversation(
-              currentConversationId as string
-            );
-            if (existing) {
-              await localDB.saveConversation({ ...existing, updated_at: now });
-            }
-          })();
+          void persistLocalConversation(currentConversationId, {
+            updated_at: now,
+          });
         }
       },
     });
@@ -711,6 +678,13 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       pendingAttachments: [],
       activeRequestId: requestId,
     });
+
+    if (currentConversationId) {
+      void persistLocalConversation(currentConversationId, {
+        updated_at: new Date().toISOString(),
+        messages: nextMessages,
+      });
+    }
 
     chatClient.sendMessage(
       nextMessages,

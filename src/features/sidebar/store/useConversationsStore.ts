@@ -8,14 +8,12 @@ import {
 type ConversationsState = {
   conversations: Conversation[];
   conversationsLoading: boolean;
-  hasFetchedRemote: boolean;
   hasLoadedLocal: boolean;
 };
 
 type ConversationsActions = {
   addConversation: (conversation: Conversation) => void;
   setConversations: (conversations: Conversation[]) => void;
-  fetchConversations: () => Promise<void>;
   loadLocalConversations: () => Promise<void>;
   clearLocal: () => Promise<void>;
 };
@@ -60,7 +58,6 @@ export const useConversationsStore = create<
 >((set, get) => ({
   conversations: [],
   conversationsLoading: false,
-  hasFetchedRemote: false,
   hasLoadedLocal: false,
 
   addConversation: (conversation) =>
@@ -81,60 +78,16 @@ export const useConversationsStore = create<
       ]),
     })),
 
-  fetchConversations: async () => {
-    let skip = false;
-    set((state) => {
-      if (state.hasFetchedRemote || state.conversationsLoading) {
-        skip = true;
-        return state;
-      }
-      return { ...state, conversationsLoading: true };
-    });
-
-    if (skip) {
-      return;
-    }
-
-    let fetched = false;
-    try {
-      const res = await fetch("/api/conversations?limit=10");
-      const data = await res.json();
-
-      if (Array.isArray(data?.conversations)) {
-        fetched = true;
-        const remoteConversations: Conversation[] = data.conversations.map(
-          (conv: Conversation) => ({
-            ...conv,
-            source: "remote",
-          })
-        );
-        set((state) => ({
-          conversations: mergeAndSortConversations(
-            state.conversations,
-            remoteConversations
-          ),
-          hasFetchedRemote: true,
-        }));
-      }
-    } catch (error) {
-      console.error("Failed to fetch conversations:", error);
-    } finally {
-      set((state) => ({
-        ...state,
-        conversationsLoading: false,
-        hasFetchedRemote: state.hasFetchedRemote || fetched,
-      }));
-    }
-  },
-
   loadLocalConversations: async () => {
-    const { hasLoadedLocal } = get();
-    if (hasLoadedLocal) {
+    const { hasLoadedLocal, conversationsLoading } = get();
+    if (hasLoadedLocal || conversationsLoading) {
       return;
     }
 
+    set((state) => ({ ...state, conversationsLoading: true }));
+
     try {
-      const localConversations = await localDB.getConversations();
+      const localConversations = await localDB.getAll();
       const mapped: Conversation[] = localConversations.map(
         mapLocalToConversation
       );
@@ -142,25 +95,28 @@ export const useConversationsStore = create<
       set((state) => ({
         conversations: mergeAndSortConversations(state.conversations, mapped),
         hasLoadedLocal: true,
+        conversationsLoading: false,
       }));
     } catch (error) {
       console.error("Failed to load local conversations:", error);
-      set((state) => ({ ...state, hasLoadedLocal: true }));
+      set((state) => ({
+        ...state,
+        hasLoadedLocal: true,
+        conversationsLoading: false,
+      }));
     }
   },
 
   clearLocal: async () => {
     try {
-      await localDB.clearAll();
+      await localDB.clear();
     } catch (error) {
       console.error("Failed to clear local conversations:", error);
     }
 
     set((state) => ({
       ...state,
-      conversations: state.conversations.filter(
-        (conversation) => conversation.user_id
-      ),
+      conversations: [],
       hasLoadedLocal: true,
     }));
   },

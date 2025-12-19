@@ -1,8 +1,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import { fetchConversationMessages } from "@/src/features/chat/lib/api";
-import { useAuthStore } from "@/src/features/auth/store/useAuthStore";
 import { localDB } from "@/src/shared/lib/indexed-db";
 
 export function useConversationLoader(conversationId: string | undefined) {
@@ -10,14 +8,8 @@ export function useConversationLoader(conversationId: string | undefined) {
   const currentConversationId = useChatStore((state) => state.conversationId);
   const setMessages = useChatStore((state) => state.setMessages);
   const setConversationId = useChatStore((state) => state.setConversationId);
-  const user = useAuthStore((state) => state.user);
-  const authLoading = useAuthStore((state) => state.loading);
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
-
     if (!conversationId || currentConversationId === conversationId) {
       return;
     }
@@ -28,99 +20,43 @@ export function useConversationLoader(conversationId: string | undefined) {
 
     const load = async () => {
       try {
-        // 未登录用户：只从本地读取
-        if (!user) {
-          const localMessages = await localDB.getMessages(conversationId);
-          if (canceled || signal.aborted) {
-            return;
-          }
-          if (!localMessages.length) {
-            router.replace("/404");
-            return;
-          }
-
-          const mapped = localMessages.map((msg) => ({
-            role: msg.role,
-            blocks: Array.isArray(msg.blocks)
-              ? msg.blocks.map((block) =>
-                  block.type === "research"
-                    ? {
-                        ...block,
-                        items: block.items.map((item) => ({ ...item })),
-                      }
-                    : { ...block }
-                )
-              : [],
-          }));
-
-          if (canceled || signal.aborted) {
-            return;
-          }
-          setConversationId(conversationId);
-          setMessages(mapped);
+        const conversation = await localDB.get(conversationId);
+        if (canceled || signal.aborted) {
           return;
         }
 
-        // 已登录用户：同时查询远端和本地，优先远端，有则用远端，否则退回本地
-        const [remoteResult, localResult] = await Promise.allSettled([
-          fetchConversationMessages(conversationId, signal),
-          localDB.getMessages(conversationId),
-        ]);
+        if (!conversation) {
+          router.replace("/404");
+          return;
+        }
+
+        const mapped = (conversation.messages ?? []).map((msg) => ({
+          role: msg.role,
+          blocks: Array.isArray(msg.blocks)
+            ? msg.blocks.map((block) =>
+                block.type === "research"
+                  ? {
+                      ...block,
+                      items: block.items.map((item) => ({ ...item })),
+                    }
+                  : block.type === "attachments"
+                  ? {
+                      ...block,
+                      attachments: block.attachments.map((att) => ({
+                        ...att,
+                      })),
+                    }
+                  : { ...block }
+              )
+            : [],
+        }));
 
         if (canceled || signal.aborted) {
           return;
         }
 
-        let messagesFromRemote = null as Awaited<
-          ReturnType<typeof fetchConversationMessages>
-        > | null;
-        if (remoteResult.status === "fulfilled" && remoteResult.value.length) {
-          messagesFromRemote = remoteResult.value;
-        }
-
-        let messagesFromLocal = null as Awaited<
-          ReturnType<typeof localDB.getMessages>
-        > | null;
-        if (
-          localResult.status === "fulfilled" &&
-          localResult.value.length > 0
-        ) {
-          messagesFromLocal = localResult.value;
-        }
-
-        if (messagesFromRemote) {
-          if (canceled || signal.aborted) {
-            return;
-          }
-          setConversationId(conversationId);
-          setMessages(messagesFromRemote);
-          return;
-        }
-
-        if (messagesFromLocal) {
-          const mapped = messagesFromLocal.map((msg) => ({
-            role: msg.role,
-            blocks: Array.isArray(msg.blocks)
-              ? msg.blocks.map((block) =>
-                  block.type === "research"
-                    ? {
-                        ...block,
-                        items: block.items.map((item) => ({ ...item })),
-                      }
-                    : { ...block }
-                )
-              : [],
-          }));
-
-          if (canceled || signal.aborted) {
-            return;
-          }
-          setConversationId(conversationId);
-          setMessages(mapped);
-          return;
-        }
-
-        router.replace("/404");
+        setConversationId(conversationId);
+        setMessages(mapped);
       } catch (error) {
         if (canceled || signal.aborted) {
           return;
@@ -140,13 +76,11 @@ export function useConversationLoader(conversationId: string | undefined) {
       abortController.abort();
     };
   }, [
-    authLoading,
     conversationId,
     currentConversationId,
     router,
     setConversationId,
     setMessages,
-    user,
   ]);
 
   return { isLoading: conversationId !== currentConversationId };

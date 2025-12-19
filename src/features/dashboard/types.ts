@@ -1,6 +1,7 @@
 export type DashboardStatsResponse = {
   userMessageCount: number;
   conversationCount: number;
+  isLocalOnly?: boolean;
 };
 
 export type LocalDashboardStats = {

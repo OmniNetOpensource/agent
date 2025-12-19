@@ -72,6 +72,16 @@ export const toChatMessages = (history: Message[]): ChatMessage[] =>
       );
 
       const contentParts: unknown[] = [];
+      const toBase64Payload = (source: string) => {
+        if (!source) {
+          return source;
+        }
+        if (!source.startsWith("data:")) {
+          return source;
+        }
+        const commaIndex = source.indexOf(",");
+        return commaIndex >= 0 ? source.slice(commaIndex + 1) : source;
+      };
 
       for (const block of relevantBlocks) {
         if (block.type === "content") {
@@ -98,9 +108,10 @@ export const toChatMessages = (history: Message[]): ChatMessage[] =>
                 video_url: { url: source },
               });
             } else {
+              const fileData = toBase64Payload(source);
               contentParts.push({
                 type: "file",
-                file: { filename: att.name, file_data: source },
+                file: { filename: att.name, file_data: fileData },
               });
             }
           }

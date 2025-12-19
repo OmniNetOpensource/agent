@@ -3,26 +3,19 @@
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSync } from "@/src/features/dashboard/hooks/useSync";
-import type {
-  DashboardStatsResponse,
-  LocalDashboardStats,
-} from "@/src/features/dashboard/types";
+import type { LocalDashboardStats } from "@/src/features/dashboard/types";
 import { toast } from "@/src/shared/toast";
 
 type SyncSectionProps = {
   localStats: LocalDashboardStats | null;
-  remoteStats: DashboardStatsResponse | null;
-  unauthorized: boolean;
   onSynced: () => Promise<void> | void;
 };
 
 export function SyncSection({
   localStats,
-  remoteStats,
-  unauthorized,
   onSynced,
 }: SyncSectionProps) {
-  const { sync, syncing, error, result } = useSync();
+  const { sync, syncing, error, result, disabled } = useSync();
 
   const localConversationCount = localStats?.conversationCount ?? 0;
   const localMessageCount = localStats?.messageCount ?? 0;
@@ -32,6 +25,11 @@ export function SyncSection({
   }
 
   const handleSync = async () => {
+    if (disabled) {
+      toast.info("云同步暂不可用。");
+      return;
+    }
+
     const confirmed = window.confirm(
       "确定将本地会话同步到云端吗？同步成功后本地数据会被清除。"
     );
@@ -77,13 +75,11 @@ export function SyncSection({
 
       <div className="flex items-center justify-between gap-3">
         <div className="text-xs text-(--text-tertiary)">
-          {unauthorized
-            ? "登录后才能将本地会话同步到云端账户。"
-            : remoteStats
-            ? "将本地会话同步到当前登录账号的云端会话列表中。"
+          {disabled
+            ? "云同步功能暂未开放，本地会话仅保存在当前浏览器。"
             : "将本地会话同步到云端账号中。"}
         </div>
-        {!unauthorized && (
+        {!disabled && (
           <Button
             type="button"
             size="sm"
