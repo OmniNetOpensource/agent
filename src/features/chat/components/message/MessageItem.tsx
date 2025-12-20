@@ -64,6 +64,15 @@ export const MessageItem = memo(function MessageItem({
   isStreaming,
 }: MessageItemProps) {
   const isUser = message.role === "user";
+  const attachmentBlocks = message.blocks.filter(
+    (
+      block
+    ): block is Extract<Message["blocks"][number], { type: "attachments" }> =>
+      block.type === "attachments"
+  );
+  const contentBlocks = message.blocks.filter(
+    (block) => block.type !== "attachments"
+  );
 
   return (
     <div
@@ -73,123 +82,121 @@ export const MessageItem = memo(function MessageItem({
         isUser ? "ml-auto max-w-[90%] sm:max-w-[85%]" : "mr-auto w-full"
       )}
     >
-      <div
-        className={cn(
-          "rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 transition-all",
-          isUser ? "bg-muted text-foreground" : "bg-transparent"
-        )}
-      >
-        {isUser ? (
-          <div className="flex flex-col space-y-4">
-            {message.blocks.map((block, blockIndex) => {
-              const blockKey = `${index}-${blockIndex}`;
+      {isUser && attachmentBlocks.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto">
+          {attachmentBlocks.flatMap((block) =>
+            block.attachments.map((attachment) =>
+              attachment.kind === "image" ? (
+                <div
+                  key={attachment.id}
+                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl"
+                >
+                  <Image
+                    src={attachment.url}
+                    alt={attachment.name}
+                    width={80}
+                    height={80}
+                    className="h-full w-full rounded-xl object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div
+                  key={attachment.id}
+                  className="flex w-[220px] shrink-0 items-center gap-3 rounded-xl border bg-card px-3 py-2"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-background text-muted-foreground">
+                    <Paperclip className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">
+                      {attachment.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatFileSize(attachment.size)}
+                    </div>
+                  </div>
+                </div>
+              )
+            )
+          )}
+        </div>
+      )}
 
-              if (block.type === "content") {
+      {(isUser ? contentBlocks.length > 0 : true) && (
+        <div
+          className={cn(
+            "rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 transition-all",
+            isUser ? "bg-muted text-foreground" : "bg-transparent"
+          )}
+        >
+          {isUser ? (
+            <div className="flex flex-col space-y-4">
+              {contentBlocks.map((block, blockIndex) => {
+                const blockKey = `${index}-${blockIndex}`;
+
+                if (block.type === "content") {
+                  return (
+                    <div
+                      key={blockKey}
+                      className="text-base leading-relaxed text-foreground"
+                    >
+                      <Markdown content={block.content} />
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col space-y-4">
+              {contentBlocks.map((block, blockIndex) => {
+                const blockKey = `${index}-${blockIndex}`;
+                if (block.type === "research") {
+                  return (
+                    <ResearchBlock
+                      key={blockKey}
+                      items={block.items}
+                      blockIndex={blockIndex}
+                      messageIndex={index}
+                      isActive={
+                        isStreaming && blockIndex === contentBlocks.length - 1
+                      }
+                    />
+                  );
+                }
+
+                if (block.type === "error") {
+                  return (
+                    <div
+                      key={blockKey}
+                      className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <div className="flex-1 whitespace-pre-wrap">
+                        {block.message}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={blockKey}
                     className="text-base leading-relaxed text-foreground"
                   >
                     <Markdown content={block.content} />
-                  </div>
-                );
-              }
-
-              if (block.type === "attachments") {
-                return (
-                  <div key={blockKey} className="flex gap-3 overflow-x-auto">
-                    {block.attachments.map((attachment) =>
-                      attachment.kind === "image" ? (
-                        <div
-                          key={attachment.id}
-                          className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl"
-                        >
-                          <Image
-                            src={attachment.url}
-                            alt={attachment.name}
-                            width={80}
-                            height={80}
-                            className="h-full w-full rounded-xl object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          key={attachment.id}
-                          className="flex w-[220px] shrink-0 items-center gap-3 rounded-xl border bg-card px-3 py-2"
-                        >
-                          <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-background text-muted-foreground">
-                            <Paperclip className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium text-foreground">
-                              {attachment.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatFileSize(attachment.size)}
-                            </div>
-                          </div>
-                        </div>
-                      )
+                    {isStreaming && blockIndex === contentBlocks.length - 1 && (
+                      <span className="ml-1 inline-flex h-5 w-0.5 animate-pulse bg-accent align-middle" />
                     )}
                   </div>
                 );
-              }
-
-              return null;
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col space-y-4">
-            {message.blocks.map((block, blockIndex) => {
-              const blockKey = `${index}-${blockIndex}`;
-              if (block.type === "research") {
-                return (
-                  <ResearchBlock
-                    key={blockKey}
-                    items={block.items}
-                    blockIndex={blockIndex}
-                    messageIndex={index}
-                    isActive={
-                      isStreaming && blockIndex === message.blocks.length - 1
-                    }
-                  />
-                );
-              }
-
-              if (block.type === "attachments") {
-                return null;
-              }
-
-              if (block.type === "error") {
-                return (
-                  <div
-                    key={blockKey}
-                    className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                  >
-                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                    <div className="flex-1 whitespace-pre-wrap">
-                      {block.message}
-                    </div>
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={blockKey}
-                  className="text-base leading-relaxed text-foreground"
-                >
-                  <Markdown content={block.content} />
-                  {isStreaming && blockIndex === message.blocks.length - 1 && (
-                    <span className="ml-1 inline-flex h-5 w-0.5 animate-pulse bg-accent align-middle" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Only show copy button for user messages OR for assistant messages when not streaming */}
       {(isUser || !isStreaming) && (

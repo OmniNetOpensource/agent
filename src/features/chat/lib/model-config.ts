@@ -9,7 +9,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     label: "轻舟",
   },
   {
-    id: "google/gemini-2.5-flash",
+    id: "google/gemini-3-flash-preview",
     label: "博学",
   },
   {
@@ -17,7 +17,7 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     label: "中国做题家",
   },
   {
-    id: "anthropic/claude-haiku-4.5",
+    id: "anthropic/claude-sonnet-4.5",
     label: "娴雅",
   },
   {
