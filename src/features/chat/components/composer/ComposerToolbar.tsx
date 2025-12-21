@@ -7,10 +7,21 @@ import {
   Globe,
   Loader2,
   Paperclip,
+  Plus,
   SlidersHorizontal,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -19,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
+import { useSystemPrompts } from "@/src/features/chat/hooks/useSystemPrompts";
 
 const MODEL_STORAGE_KEY = "selected-model";
 const SEARCH_ENABLED_STORAGE_KEY = "search-enabled";
@@ -36,16 +48,38 @@ export function ComposerToolbar() {
     (state) => state.setSystemInstruction
   );
 
+  const {
+    prompts,
+    selectedPromptId,
+    selectedPrompt,
+    createPrompt,
+    updatePrompt,
+    deletePrompt,
+    selectPrompt,
+  } = useSystemPrompts();
+
   // Local state
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [instructionOpen, setInstructionOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasInitializedSearchEnabled = useRef(false);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [instructionValue, setInstructionValue] = useState(systemInstruction);
+  const [promptNameValue, setPromptNameValue] = useState(
+    selectedPrompt?.name ?? ""
+  );
 
   const currentModelLabel =
     MODEL_CONFIGS.find((m) => m.id === currentModel)?.label ?? "";
-  const hasInstruction = systemInstruction.trim().length > 0;
+  const hasInstruction = instructionValue.trim().length > 0;
+
+  const clearInstructionDebounce = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  };
 
   // Initialize model from localStorage
   // 合并 model/searchEnabled 初始化 effect
@@ -80,6 +114,28 @@ export function ComposerToolbar() {
     }
   }, [setCurrentModel, setSearchEnabled]);
 
+  useEffect(() => {
+    if (selectedPrompt) {
+      setInstructionValue(selectedPrompt.content ?? "");
+      setSystemInstruction((selectedPrompt.content ?? "").trim());
+      return;
+    }
+    setInstructionValue("");
+    setSystemInstruction("");
+  }, [selectedPromptId, selectedPrompt, setSystemInstruction]);
+
+  useEffect(() => {
+    setPromptNameValue(selectedPrompt?.name ?? "");
+  }, [selectedPrompt]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   // Handlers
   const handleSearchToggle = () => {
     const newValue = !searchEnabled;
@@ -102,12 +158,57 @@ export function ComposerToolbar() {
   const handlePickFiles = () => fileInputRef.current?.click();
 
   const handleInstructionChange = (value: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+    if (!selectedPrompt) return;
+    setInstructionValue(value);
+
+    clearInstructionDebounce();
+    const activePromptId = selectedPrompt?.id ?? null;
     debounceTimerRef.current = setTimeout(() => {
       setSystemInstruction(value.trim());
+      if (activePromptId) {
+        updatePrompt(activePromptId, { content: value });
+      }
     }, 400);
+  };
+
+  const handlePromptSelect = (event: ChangeEvent<HTMLSelectElement>) => {
+    clearInstructionDebounce();
+    const value = event.target.value;
+    selectPrompt(value ? value : null);
+  };
+
+  const handleCreatePrompt = () => {
+    clearInstructionDebounce();
+    const created = createPrompt();
+    if (created) {
+      setInstructionValue(created.content);
+      setPromptNameValue(created.name);
+      setSystemInstruction(created.content.trim());
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedPrompt) return;
+    clearInstructionDebounce();
+    deletePrompt(selectedPrompt.id);
+    setDeleteDialogOpen(false);
+  };
+
+  const commitPromptName = (value: string) => {
+    if (!selectedPrompt) return;
+    const nextName = value.trim();
+    if (!nextName) {
+      setPromptNameValue(selectedPrompt.name);
+      return;
+    }
+    if (nextName !== selectedPrompt.name) {
+      updatePrompt(selectedPrompt.id, { name: nextName });
+    }
+    setPromptNameValue(nextName);
+  };
+
+  const handlePromptNameBlur = () => {
+    commitPromptName(promptNameValue);
   };
 
   return (
@@ -196,11 +297,70 @@ export function ComposerToolbar() {
               <div className="text-xs font-medium text-muted-foreground">
                 自定义系统指令
               </div>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value={selectedPromptId ?? ""}
+                    onChange={handlePromptSelect}
+                    className={cn(
+                      "border-input bg-card text-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 flex h-8 w-full appearance-none rounded-md border px-2 pr-7 text-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px]",
+                      "disabled:cursor-not-allowed disabled:opacity-50"
+                    )}
+                  >
+                    <option value="">默认</option>
+                    {prompts.map((prompt) => (
+                      <option key={prompt.id} value={prompt.id}>
+                        {prompt.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCreatePrompt}
+                  className="h-8 gap-1.5 px-2 text-xs"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  新建
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={!selectedPrompt}
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="h-8 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  删除
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-muted-foreground">名称</div>
+                <Input
+                  value={promptNameValue}
+                  onChange={(event) => setPromptNameValue(event.target.value)}
+                  onBlur={handlePromptNameBlur}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handlePromptNameBlur();
+                    }
+                  }}
+                  placeholder="指令名称"
+                  disabled={!selectedPrompt}
+                  className="h-8 flex-1 text-xs"
+                />
+              </div>
               <Textarea
                 rows={4}
-                defaultValue={systemInstruction}
+                value={instructionValue}
                 onChange={(event) => handleInstructionChange(event.target.value)}
                 placeholder="例如：你是一名擅长解释代码的前端导师，回答要简洁、分点。"
+                disabled={!selectedPrompt}
                 className="h-32 resize-none overflow-y-auto text-sm"
               />
             </div>
@@ -257,6 +417,33 @@ export function ComposerToolbar() {
           </PopoverContent>
         </Popover>
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              确定要删除「{selectedPrompt?.name}」吗？此操作无法撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
+              删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

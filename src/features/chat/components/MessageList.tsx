@@ -38,22 +38,6 @@ export function MessageList() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isAtBottom) {
-      return;
-    }
-
-    const container = scrollRef.current;
-    if (!container) {
-      return;
-    }
-
-    container.scrollTo({
-      top: container.scrollHeight,
-      behavior: "auto",
-    });
-  }, [messages.length, pending, isAtBottom]);
-
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
     if (!container) {
