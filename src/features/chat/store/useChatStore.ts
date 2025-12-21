@@ -3,12 +3,17 @@ import {
   ContentBlock,
   Message,
   ResearchItem,
+  SerializedAttachment,
+  SerializedContentBlock,
+  SerializedMessage,
   ToolProgress,
 } from "@/src/features/chat/types/chat";
 import {
   MAX_ATTACHMENT_SIZE,
+  convertBlobToBase64,
+  createBlobUrl,
   detectAttachmentKind,
-  convertFileToBase64,
+  revokeBlobUrl,
 } from "@/src/shared/utils/file";
 import { create } from "zustand";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
@@ -57,6 +62,69 @@ const generateLocalMessageId = () =>
     ? crypto.randomUUID()
     : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
+const revokeAttachments = (attachments: Attachment[]) => {
+  for (const attachment of attachments) {
+    if (attachment.displayUrl) {
+      revokeBlobUrl(attachment.displayUrl);
+    }
+  }
+};
+
+const revokeMessagesAttachments = (messages: Message[]) => {
+  for (const msg of messages) {
+    for (const block of msg.blocks) {
+      if (block.type === "attachments") {
+        revokeAttachments(block.attachments);
+      }
+    }
+  }
+};
+
+const serializeAttachments = async (
+  attachments: Attachment[]
+): Promise<SerializedAttachment[]> => {
+  const serialized: SerializedAttachment[] = [];
+
+  for (const attachment of attachments) {
+    const url = await convertBlobToBase64(attachment.blob);
+    serialized.push({
+      id: attachment.id,
+      kind: attachment.kind,
+      name: attachment.name,
+      size: attachment.size,
+      mimeType: attachment.mimeType,
+      url,
+    });
+  }
+
+  return serialized;
+};
+
+const serializeBlocks = async (
+  blocks: ContentBlock[]
+): Promise<SerializedContentBlock[]> =>
+  Promise.all(
+    blocks.map(async (block) => {
+      if (block.type === "attachments") {
+        return {
+          ...block,
+          attachments: await serializeAttachments(block.attachments),
+        };
+      }
+      return { ...block };
+    })
+  );
+
+const serializeMessagesForRequest = async (
+  messages: Message[]
+): Promise<SerializedMessage[]> =>
+  Promise.all(
+    messages.map(async (message) => ({
+      role: message.role,
+      blocks: await serializeBlocks(message.blocks),
+    }))
+  );
+
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
   input: "",
@@ -70,7 +138,13 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   systemInstruction: "",
   activeRequestId: null,
   setInput: (value) => set({ input: value }),
-  setMessages: (messages) => set({ messages }),
+  setMessages: (messages) => {
+    const oldMessages = get().messages;
+    if (oldMessages.length > 0) {
+      revokeMessagesAttachments(oldMessages);
+    }
+    set({ messages });
+  },
   setConversationId: (id) => set({ conversationId: id }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
   setSystemInstruction: (instruction) =>
@@ -80,6 +154,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     if (client) {
       client.abort();
     }
+    revokeMessagesAttachments(get().messages);
+    revokeAttachments(get().pendingAttachments);
     set({
       messages: [],
       input: "",
@@ -114,7 +190,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
       try {
         const mimeType = file.type || "application/octet-stream";
-        const url = await convertFileToBase64(file);
+        const blob = file;
+        const displayUrl = createBlobUrl(blob);
         attachments.push({
           id:
             typeof crypto !== "undefined" && crypto.randomUUID
@@ -124,7 +201,8 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
           name: file.name,
           size: file.size,
           mimeType,
-          url,
+          blob,
+          displayUrl,
         });
       } catch (error) {
         console.error(`无法上传文件「${file.name}」`, error);
@@ -144,11 +222,17 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }));
   },
   removeAttachment: (id) =>
-    set((state) => ({
-      pendingAttachments: state.pendingAttachments.filter(
-        (item) => item.id !== id
-      ),
-    })),
+    set((state) => {
+      const attachment = state.pendingAttachments.find((item) => item.id === id);
+      if (attachment?.displayUrl) {
+        revokeBlobUrl(attachment.displayUrl);
+      }
+      return {
+        pendingAttachments: state.pendingAttachments.filter(
+          (item) => item.id !== id
+        ),
+      };
+    }),
   appendToAssistant: (addition) =>
     set((state) => {
       const next = [...state.messages];
@@ -428,6 +512,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     const requestId = generateLocalMessageId();
 
+    let serializedMessages: SerializedMessage[];
+    try {
+      serializedMessages = await serializeMessagesForRequest(nextMessages);
+    } catch (error) {
+      console.error("Failed to serialize attachments", error);
+      toast.error("附件处理失败，请稍后重试。");
+      return;
+    }
+
     const normalizeMessages = (messages: Message[]) =>
       messages.map((msg) => ({
         role: msg.role,
@@ -686,7 +779,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     chatClient.sendMessage(
-      nextMessages,
+      serializedMessages,
       selectedModel,
       currentConversationId,
       searchEnabled,

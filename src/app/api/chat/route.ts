@@ -6,8 +6,8 @@ import {
   parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
 import type {
-  Message,
   ResearchItem,
+  SerializedMessage,
   ToolProgress,
 } from "@/src/features/chat/types/chat";
 import type { ToolProgressUpdate } from "@/src/shared/lib/tools/types";
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
       updated_at: string;
     } | null = null;
 
-    const history: Message[] = conversationHistory.map((message) => ({
+    const history: SerializedMessage[] = conversationHistory.map((message) => ({
       ...message,
       blocks: Array.isArray(message.blocks) ? message.blocks : [],
     }));

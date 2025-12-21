@@ -24,14 +24,26 @@ export type ResearchItem =
   | { kind: "thinking"; text: string }
   | { kind: "tool"; data: Tool };
 
-export type Attachment = {
+export type AttachmentKind = "image" | "file" | "video" | "audio";
+
+export type AttachmentBase = {
   id: string;
-  kind: "image" | "file" | "video" | "audio";
+  kind: AttachmentKind;
   name: string;
   size: number;
   mimeType: string;
+};
+
+export type Attachment = AttachmentBase & {
+  blob: Blob;
+  displayUrl: string;
+};
+
+export type SerializedAttachment = AttachmentBase & {
   url: string;
 };
+
+export type LegacyAttachment = SerializedAttachment;
 
 export type ChatContentPart =
   | { type: "text"; text: string }
@@ -46,10 +58,22 @@ export type ContentBlock =
   | { type: "research"; items: ResearchItem[] }
   | { type: "error"; message: string };
 
-export type Message = { role: "user" | "assistant"; blocks: ContentBlock[] };
+export type SerializedContentBlock =
+  | { type: "content"; content: string }
+  | { type: "attachments"; attachments: SerializedAttachment[] }
+  | { type: "research"; items: ResearchItem[] }
+  | { type: "error"; message: string };
+
+export type MessageBase<Block> = { role: "user" | "assistant"; blocks: Block[] };
+
+export type Message = MessageBase<ContentBlock>;
+
+export type SerializedMessage = MessageBase<SerializedContentBlock>;
+
+export type MessageLike = Message | SerializedMessage;
 
 export type ChatRequest = {
-  conversationHistory: Message[];
+  conversationHistory: SerializedMessage[];
   conversationId?: string | null;
   model?: string;
   searchEnabled?: boolean;

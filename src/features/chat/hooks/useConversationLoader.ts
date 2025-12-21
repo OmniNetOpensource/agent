@@ -2,6 +2,44 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { localDB } from "@/src/shared/lib/indexed-db";
+import type {
+  Attachment,
+  LegacyAttachment,
+} from "@/src/features/chat/types/chat";
+import { base64ToBlob, createBlobUrl } from "@/src/shared/utils/file";
+
+const buildAttachment = (
+  att: Attachment | LegacyAttachment,
+  blob: Blob
+): Attachment => ({
+  id: att.id,
+  kind: att.kind,
+  name: att.name,
+  size: att.size,
+  mimeType: att.mimeType,
+  blob,
+  displayUrl: createBlobUrl(blob),
+});
+
+const restoreDisplayUrls = (
+  attachments: Array<Attachment | LegacyAttachment>
+): Attachment[] =>
+  attachments.map((att) => {
+    if ("blob" in att && att.blob instanceof Blob) {
+      return buildAttachment(att, att.blob);
+    }
+
+    if (
+      "url" in att &&
+      typeof att.url === "string" &&
+      att.url.startsWith("data:")
+    ) {
+      const blob = base64ToBlob(att.url);
+      return buildAttachment(att, blob);
+    }
+
+    return att as Attachment;
+  });
 
 export function useConversationLoader(conversationId: string | undefined) {
   const router = useRouter();
@@ -42,9 +80,9 @@ export function useConversationLoader(conversationId: string | undefined) {
                   : block.type === "attachments"
                   ? {
                       ...block,
-                      attachments: block.attachments.map((att) => ({
-                        ...att,
-                      })),
+                      attachments: restoreDisplayUrls(
+                        Array.isArray(block.attachments) ? block.attachments : []
+                      ),
                     }
                   : { ...block }
               )

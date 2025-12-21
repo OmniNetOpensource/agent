@@ -161,7 +161,7 @@ export function Composer() {
               attachment.kind === "image" ? (
                 <div key={attachment.id} className="group relative">
                   <ImagePreview
-                    url={attachment.url}
+                    url={attachment.displayUrl}
                     name={attachment.name}
                     size={attachment.size}
                   />

@@ -89,7 +89,7 @@ export const MessageItem = memo(function MessageItem({
               attachment.kind === "image" ? (
                 <ImagePreview
                   key={attachment.id}
-                  url={attachment.url}
+                  url={attachment.displayUrl}
                   name={attachment.name}
                   size={attachment.size}
                   className="shrink-0"

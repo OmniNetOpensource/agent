@@ -1,4 +1,4 @@
-import { Message } from "@/src/features/chat/types/chat";
+import { SerializedMessage } from "@/src/features/chat/types/chat";
 import { StreamParser, StreamEvent } from "./stream-parser";
 
 export type ChatClientOptions = {
@@ -13,7 +13,7 @@ export class ChatClient {
   constructor(private options: ChatClientOptions) {}
 
   public async sendMessage(
-    messages: Message[],
+    messages: SerializedMessage[],
     model: string,
     conversationId: string | null,
     searchEnabled?: boolean,

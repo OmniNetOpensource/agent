@@ -1,7 +1,7 @@
 import {
   ContentBlock,
-  Message,
   ResearchItem,
+  SerializedMessage,
 } from "@/src/features/chat/types/chat";
 
 export type StreamToolCall = {
@@ -64,7 +64,7 @@ ${trimmedInstruction}
 `;
 };
 
-export const toChatMessages = (history: Message[]): ChatMessage[] =>
+export const toChatMessages = (history: SerializedMessage[]): ChatMessage[] =>
   history
     .map((msg) => {
       const relevantBlocks = msg.blocks.filter(

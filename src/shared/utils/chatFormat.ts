@@ -16,9 +16,9 @@ export function prettyPrintArgs(args: Record<string, unknown>): string {
 }
 
 // 对话标题生成逻辑，供本地/云端统一使用
-import type { Message } from "@/src/features/chat/types/chat";
+import type { MessageLike } from "@/src/features/chat/types/chat";
 
-export const buildConversationTitle = (message: Message) => {
+export const buildConversationTitle = (message: MessageLike) => {
   const text = message.blocks
     .filter((b) => b.type === "content")
     .map((b) => b.content)
