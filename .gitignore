@@ -43,6 +43,9 @@ next-env.d.ts
 # logs
 logs/
 
+# Windows reserved names (cannot be created as files)
+nul
+
 .cursor/
 .claude/
 .vscode/

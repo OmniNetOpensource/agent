@@ -7,10 +7,10 @@ import {
   useEffect,
   useRef,
 } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
+import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import {
   useChatStore,
   useIsNewChat,
@@ -160,13 +160,10 @@ export function Composer() {
             {pendingAttachments.map((attachment) =>
               attachment.kind === "image" ? (
                 <div key={attachment.id} className="group relative">
-                  <Image
-                    src={attachment.url}
-                    alt={attachment.name}
-                    width={80}
-                    height={80}
-                    className="h-20 w-20 rounded-xl object-cover"
-                    unoptimized
+                  <ImagePreview
+                    url={attachment.url}
+                    name={attachment.name}
+                    size={attachment.size}
                   />
                   <Button
                     type="button"

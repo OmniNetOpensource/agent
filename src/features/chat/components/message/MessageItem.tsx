@@ -1,8 +1,8 @@
 "use client";
 
 import { memo, useState } from "react";
-import Image from "next/image";
 import Markdown from "@/src/shared/components/Markdown";
+import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import { Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
@@ -87,19 +87,13 @@ export const MessageItem = memo(function MessageItem({
           {attachmentBlocks.flatMap((block) =>
             block.attachments.map((attachment) =>
               attachment.kind === "image" ? (
-                <div
+                <ImagePreview
                   key={attachment.id}
-                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl"
-                >
-                  <Image
-                    src={attachment.url}
-                    alt={attachment.name}
-                    width={80}
-                    height={80}
-                    className="h-full w-full rounded-xl object-cover"
-                    unoptimized
-                  />
-                </div>
+                  url={attachment.url}
+                  name={attachment.name}
+                  size={attachment.size}
+                  className="shrink-0"
+                />
               ) : (
                 <div
                   key={attachment.id}
