@@ -70,8 +70,7 @@ export function useSystemPrompts() {
     );
     setPrompts(storedPrompts);
 
-    const storedSelectedId =
-      window.localStorage.getItem(SELECTED_PROMPT_KEY);
+    const storedSelectedId = window.localStorage.getItem(SELECTED_PROMPT_KEY);
     const isValidSelection =
       storedSelectedId &&
       storedPrompts.some((prompt) => prompt.id === storedSelectedId);
@@ -147,8 +146,7 @@ export function useSystemPrompts() {
         return;
       }
 
-      const fallbackPrompt =
-        prompts[index - 1] ?? prompts[index + 1] ?? null;
+      const fallbackPrompt = prompts[index - 1] ?? prompts[index + 1] ?? null;
       persistSelected(fallbackPrompt?.id ?? null);
     },
     [persistPrompts, persistSelected, prompts, selectedPromptId]

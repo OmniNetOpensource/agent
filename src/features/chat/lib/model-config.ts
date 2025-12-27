@@ -6,23 +6,23 @@ export type ModelConfig = {
 export const MODEL_CONFIGS: ModelConfig[] = [
   {
     id: "x-ai/grok-4.1-fast",
-    label: "轻舟",
+    label: "grok-4.1-fast",
   },
   {
     id: "google/gemini-3-flash-preview",
-    label: "博学",
+    label: "gemini-3-flash-preview",
   },
   {
     id: "deepseek/deepseek-v3.2",
-    label: "中国做题家",
+    label: "deepseek-v3.2",
   },
   {
     id: "anthropic/claude-sonnet-4.5",
-    label: "娴雅",
+    label: "claude-sonnet-4.5",
   },
   {
     id: "openai/gpt-5.1-codex-mini",
-    label: "普通人",
+    label: "gpt-5.1-codex-mini",
   },
 ];
 

@@ -19,6 +19,11 @@ interface AetherDB extends DBSchema {
     value: LocalConversation;
     indexes: { updated_at: string };
   };
+  // Legacy store kept in typing so upgrade can safely delete it.
+  messages: {
+    key: string;
+    value: unknown;
+  };
 }
 
 const supportsIndexedDB =
