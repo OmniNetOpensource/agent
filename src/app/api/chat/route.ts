@@ -15,6 +15,7 @@ import type { ChatRequest } from "@/src/features/chat/types/chat";
 import {
   buildSystemPrompt,
   ChatMessage,
+  ReasoningDetail,
   StreamToolCall,
   toChatMessages,
 } from "./utils";
@@ -249,6 +250,12 @@ export async function POST(req: Request) {
         };
 
         try {
+          // Tool calling rules (OpenRouter/OpenAI-compatible):
+          // - Assistant must return tool_calls, then we append role=tool results with matching tool_call_id,
+          //   and resend the full history including that assistant message.
+          // Gemini-specific rule (thinking/reasoning variants):
+          // - Preserve reasoning_details from the assistant tool-call turn exactly, and send them back
+          //   on the next request (Gemini uses these as thought signatures).
           while (iteration < maxIterations) {
             iteration++;
             logger?.log("ITERATION", `Starting iteration ${iteration}`, {
@@ -289,6 +296,7 @@ export async function POST(req: Request) {
 
             let assistantMessage = "";
             let currentReasoning = "";
+            let currentReasoningDetails: ReasoningDetail[] = [];
             const toolCalls: Array<{
               id: string;
               type: "function";
@@ -296,6 +304,37 @@ export async function POST(req: Request) {
             }> = [];
             let currentToolCallIndex = -1;
             let finishedWithStop = false;
+
+            const mergeReasoningDetail = (detail: ReasoningDetail) => {
+              const detailIndex =
+                typeof detail.index === "number" ? detail.index : null;
+
+              if (detailIndex === null) {
+                currentReasoningDetails = [...currentReasoningDetails, detail];
+                return;
+              }
+
+              const existingIndex = currentReasoningDetails.findIndex(
+                (item) => item.index === detailIndex
+              );
+              if (existingIndex === -1) {
+                currentReasoningDetails = [...currentReasoningDetails, detail];
+                return;
+              }
+
+              const existing = currentReasoningDetails[existingIndex];
+              const mergedText =
+                typeof existing.text === "string" ||
+                typeof detail.text === "string"
+                  ? `${existing.text ?? ""}${detail.text ?? ""}`
+                  : existing.text;
+              const merged = { ...existing, ...detail, text: mergedText };
+              currentReasoningDetails = [
+                ...currentReasoningDetails.slice(0, existingIndex),
+                merged,
+                ...currentReasoningDetails.slice(existingIndex + 1),
+              ];
+            };
 
             for await (const chunk of parseSSEStream(stream)) {
               logger?.log("OPENROUTER", "Received chunk", chunk);
@@ -310,6 +349,14 @@ export async function POST(req: Request) {
                 sendToClient("thinking", {
                   content: delta.reasoning,
                 });
+              }
+
+              if (delta?.reasoning_details) {
+                for (const detail of delta.reasoning_details) {
+                  if (detail && typeof detail === "object") {
+                    mergeReasoningDetail(detail);
+                  }
+                }
               }
 
               if (delta?.content) {
@@ -392,6 +439,10 @@ export async function POST(req: Request) {
               content: assistantMessage || null,
               toolCalls,
               reasoning: currentReasoning || undefined,
+              reasoningDetails:
+                currentReasoningDetails.length > 0
+                  ? currentReasoningDetails
+                  : undefined,
             });
 
             // All users: send conversation_updated event

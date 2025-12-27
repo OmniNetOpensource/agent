@@ -1,14 +1,25 @@
 "use client";
 
 import { memo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import { Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "./research/ResearchBlock";
-import { Copy, Check, Paperclip, AlertCircle } from "lucide-react";
+import { Copy, Check, Paperclip, AlertCircle, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type CopyButtonProps = {
   blocks: Message["blocks"];
@@ -49,6 +60,65 @@ const CopyButton = ({ blocks }: CopyButtonProps) => {
       )}
       {isCopied ? "已复制" : "复制"}
     </Button>
+  );
+};
+
+type BranchButtonProps = {
+  messageIndex: number;
+};
+
+const BranchButton = ({ messageIndex }: BranchButtonProps) => {
+  const router = useRouter();
+  const branchFromMessage = useChatStore((state) => state.branchFromMessage);
+  const [open, setOpen] = useState(false);
+  const [isBranching, setIsBranching] = useState(false);
+
+  const handleConfirm = async () => {
+    if (isBranching) return;
+    setIsBranching(true);
+    try {
+      await branchFromMessage(messageIndex, (path) => router.push(path));
+      setOpen(false);
+    } finally {
+      setIsBranching(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto gap-1.5 px-2 py-1 text-xs"
+          title="从此消息分支"
+        >
+          <GitBranch className="h-3.5 w-3.5" />
+          分支
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>创建分支对话</DialogTitle>
+          <DialogDescription>
+            将从此消息创建一个新的对话分支，包含该消息及之前的所有历史消息。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isBranching}
+          >
+            取消
+          </Button>
+          <Button type="button" onClick={handleConfirm} disabled={isBranching}>
+            确认
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -196,11 +266,12 @@ export const MessageItem = memo(function MessageItem({
       {(isUser || !isStreaming) && (
         <div
           className={cn(
-            "flex items-center px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
             isUser ? "justify-end" : "justify-start"
           )}
         >
           <CopyButton blocks={message.blocks} />
+          {!isUser && !isStreaming && <BranchButton messageIndex={index} />}
         </div>
       )}
     </div>

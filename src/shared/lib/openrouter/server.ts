@@ -1,5 +1,5 @@
 import { OpenRouter } from "@openrouter/sdk";
-import type { ChatMessage } from "@/src/app/api/chat/utils";
+import type { ChatMessage, ReasoningDetail } from "@/src/app/api/chat/utils";
 import type { StreamToolCall } from "@/src/app/api/chat/utils";
 
 export function isSupportedChatModel(
@@ -38,6 +38,7 @@ export type StreamChunk = {
     delta?: {
       content?: string;
       reasoning?: string;
+      reasoning_details?: ReasoningDetail[];
       tool_calls?: StreamToolCall[];
     };
     finishReason?: string | null;
@@ -56,7 +57,7 @@ export async function streamChatCompletion(params: {
 
   // 转换消息格式以符合 OpenAI API 标准 (驼峰 -> 下划线)
   const messages = params.messages.map((msg) => {
-    const { toolCalls, toolCallId, ...rest } = msg;
+    const { toolCalls, toolCallId, reasoningDetails, ...rest } = msg;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const newMsg: any = { ...rest };
 
@@ -70,6 +71,10 @@ export async function streamChatCompletion(params: {
 
     if (toolCallId) {
       newMsg.tool_call_id = toolCallId;
+    }
+
+    if (reasoningDetails) {
+      newMsg.reasoning_details = reasoningDetails;
     }
 
     return newMsg;

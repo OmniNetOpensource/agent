@@ -11,6 +11,14 @@ export type StreamToolCall = {
   function?: { name?: string; arguments?: string };
 };
 
+export type ReasoningDetail = {
+  type?: string;
+  text?: string;
+  format?: string;
+  index?: number;
+  [key: string]: unknown;
+};
+
 export type ChatMessage = {
   role: "system" | "user" | "assistant" | "tool";
   content?: unknown;
@@ -19,6 +27,8 @@ export type ChatMessage = {
   name?: string;
   // Optional reasoning / thinking content for models like Gemini
   reasoning?: string;
+  // OpenRouter reasoning_details (Gemini thought signatures) must be preserved
+  reasoningDetails?: ReasoningDetail[];
 };
 
 export const buildSystemPrompt = (

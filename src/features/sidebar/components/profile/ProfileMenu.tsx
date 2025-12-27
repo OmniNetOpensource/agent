@@ -2,54 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { User } from "@supabase/supabase-js";
-import { BarChart3, Loader2, LogIn, Settings, User2 } from "lucide-react";
+import { BarChart3, Settings, User2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/src/features/auth/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SettingsModal } from "./SettingsModal";
 
 type ProfileMenuProps = {
   isCollapsed?: boolean;
 };
 
-const getAvatarUrl = (user: User) =>
-  (user.user_metadata as Record<string, unknown>)?.avatar_url as
-    | string
-    | undefined;
-
-const getDisplayName = (user: User) =>
-  ((user.user_metadata as Record<string, unknown>)?.full_name as
-    | string
-    | undefined) ||
-  user.email ||
-  "用户";
-
 const menuItemClass =
   "flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground [&_svg]:size-4";
 
 export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
-  const { user, signIn, loading, supabaseReady } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const isLoadingUser = loading && !user;
-  const displayName = user
-    ? getDisplayName(user)
-    : isLoadingUser
-    ? "正在获取登录状态..."
-    : "Guest";
-  const avatarUrl = user ? getAvatarUrl(user) : undefined;
-  const subtitle = user?.email || (isLoadingUser ? "请稍候" : "游客模式");
-  const buttonDisabled = loading || !supabaseReady;
-
-  const handleSignIn = async () => {
-    if (buttonDisabled) return;
-    await signIn();
-  };
+  const displayName = "Guest";
+  const subtitle = "本地模式";
 
   return (
     <div
@@ -83,18 +55,9 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                   }`}
                 >
                   <Avatar className="h-8 w-8">
-                    {user ? (
-                      <>
-                        <AvatarImage src={avatarUrl} alt={displayName} />
-                        <AvatarFallback className="text-sm font-semibold">
-                          {displayName.slice(0, 1).toUpperCase()}
-                        </AvatarFallback>
-                      </>
-                    ) : (
-                      <AvatarFallback className="text-sm font-semibold">
-                        <User2 className="h-4 w-4" />
-                      </AvatarFallback>
-                    )}
+                    <AvatarFallback className="text-sm font-semibold">
+                      <User2 className="h-4 w-4" />
+                    </AvatarFallback>
                   </Avatar>
                   <span
                     className="flex min-w-0 flex-col text-left transition-all duration-500 overflow-hidden"
@@ -120,18 +83,9 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
             >
               <div className="flex items-center gap-1.5 px-2 py-1.5">
                 <Avatar className="h-5 w-5">
-                  {user ? (
-                    <>
-                      <AvatarImage src={avatarUrl} alt={displayName} />
-                      <AvatarFallback className="text-xs font-semibold">
-                        {displayName.slice(0, 1).toUpperCase()}
-                      </AvatarFallback>
-                    </>
-                  ) : (
-                    <AvatarFallback className="text-xs font-semibold">
-                      <User2 className="h-3 w-3" />
-                    </AvatarFallback>
-                  )}
+                  <AvatarFallback className="text-xs font-semibold">
+                    <User2 className="h-3 w-3" />
+                  </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -140,7 +94,7 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                     </span>
                   </div>
                   <div className="text-xs leading-tight text-muted-foreground">
-                    {user ? user.email : "游客模式，登录后可同步聊天记录"}
+                    本地模式，仅保存到浏览器
                   </div>
                 </div>
               </div>
@@ -161,29 +115,6 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                 Dashboard / 数据面板
               </Link>
 
-              {!user && !isLoadingUser && (
-                <button
-                  type="button"
-                  onClick={handleSignIn}
-                  disabled={buttonDisabled}
-                  className={`${menuItemClass} data-disabled:pointer-events-none data-disabled:opacity-50`}
-                >
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-muted ring-1 ring-border">
-                    <span className="text-xs font-bold">G</span>
-                  </span>
-                  {loading ? (
-                    <span className="flex items-center gap-1.5">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      正在登录...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5">
-                      <LogIn className="h-4 w-4" />
-                      使用 Google 登录
-                    </span>
-                  )}
-                </button>
-              )}
             </PopoverContent>
           </Popover>
 

@@ -51,6 +51,10 @@ export type ChatActions = {
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
   sendMessage: (navigate?: (path: string) => void) => Promise<void>;
+  branchFromMessage: (
+    messageIndex: number,
+    navigate: (path: string) => void
+  ) => Promise<void>;
   stop: () => void;
   setCurrentModel: (model: string) => void;
   setSearchEnabled: (enabled: boolean) => void;
@@ -61,6 +65,11 @@ const generateLocalMessageId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const generateConversationId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 const revokeAttachments = (attachments: Attachment[]) => {
   for (const attachment of attachments) {
@@ -124,6 +133,30 @@ const serializeMessagesForRequest = async (
       blocks: await serializeBlocks(message.blocks),
     }))
   );
+
+const cloneMessages = (messages: Message[]) =>
+  messages.map((msg) => ({
+    role: msg.role,
+    blocks: Array.isArray(msg.blocks)
+      ? msg.blocks.map((block) => {
+          if (block.type === "research") {
+            return {
+              ...block,
+              items: block.items.map((item) => ({ ...item })),
+            };
+          }
+          if (block.type === "attachments") {
+            return {
+              ...block,
+              attachments: block.attachments.map((attachment) => ({
+                ...attachment,
+              })),
+            };
+          }
+          return { ...block };
+        })
+      : [],
+  }));
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
@@ -521,30 +554,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    const normalizeMessages = (messages: Message[]) =>
-      messages.map((msg) => ({
-        role: msg.role,
-        blocks: Array.isArray(msg.blocks)
-          ? msg.blocks.map((block) => {
-              if (block.type === "research") {
-                return {
-                  ...block,
-                  items: block.items.map((item) => ({ ...item })),
-                };
-              }
-              if (block.type === "attachments") {
-                return {
-                  ...block,
-                  attachments: block.attachments.map((attachment) => ({
-                    ...attachment,
-                  })),
-                };
-              }
-              return { ...block };
-            })
-          : [],
-      }));
-
     const persistLocalConversation = async (
       id: string,
       options?: {
@@ -556,7 +565,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     ) => {
       const now = options?.updated_at ?? new Date().toISOString();
       const existing = await localDB.get(id);
-      const messages = normalizeMessages(options?.messages ?? get().messages);
+      const messages = cloneMessages(options?.messages ?? get().messages);
       const title =
         options?.title ??
         existing?.title ??
@@ -785,6 +794,62 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       searchEnabled,
       systemInstruction
     );
+  },
+  branchFromMessage: async (messageIndex, navigate) => {
+    const messages = get().messages;
+    if (
+      messageIndex < 0 ||
+      messageIndex >= messages.length ||
+      messages.length === 0
+    ) {
+      return;
+    }
+
+    if (get().pending) {
+      get().stop();
+    }
+
+    const branchedMessages = cloneMessages(
+      messages.slice(0, messageIndex + 1)
+    );
+    const newConversationId = generateConversationId();
+    const now = new Date().toISOString();
+    const titleSource =
+      branchedMessages.find((message) => message.role === "user") ??
+      branchedMessages[0];
+    const title = titleSource
+      ? buildConversationTitle(titleSource)
+      : "新会话";
+
+    await localDB.save({
+      id: newConversationId,
+      title,
+      messages: branchedMessages,
+      created_at: now,
+      updated_at: now,
+    });
+
+    const { addConversation } = useConversationsStore.getState();
+    addConversation({
+      id: newConversationId,
+      title,
+      user_id: "",
+      created_at: now,
+      updated_at: now,
+    });
+
+    const droppedMessages = messages.slice(messageIndex + 1);
+    if (droppedMessages.length > 0) {
+      revokeMessagesAttachments(droppedMessages);
+    }
+
+    set((state) => ({
+      ...state,
+      conversationId: newConversationId,
+      messages: branchedMessages,
+    }));
+
+    navigate(`/app/c/${newConversationId}`);
   },
 }));
 

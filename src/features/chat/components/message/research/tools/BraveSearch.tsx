@@ -2,7 +2,14 @@
 
 import type { Tool } from "@/src/features/chat/types/chat";
 import Markdown from "@/src/shared/components/Markdown";
-import { Search, Zap, ExternalLink, Globe, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Zap,
+  ExternalLink,
+  Globe,
+  ChevronRight,
+  Image as ImageIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getToolLifecycle } from "../utils";
 import { useState } from "react";
@@ -15,6 +22,7 @@ type BraveSearchResult = {
   title: string;
   url: string;
   description: string;
+  thumbnailSrc?: string;
 };
 
 const parseBraveSearchResults = (
@@ -23,8 +31,8 @@ const parseBraveSearchResults = (
   try {
     const data = JSON.parse(rawResult);
     const rawResults =
-      (Array.isArray(data?.results) && data.results) ||
       (Array.isArray(data?.rawResults) && data.rawResults) ||
+      (Array.isArray(data?.results) && data.results) ||
       (Array.isArray(data?.web?.results) && data.web.results) ||
       [];
 
@@ -48,6 +56,21 @@ const parseBraveSearchResults = (
           "description" in item && typeof item.description === "string"
             ? item.description
             : "";
+        const thumbnailSrc = (() => {
+          if (!("thumbnail" in item)) return undefined;
+          const thumbnail = item.thumbnail as
+            | { src?: unknown; original?: unknown }
+            | string
+            | undefined;
+          if (typeof thumbnail === "string") {
+            return thumbnail;
+          }
+          if (thumbnail && typeof thumbnail === "object") {
+            if (typeof thumbnail.src === "string") return thumbnail.src;
+            if (typeof thumbnail.original === "string") return thumbnail.original;
+          }
+          return undefined;
+        })();
 
         if (!title && !url) {
           return null;
@@ -57,6 +80,7 @@ const parseBraveSearchResults = (
           title: title || url,
           url,
           description,
+          thumbnailSrc,
         };
       })
       .filter((item): item is BraveSearchResult => Boolean(item?.url));
@@ -84,6 +108,7 @@ type SearchResultCardProps = {
   title: string;
   url: string;
   description?: string;
+  thumbnailSrc?: string;
   delay?: number;
 };
 
@@ -91,9 +116,12 @@ function SearchResultCard({
   title,
   url,
   description,
+  thumbnailSrc,
   delay = 0,
 }: SearchResultCardProps) {
   const hostname = tryGetHostname(url);
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(thumbnailSrc) && !imageFailed;
 
   return (
     <a
@@ -107,6 +135,26 @@ function SearchResultCard({
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
+      {/* Thumbnail */}
+      <div className="relative h-20 w-full overflow-hidden rounded-md bg-(--surface-hover)">
+        {showImage ? (
+          <img
+            src={thumbnailSrc}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-(--surface-hover) via-(--surface-muted) to-(--surface-card)">
+            <ImageIcon className="h-4 w-4 text-(--text-tertiary)" />
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-(--border-subtle)" />
+      </div>
+
       {/* Header */}
       <div className="flex items-start gap-2">
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-(--surface-hover) text-(--text-secondary)">
@@ -236,6 +284,7 @@ export function BraveSearch({ tool }: BraveSearchProps) {
                           title={result.title}
                           url={result.url}
                           description={result.description}
+                          thumbnailSrc={result.thumbnailSrc}
                           delay={index * 90}
                         />
                       ))}

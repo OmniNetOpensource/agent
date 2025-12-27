@@ -1,9 +1,8 @@
 "use client";
 
 import { flushSync } from "react-dom";
-import { LogIn, LogOut, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
-import { useAuth } from "@/src/features/auth/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -20,21 +19,6 @@ type SettingsModalProps = {
 
 export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
-  const { user, signIn, signOut, loading, supabaseReady } = useAuth();
-
-  const hasUser = !!user;
-  const authLoading = loading;
-
-  const handleSignOut = async () => {
-    if (!hasUser) return;
-    await signOut();
-    onOpenChange(false);
-  };
-
-  const handleSignIn = async () => {
-    if (authLoading || !supabaseReady) return;
-    await signIn();
-  };
 
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (
@@ -116,39 +100,14 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
               </div>
             </div>
           </div>
-
           <div className="flex gap-3">
-            {!hasUser && (
-              <Button
-                variant="outline"
-                onClick={handleSignIn}
-                disabled={authLoading || !supabaseReady}
-                className="self-start"
-              >
-                {authLoading ? (
-                  <>
-                    <LogIn className="h-4 w-4 animate-spin" />
-                    正在登录...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="h-4 w-4" />
-                    使用 Google 登录
-                  </>
-                )}
-              </Button>
-            )}
-
-            {hasUser && (
-              <Button
-                variant="outline"
-                onClick={handleSignOut}
-                className="self-start"
-              >
-                <LogOut className="h-4 w-4" />
-                退出登录
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="self-start"
+            >
+              关闭
+            </Button>
           </div>
         </div>
       </DialogContent>

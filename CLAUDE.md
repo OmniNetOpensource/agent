@@ -8,8 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Multi-model LLM support via OpenRouter
 - Real-time web search and URL fetching capabilities
 - Message attachments (images, videos, audio, files)
-- Persistent conversation history with Supabase
-- User authentication and account management
+- Persistent conversation history with local IndexedDB
 - Research tracking (thinking processes and tool execution visibility)
 
 ## Common Development Commands
@@ -30,7 +29,7 @@ pnpm check         # Full validation: type-check + lint + build
 ### Frontend Structure (`src/`)
 
 - **`src/app/`** - Next.js app directory (routes and layouts)
-  - `api/` - Server-side API routes (chat, conversations, dashboard, sync)
+  - `api/` - Server-side API routes (chat, dashboard, sync)
   - `page.tsx` - Root page that redirects to `/app`
   - `app/page.tsx` - Home chat page at `/app` (renders new conversation UI)
   - `app/c/[conversationId]/page.tsx` - Chat conversation page
@@ -43,17 +42,15 @@ pnpm check         # Full validation: type-check + lint + build
     - `lib/` - Chat client, streaming parser, model configuration
     - Components handle message rendering, tool progress, research visibility
   - `sidebar/` - Conversation history and user profile
-    - `useConversationsStore` - Manages conversation list (remote + local)
+    - `useConversationsStore` - Manages local conversation list
   - `preview/` - Preview panel (usePreviewStore for preview state)
-  - `dashboard/` - Dashboard stats and local→remote sync (useSync)
-  - `auth/` - Authentication hooks and store
+  - `dashboard/` - Dashboard stats (local-only)
   - `theme/` - Theme switching (dark/light mode)
 
 - **`src/shared/`** - Shared utilities and components
   - `components/` - Shared UI (Markdown, CodeBlock, etc.)
   - `lib/tools/` - Tool definitions (brave-search.ts, fetch.ts)
   - `lib/openrouter/` - OpenRouter client and streaming helpers
-  - `lib/supabase/` - Supabase client configuration (browser + server)
   - `lib/indexed-db/` - Browser IndexedDB storage for guest conversations
   - `mobile/` - Mobile layout detection/context
   - `toast/` - Toast store and presenter
@@ -85,17 +82,13 @@ ResearchItem    // "thinking" or "tool" execution record
 - Actions: `setInput`, `sendMessage`, `appendToAssistant`, `stop`, `setCurrentModel`, `setSearchEnabled`, `setSystemInstruction`, scroll helpers, etc.
 
 **`useConversationsStore`** - Manages conversation list:
-- `conversations[]` - Loaded conversations (merged remote + local)
+- `conversations[]` - Loaded local conversations
 - `conversationsLoading` - Fetch state
-- `hasFetchedRemote` - Whether remote conversations have been fetched
 - `hasLoadedLocal` - Whether local IndexedDB conversations have been loaded
-- `fetchConversations()` - Loads user's conversations from `/api/conversations`
-- `loadLocalConversations()` - Loads guest/local conversations from IndexedDB
+- `loadLocalConversations()` - Loads conversations from IndexedDB
 - `clearLocal()` - Clears local IndexedDB conversations/messages
 
 **`usePreviewStore`** - Manages preview panel state
-
-**`useAuth` / `useAuthStore`** - Manages Supabase user state and auth loading flag
 
 ## API Routes
 
@@ -105,35 +98,22 @@ Core chat endpoint that:
 2. Streams response via Server-Sent Events (SSE)
 3. Executes tools (brave_search, fetch_url) in a loop up to 20 iterations
 4. Broadcasts events: thinking, tool_call, tool_progress, tool_result, content, error
-5. Saves to Supabase when user/assistant messages complete (if Supabase is configured and user is authenticated)
-6. Emits `conversation_created` / `conversation_updated` events for both remote and local persistence
-7. Returns structured message blocks with research items
+5. Emits `conversation_created` / `conversation_updated` events for local persistence
+6. Returns structured message blocks with research items
 
 **Request**: `{ conversationHistory, conversationId, model, searchEnabled?, systemInstruction? }`
 **Response**: SSE stream with events (type + data)
-**Implementation**: [src/app/api/chat/route.ts](src/app/api/chat/route.ts) with persistence in [src/app/api/chat/repository.ts](src/app/api/chat/repository.ts)
-
-### `GET /api/conversations`
-Fetches authenticated user's conversation history (requires auth), returns list of conversation metadata. Supports an optional `limit` query parameter (default 10). When Supabase is not configured, returns an empty list.
-
-### `DELETE /api/conversations/[id]`
-Deletes a conversation for the authenticated user from Supabase. No GET handler exists; conversation details are reconstructed on the client from messages.
-
-### `GET /api/conversations/[id]/messages`
-Fetch all messages in a conversation (requires auth), ordered by `created_at`. When Supabase is not configured, returns an empty list.
+**Implementation**: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
 
 ### `GET /api/dashboard/stats`
-Returns basic dashboard statistics for the authenticated user:
+Returns local-only dashboard statistics:
 
-- `userMessageCount` - Number of user messages stored in Supabase
-- `conversationCount` - Number of conversations in Supabase
-
-When Supabase is not configured, returns an error payload.
+- `userMessageCount` - Count of local messages (0 when unavailable)
+- `conversationCount` - Count of local conversations (0 when unavailable)
+- `isLocalOnly` - Always `true`
 
 ### `POST /api/sync`
-Synchronizes local (IndexedDB) guest conversations into Supabase for the authenticated user.  
-Request body: `{ conversations: { id, title, created_at, updated_at, messages: [...] }[] }`  
-Response contains counts of synced conversations and messages, plus optional error messages.
+Sync endpoint is disabled in local-only mode and returns `501`.
 
 ## Message Block Architecture
 
@@ -157,29 +137,6 @@ This allows:
 - Error blocks for surfacing API / tool / network errors in the UI
 - Progressive rendering as stream arrives
 
-## Supabase Schema
-
-**`conversations` table:**
-```
-id              UUID primary key
-user_id         UUID (foreign key to auth.users)
-title           text (initially null, set on first assistant message)
-created_at      timestamp with time zone
-updated_at      timestamp with time zone
-```
-
-**`messages` table:**
-```
-id              UUID primary key
-conversation_id UUID (foreign key to conversations)
-role            text ('user' | 'assistant')
-blocks          jsonb (array of ContentBlock objects)
-created_at      timestamp with time zone
-updated_at      timestamp with time zone
-```
-
-The `blocks` column stores the block-based message structure (content, attachments, research). This allows efficient querying of messages while supporting flexible content types.
-
 ## Streaming Architecture
 
 The `/api/chat` endpoint implements Server-Sent Events (SSE) for real-time response streaming:
@@ -191,22 +148,19 @@ The `/api/chat` endpoint implements Server-Sent Events (SSE) for real-time respo
    - `tool_call` - Function call initiated (brave_search, fetch_url)
    - `tool_progress` - Intermediate tool execution status
    - `tool_result` - Tool execution result
-   - `conversation_created` / `conversation_updated` - DB sync events
+   - `conversation_created` / `conversation_updated` - Local persistence events
 3. **Client-Side**: `src/features/chat/lib/chat-client.ts` parses events and dispatches to `useChatStore`
 4. **Tool Loop**: Server executes tools up to 20 iterations per request, collecting results before final response
 
 **Key Implementation Details:**
 - Tools only execute if their API keys are configured (e.g., BRAVE_API_KEY)
 - Each tool execution updates the research block progressively
-- Stream persists blocks to Supabase after completion (in `src/app/api/chat/repository.ts`)
 - System prompt is in Chinese, instructing thorough search before answering
 
 ## Environment Variables
 
 Required in `.env.local`:
 - `OPENROUTER_API_KEY` - OpenRouter API key
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` - Supabase publishable client key
 
 Optional:
 - `OPENROUTER_HTTP_REFERER` - HTTP referer header
@@ -233,7 +187,7 @@ Optional:
 
 **Research Visibility**: The research/thinking process is progressively streamed and rendered by [src/features/chat/components/message/research/](src/features/chat/components/message/research/) components. Users can expand/collapse research sections.
 
-**Conversation Loading**: New conversations start without a `conversationId` (`null`). After the first request, a conversation ID is generated (both for authenticated users and guests). For logged-in users, the server ensures the conversation exists in Supabase and returns a `conversation_created` event. For guests, the conversation and messages are stored in IndexedDB via `localDB`, and can later be synchronized to Supabase using `/api/sync`.
+**Conversation Loading**: New conversations start without a `conversationId` (`null`). After the first request, a conversation ID is generated and `conversation_created` is emitted. Conversations and messages are stored in IndexedDB via `localDB`.
 
 **Model Selection**: Available models are defined statically in `MODEL_CONFIGS` (`src/features/chat/lib/model-config.ts`) and selected via `ModelSelector`. The `currentModel` value in `useChatStore` must be set (the selector defaults to the first config) before sending a message.
 
@@ -293,7 +247,6 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 
 **Chat Feature:**
 - Chat API: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
-- Chat persistence: [src/app/api/chat/repository.ts](src/app/api/chat/repository.ts)
 - Chat components: [src/features/chat/components/](src/features/chat/components/)
 - Chat store: [src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)
 - Chat types: [src/features/chat/types/chat.ts](src/features/chat/types/chat.ts)
@@ -302,12 +255,10 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 **Other Features:**
 - Conversation store: [src/features/sidebar/store/useConversationsStore.ts](src/features/sidebar/store/useConversationsStore.ts)
 - Theme hook: [src/features/theme/hooks/useTheme.ts](src/features/theme/hooks/useTheme.ts)
-- Auth hook: [src/features/auth/hooks/useAuth.ts](src/features/auth/hooks/useAuth.ts)
 - Dashboard page: [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
 - Dashboard sync hook: [src/features/dashboard/hooks/useSync.ts](src/features/dashboard/hooks/useSync.ts)
 
 **Shared Utilities:**
-- Supabase client: [src/shared/lib/supabase/client.ts](src/shared/lib/supabase/client.ts)
 - Tools definition: [src/shared/lib/tools.ts](src/shared/lib/tools.ts)
 - OpenRouter client: [src/shared/lib/openrouter/server.ts](src/shared/lib/openrouter/server.ts)
 - Local IndexedDB store: [src/shared/lib/indexed-db/](src/shared/lib/indexed-db/)
