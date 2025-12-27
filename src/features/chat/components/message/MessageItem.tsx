@@ -78,7 +78,7 @@ export const MessageItem = memo(function MessageItem({
     <div
       key={`${message.role}-${index}`}
       className={cn(
-        "flex flex-col space-y-2",
+        "group/message flex flex-col space-y-2",
         isUser ? "ml-auto max-w-[90%] sm:max-w-[85%]" : "mr-auto w-full"
       )}
     >
@@ -196,7 +196,7 @@ export const MessageItem = memo(function MessageItem({
       {(isUser || !isStreaming) && (
         <div
           className={cn(
-            "flex items-center px-1",
+            "flex items-center px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
             isUser ? "justify-end" : "justify-start"
           )}
         >

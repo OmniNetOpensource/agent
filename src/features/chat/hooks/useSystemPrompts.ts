@@ -102,20 +102,27 @@ export function useSystemPrompts() {
     }
   }, []);
 
-  const createPrompt = useCallback(() => {
-    const now = Date.now();
-    const prompt: SystemPrompt = {
-      id: generateId(),
-      name: generateName(prompts),
-      content: "",
-      createdAt: now,
-      updatedAt: now,
-    };
-    const nextPrompts = [...prompts, prompt];
-    persistPrompts(nextPrompts);
-    persistSelected(prompt.id);
-    return prompt;
-  }, [persistPrompts, persistSelected, prompts]);
+  const createPrompt = useCallback(
+    (options?: Partial<Pick<SystemPrompt, "name" | "content">>) => {
+      const now = Date.now();
+      const nextName =
+        typeof options?.name === "string" && options.name.trim().length > 0
+          ? options.name.trim()
+          : generateName(prompts);
+      const prompt: SystemPrompt = {
+        id: generateId(),
+        name: nextName,
+        content: typeof options?.content === "string" ? options.content : "",
+        createdAt: now,
+        updatedAt: now,
+      };
+      const nextPrompts = [...prompts, prompt];
+      persistPrompts(nextPrompts);
+      persistSelected(prompt.id);
+      return prompt;
+    },
+    [persistPrompts, persistSelected, prompts]
+  );
 
   const updatePrompt = useCallback(
     (id: string, updates: Partial<Pick<SystemPrompt, "name" | "content">>) => {
@@ -171,7 +178,6 @@ export function useSystemPrompts() {
 
   return {
     prompts,
-    selectedPromptId,
     selectedPrompt,
     createPrompt,
     updatePrompt,
