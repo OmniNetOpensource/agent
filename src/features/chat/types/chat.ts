@@ -72,6 +72,34 @@ export type SerializedMessage = MessageBase<SerializedContentBlock>;
 
 export type MessageLike = Message | SerializedMessage;
 
+export type MessageNode = {
+  id: string;
+  role: "user" | "assistant";
+  blocks: ContentBlock[];
+  parentId: string | null;
+  children: string[];
+  createdAt: string;
+};
+
+export type BranchInfo = {
+  currentIndex: number;
+  total: number;
+  siblingIds: string[];
+};
+
+export type MessageTree = {
+  nodes: Record<string, MessageNode>;
+  rootIds: string[];
+  currentPath: string[];
+};
+
+export type EditingState = {
+  messageId: string;
+  originalBlocks: ContentBlock[];
+  editedContent: string;
+  editedAttachments: Attachment[];
+};
+
 export type ChatRequest = {
   conversationHistory: SerializedMessage[];
   conversationId?: string | null;
