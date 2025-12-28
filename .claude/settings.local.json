@@ -12,8 +12,7 @@
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\UserMenu.tsx\")",
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\GuestMenu.tsx\")",
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\ProfileSection.tsx\")",
-      "Bash(find:*)",
-      "Bash(ls -la \"d:\\develop\\projects\\agent\\src\\types\"\" 2>/dev/null || echo \"Types directory check \")"
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
