@@ -12,14 +12,17 @@
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\UserMenu.tsx\")",
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\GuestMenu.tsx\")",
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\ProfileSection.tsx\")",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["shadcn"],
-  "outputStyle": "default",
+  "enabledMcpjsonServers": [
+    "shadcn"
+  ],
   "hooks": {
     "Stop": [
       {
@@ -64,5 +67,6 @@
         ]
       }
     ]
-  }
+  },
+  "outputStyle": "default"
 }
