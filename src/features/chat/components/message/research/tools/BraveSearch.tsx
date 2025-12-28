@@ -80,7 +80,7 @@ const parseBraveSearchResults = (
           title: title || url,
           url,
           description,
-          thumbnailSrc,
+          ...(thumbnailSrc && { thumbnailSrc }),
         };
       })
       .filter((item): item is BraveSearchResult => Boolean(item?.url));
