@@ -589,6 +589,10 @@ const startChatRequest = async (
     const existing = await localDB.get(id);
     const messageTree = options?.messageTree ?? get().messageTree;
     const currentMessages = cloneMessages(options?.messages ?? get().messages);
+    const { conversations } = useConversationsStore.getState();
+    const storedConversation = conversations.find((item) => item.id === id);
+    const pinned = storedConversation?.pinned ?? existing?.pinned;
+    const pinned_at = storedConversation?.pinned_at ?? existing?.pinned_at;
     const resolvedTitleSource =
       options?.titleSource ??
       currentMessages.find((message) => message.role === "user") ??
@@ -608,6 +612,8 @@ const startChatRequest = async (
       messages: currentMessages,
       created_at,
       updated_at: now,
+      pinned,
+      pinned_at,
     });
   };
 

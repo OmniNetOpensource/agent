@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { MoreHorizontal, Pin, PinOff } from "lucide-react";
 import type { Conversation } from "@/types/conversation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 
 type ConversationItemProps = {
   conversation: Conversation;
@@ -40,9 +48,16 @@ export function ConversationItem({
   const timeLabel = conversation.updated_at
     ? formatTime(conversation.updated_at)
     : "";
+  const isPinned = Boolean(conversation.pinned);
 
   const pending = useChatStore((state) => state.pending);
   const stop = useChatStore((state) => state.stop);
+  const pinConversation = useConversationsStore(
+    (state) => state.pinConversation
+  );
+  const unpinConversation = useConversationsStore(
+    (state) => state.unpinConversation
+  );
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     // 如果是修饰键点击（Ctrl/Cmd/Shift/Alt），用户意图是新标签/新窗口/下载等
@@ -66,22 +81,65 @@ export function ConversationItem({
     stop();
   };
 
+  const handleMenuClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <Link
       href={`/app/c/${conversation.id}`}
       onClick={handleClick}
-      className={`flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
+      className={`group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
         isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
       }`}
     >
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-foreground">
-          {title}
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+            {title}
+          </span>
+          {isPinned ? (
+            <Pin className="size-3.5 text-(--text-tertiary)" />
+          ) : null}
         </div>
         <div className="mt-0.5 text-[11px] text-(--text-tertiary)">
           {timeLabel || "刚刚更新"}
         </div>
       </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            onClick={handleMenuClick}
+            aria-label="会话操作"
+            className="flex size-7 items-center justify-center rounded-lg text-(--text-tertiary) opacity-0 transition-opacity hover:bg-(--surface-hover) hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+          >
+            <MoreHorizontal className="size-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="right" className="min-w-[8.5rem]">
+          {isPinned ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                void unpinConversation(conversation.id);
+              }}
+            >
+              <PinOff className="size-4" />
+              取消置顶
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              onSelect={() => {
+                void pinConversation(conversation.id);
+              }}
+            >
+              <Pin className="size-4" />
+              置顶会话
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </Link>
   );
 }

@@ -38,15 +38,52 @@ export function ConversationList() {
     );
   }
 
+  const pinnedConversations = conversations.filter((conversation) =>
+    Boolean(conversation.pinned)
+  );
+  const regularConversations = conversations.filter(
+    (conversation) => !conversation.pinned
+  );
+  const hasPinned = pinnedConversations.length > 0;
+  const hasRegular = regularConversations.length > 0;
+
   return (
     <div className="flex flex-col gap-1">
-      {conversations.map((conversation) => (
-        <ConversationItem
-          key={conversation.id}
-          conversation={conversation}
-          isActive={conversation.id === activeConversationId}
-        />
-      ))}
+      {hasPinned ? (
+        <>
+          <div className="px-3 py-1 text-[11px] font-medium text-(--text-tertiary)">
+            置顶
+          </div>
+          <div className="flex flex-col gap-1">
+            {pinnedConversations.map((conversation) => (
+              <ConversationItem
+                key={conversation.id}
+                conversation={conversation}
+                isActive={conversation.id === activeConversationId}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
+      {hasPinned && hasRegular ? (
+        <div className="my-2 h-px w-full bg-(--border-subtle)" />
+      ) : null}
+      {hasRegular ? (
+        <>
+          <div className="px-3 py-1 text-[11px] font-medium text-(--text-tertiary)">
+            最近
+          </div>
+          <div className="flex flex-col gap-1">
+            {regularConversations.map((conversation) => (
+              <ConversationItem
+                key={conversation.id}
+                conversation={conversation}
+                isActive={conversation.id === activeConversationId}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

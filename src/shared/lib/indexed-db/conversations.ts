@@ -2,7 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { Message, MessageTree } from "@/src/features/chat/types/chat";
 
 const DB_NAME = "aether_local";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_CONVERSATIONS = "conversations";
 
 export type LocalConversation = {
@@ -12,13 +12,15 @@ export type LocalConversation = {
   messages?: Message[];
   created_at: string;
   updated_at: string;
+  pinned?: boolean;
+  pinned_at?: string;
 };
 
 interface AetherDB extends DBSchema {
   conversations: {
     key: string;
     value: LocalConversation;
-    indexes: { updated_at: string };
+    indexes: { updated_at: string; pinned_at: string };
   };
   // Legacy store kept in typing so upgrade can safely delete it.
   messages: {
@@ -39,7 +41,7 @@ const openDatabase = async (): Promise<IDBPDatabase<AetherDB>> => {
 
   if (!dbPromise) {
     dbPromise = openDB<AetherDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, _newVersion, transaction) {
         if (oldVersion < 2) {
           if (db.objectStoreNames.contains("messages")) {
             db.deleteObjectStore("messages");
@@ -51,6 +53,13 @@ const openDatabase = async (): Promise<IDBPDatabase<AetherDB>> => {
             keyPath: "id",
           });
           store.createIndex("updated_at", "updated_at");
+          store.createIndex("pinned_at", "pinned_at");
+        }
+        if (oldVersion < 3) {
+          const store = transaction?.objectStore(STORE_CONVERSATIONS);
+          if (store && !store.indexNames.contains("pinned_at")) {
+            store.createIndex("pinned_at", "pinned_at");
+          }
         }
       },
     });
