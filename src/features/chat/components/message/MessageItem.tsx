@@ -113,7 +113,7 @@ const BranchConversationButton = ({
 }: BranchConversationButtonProps) => {
   const router = useRouter();
   const branchToNewConversation = useChatStore(
-    (state) => state.branchToNewConversation
+    (state) => state.branchToNewConversation,
   );
   const [open, setOpen] = useState(false);
   const [isBranching, setIsBranching] = useState(false);
@@ -194,12 +194,12 @@ export const MessageItem = memo(function MessageItem({
   const isEditing = editingState?.messageId === messageId;
   const attachmentBlocks = message.blocks.filter(
     (
-      block
+      block,
     ): block is Extract<Message["blocks"][number], { type: "attachments" }> =>
-      block.type === "attachments"
+      block.type === "attachments",
   );
   const contentBlocks = message.blocks.filter(
-    (block) => block.type !== "attachments"
+    (block) => block.type !== "attachments",
   );
 
   const shouldShowToolbar = !isEditing && (isUser || !isStreaming);
@@ -209,7 +209,7 @@ export const MessageItem = memo(function MessageItem({
       key={`${message.role}-${index}`}
       className={cn(
         "w-full group/message flex flex-col space-y-2",
-        isUser ? "items-end" : "items-start"
+        isUser ? "items-end" : "items-start",
       )}
     >
       {isUser && !isEditing && attachmentBlocks.length > 0 && (
@@ -241,8 +241,8 @@ export const MessageItem = memo(function MessageItem({
                     </div>
                   </div>
                 </div>
-              )
-            )
+              ),
+            ),
           )}
         </div>
       )}
@@ -255,7 +255,7 @@ export const MessageItem = memo(function MessageItem({
             <div
               className={cn(
                 "space-y-4 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6",
-                "bg-muted text-foreground w-fit"
+                "bg-muted text-foreground w-fit",
               )}
             >
               {contentBlocks.map((block, blockIndex) => {
@@ -329,7 +329,7 @@ export const MessageItem = memo(function MessageItem({
         <div
           className={cn(
             "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
-            isUser ? "justify-end" : "justify-start"
+            isUser ? "justify-end" : "justify-start",
           )}
         >
           {isUser && (
@@ -363,7 +363,7 @@ export const MessageItem = memo(function MessageItem({
         <div
           className={cn(
             "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
-            isUser ? "justify-end" : "justify-start"
+            isUser ? "justify-end" : "justify-start",
           )}
         >
           <BranchNavigator

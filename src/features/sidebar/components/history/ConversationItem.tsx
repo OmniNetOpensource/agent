@@ -107,14 +107,18 @@ export function ConversationItem({
   };
 
   return (
-    <Link
-      href={`/app/c/${conversation.id}`}
-      onClick={handleClick}
-      className={`group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
+    <div
+      className={`group relative flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
         isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
       }`}
     >
-      <div className="min-w-0 flex-1">
+      <Link
+        href={`/app/c/${conversation.id}`}
+        onClick={handleClick}
+        className="absolute inset-0 z-0"
+        aria-label={title}
+      />
+      <div className="min-w-0 flex-1 pointer-events-none relative z-10">
         <div className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
             {title}
@@ -127,48 +131,55 @@ export function ConversationItem({
           {timeLabel || "刚刚更新"}
         </div>
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            onClick={handleMenuClick}
-            aria-label="会话操作"
-            className="flex size-7 items-center justify-center rounded-lg text-(--text-tertiary) opacity-0 transition-opacity hover:bg-(--surface-hover) hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+      <div className="relative z-20">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              onClick={handleMenuClick}
+              aria-label="会话操作"
+              className="flex size-7 items-center justify-center rounded-lg text-(--text-tertiary) opacity-0 transition-opacity hover:bg-(--surface-hover) hover:text-foreground group-hover:opacity-100 data-[state=open]:opacity-100"
+            >
+              <MoreHorizontal className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            side="right"
+            className="min-w-[8.5rem]"
+            onClick={(e) => e.stopPropagation()}
           >
-            <MoreHorizontal className="size-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="right" className="min-w-[8.5rem]">
-          {isPinned ? (
+            {isPinned ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  void unpinConversation(conversation.id);
+                }}
+              >
+                <PinOff className="size-4" />
+                取消置顶
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onSelect={() => {
+                  void pinConversation(conversation.id);
+                }}
+              >
+                <Pin className="size-4" />
+                置顶会话
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onSelect={() => {
-                void unpinConversation(conversation.id);
+                void handleDelete();
               }}
+              className="text-destructive"
             >
-              <PinOff className="size-4" />
-              取消置顶
+              <Trash2 className="size-4" />
+              删除会话
             </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem
-              onSelect={() => {
-                void pinConversation(conversation.id);
-              }}
-            >
-              <Pin className="size-4" />
-              置顶会话
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem
-            onSelect={() => {
-              void handleDelete();
-            }}
-            className="text-destructive"
-          >
-            <Trash2 className="size-4" />
-            删除会话
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </Link>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }
