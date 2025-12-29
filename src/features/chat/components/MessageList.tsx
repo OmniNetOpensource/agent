@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 export function MessageList() {
   const messages = useChatStore((state) => state.messages);
   const pending = useChatStore((state) => state.pending);
+  const messageTree = useChatStore((state) => state.messageTree);
+  const getBranchInfo = useChatStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -61,13 +63,19 @@ export function MessageList() {
           {messages.map((message, index) => {
             const isLastMessage = index === messages.length - 1;
             const isStreaming = isLastMessage && pending;
+            const messageId = messageTree.currentPath[index] ?? `${message.role}-${index}`;
+            const branchInfo = messageId
+              ? getBranchInfo(messageId)
+              : null;
 
             return (
               <MessageItem
-                key={`${message.role}-${index}`}
+                key={messageId}
                 message={message}
+                messageId={messageId}
                 index={index}
                 isStreaming={isStreaming}
+                branchInfo={branchInfo}
               />
             );
           })}

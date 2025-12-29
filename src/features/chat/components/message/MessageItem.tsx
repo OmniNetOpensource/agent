@@ -1,16 +1,26 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
-import { Message } from "@/src/features/chat/types/chat";
+import { BranchInfo, Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "./research/ResearchBlock";
-import { Copy, Check, Paperclip, AlertCircle, GitBranch } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Paperclip,
+  AlertCircle,
+  Pencil,
+  RotateCcw,
+  GitBranch,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { MessageEditor } from "./MessageEditor";
+import { BranchNavigator } from "./BranchNavigator";
 import {
   Dialog,
   DialogContent,
@@ -63,13 +73,48 @@ const CopyButton = ({ blocks }: CopyButtonProps) => {
   );
 };
 
-type BranchButtonProps = {
-  messageIndex: number;
+type ActionButtonProps = {
+  onClick: () => void;
+  disabled?: boolean;
+  title: string;
+  icon: ReactNode;
+  label: string;
 };
 
-const BranchButton = ({ messageIndex }: BranchButtonProps) => {
+const ActionButton = ({
+  onClick,
+  disabled,
+  title,
+  icon,
+  label,
+}: ActionButtonProps) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="sm"
+    onClick={onClick}
+    disabled={disabled}
+    className="h-auto gap-1.5 px-2 py-1 text-xs"
+    title={title}
+  >
+    {icon}
+    {label}
+  </Button>
+);
+
+type BranchConversationButtonProps = {
+  messageId: string;
+  disabled?: boolean;
+};
+
+const BranchConversationButton = ({
+  messageId,
+  disabled,
+}: BranchConversationButtonProps) => {
   const router = useRouter();
-  const branchFromMessage = useChatStore((state) => state.branchFromMessage);
+  const branchToNewConversation = useChatStore(
+    (state) => state.branchToNewConversation
+  );
   const [open, setOpen] = useState(false);
   const [isBranching, setIsBranching] = useState(false);
 
@@ -77,7 +122,7 @@ const BranchButton = ({ messageIndex }: BranchButtonProps) => {
     if (isBranching) return;
     setIsBranching(true);
     try {
-      await branchFromMessage(messageIndex, (path) => router.push(path));
+      await branchToNewConversation(messageId, (path) => router.push(path));
       setOpen(false);
     } finally {
       setIsBranching(false);
@@ -88,20 +133,22 @@ const BranchButton = ({ messageIndex }: BranchButtonProps) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           className="h-auto gap-1.5 px-2 py-1 text-xs"
-          title="从此消息分支"
+          title="创建新对话分支"
+          disabled={disabled}
         >
           <GitBranch className="h-3.5 w-3.5" />
-          分支
+          分支对话
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>创建分支对话</DialogTitle>
           <DialogDescription>
-            将从此消息创建一个新的对话分支，包含该消息及之前的所有历史消息。
+            将以此消息为止的内容创建一个新的对话，原对话保持不变。
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -124,16 +171,27 @@ const BranchButton = ({ messageIndex }: BranchButtonProps) => {
 
 type MessageItemProps = {
   message: Message;
+  messageId: string;
   index: number;
   isStreaming: boolean;
+  branchInfo: BranchInfo | null;
 };
 
 export const MessageItem = memo(function MessageItem({
   message,
+  messageId,
   index,
   isStreaming,
+  branchInfo,
 }: MessageItemProps) {
+  const router = useRouter();
+  const pending = useChatStore((state) => state.pending);
+  const editingState = useChatStore((state) => state.editingState);
+  const startEditing = useChatStore((state) => state.startEditing);
+  const retryFromMessage = useChatStore((state) => state.retryFromMessage);
+  const navigateBranch = useChatStore((state) => state.navigateBranch);
   const isUser = message.role === "user";
+  const isEditing = editingState?.messageId === messageId;
   const attachmentBlocks = message.blocks.filter(
     (
       block
@@ -144,15 +202,17 @@ export const MessageItem = memo(function MessageItem({
     (block) => block.type !== "attachments"
   );
 
+  const shouldShowToolbar = !isEditing && (isUser || !isStreaming);
+
   return (
     <div
       key={`${message.role}-${index}`}
       className={cn(
-        "group/message flex flex-col space-y-2",
-        isUser ? "ml-auto max-w-[90%] sm:max-w-[85%]" : "mr-auto w-full"
+        "w-full group/message flex flex-col space-y-2",
+        isUser ? "items-end" : "items-start"
       )}
     >
-      {isUser && attachmentBlocks.length > 0 && (
+      {isUser && !isEditing && attachmentBlocks.length > 0 && (
         <div className="flex gap-3 overflow-x-auto">
           {attachmentBlocks.flatMap((block) =>
             block.attachments.map((attachment) =>
@@ -187,15 +247,17 @@ export const MessageItem = memo(function MessageItem({
         </div>
       )}
 
-      {(isUser ? contentBlocks.length > 0 : true) && (
-        <div
-          className={cn(
-            "rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 transition-all",
-            isUser ? "bg-muted text-foreground" : "bg-transparent"
-          )}
-        >
-          {isUser ? (
-            <div className="flex flex-col space-y-4">
+      {(isEditing || (isUser ? contentBlocks.length > 0 : true)) && (
+        <>
+          {isEditing ? (
+            <MessageEditor messageId={messageId} />
+          ) : isUser ? (
+            <div
+              className={cn(
+                "space-y-4 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6",
+                "bg-muted text-foreground w-fit"
+              )}
+            >
               {contentBlocks.map((block, blockIndex) => {
                 const blockKey = `${index}-${blockIndex}`;
 
@@ -237,7 +299,7 @@ export const MessageItem = memo(function MessageItem({
                       key={blockKey}
                       className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                     >
-                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <div className="flex-1 whitespace-pre-wrap">
                         {block.message}
                       </div>
@@ -259,19 +321,56 @@ export const MessageItem = memo(function MessageItem({
               })}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Only show copy button for user messages OR for assistant messages when not streaming */}
-      {(isUser || !isStreaming) && (
+      {shouldShowToolbar && (
         <div
           className={cn(
             "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
             isUser ? "justify-end" : "justify-start"
           )}
         >
+          {isUser && (
+            <ActionButton
+              onClick={() => startEditing(messageId)}
+              disabled={pending}
+              title="编辑消息"
+              icon={<Pencil className="h-3.5 w-3.5" />}
+              label="编辑"
+            />
+          )}
           <CopyButton blocks={message.blocks} />
-          {!isUser && !isStreaming && <BranchButton messageIndex={index} />}
+          <ActionButton
+            onClick={() =>
+              retryFromMessage(messageId, (path) => router.push(path))
+            }
+            disabled={pending}
+            title="重试生成"
+            icon={<RotateCcw className="h-3.5 w-3.5" />}
+            label="重试"
+          />
+          {!isUser && !isStreaming && (
+            <BranchConversationButton
+              messageId={messageId}
+              disabled={pending}
+            />
+          )}
+        </div>
+      )}
+      {branchInfo && !isEditing && (
+        <div
+          className={cn(
+            "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            isUser ? "justify-end" : "justify-start"
+          )}
+        >
+          <BranchNavigator
+            branchInfo={branchInfo}
+            onNavigate={(direction) => navigateBranch(messageId, direction)}
+            disabled={pending}
+          />
         </div>
       )}
     </div>

@@ -217,4 +217,4 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 - Use plain, natural language (avoid jargon)
 - Take time with implementation; be detailed
 - frontend style need to fit in the current project's style
-- 不需要运行 pnpm 或者 npm 等命令
+- be flexible

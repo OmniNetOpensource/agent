@@ -2,9 +2,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { localDB } from "@/src/shared/lib/indexed-db";
+import { migrateMessagesToTree } from "@/src/features/chat/lib/message-tree";
 import type {
   Attachment,
   LegacyAttachment,
+  Message,
+  MessageNode,
+  MessageTree,
 } from "@/src/features/chat/types/chat";
 import { base64ToBlob, createBlobUrl } from "@/src/shared/utils/file";
 
@@ -41,10 +45,53 @@ const restoreDisplayUrls = (
     return att as Attachment;
   });
 
+const hydrateBlocks = (blocks: Message["blocks"]) =>
+  Array.isArray(blocks)
+    ? blocks.map((block) =>
+        block.type === "research"
+          ? {
+              ...block,
+              items: block.items.map((item) => ({ ...item })),
+            }
+          : block.type === "attachments"
+          ? {
+              ...block,
+              attachments: restoreDisplayUrls(
+                Array.isArray(block.attachments) ? block.attachments : []
+              ),
+            }
+          : { ...block }
+      )
+    : [];
+
+const hydrateMessage = (msg: Message): Message => ({
+  role: msg.role,
+  blocks: hydrateBlocks(msg.blocks),
+});
+
+const hydrateTree = (tree: MessageTree): MessageTree => {
+  const nodes: Record<string, MessageNode> = {};
+
+  for (const [id, node] of Object.entries(tree.nodes ?? {})) {
+    nodes[id] = {
+      ...node,
+      blocks: hydrateBlocks(node.blocks ?? []),
+      children: Array.isArray(node.children) ? [...node.children] : [],
+    };
+  }
+
+  return {
+    ...tree,
+    nodes,
+    rootIds: Array.isArray(tree.rootIds) ? [...tree.rootIds] : [],
+    currentPath: Array.isArray(tree.currentPath) ? [...tree.currentPath] : [],
+  };
+};
+
 export function useConversationLoader(conversationId: string | undefined) {
   const router = useRouter();
   const currentConversationId = useChatStore((state) => state.conversationId);
-  const setMessages = useChatStore((state) => state.setMessages);
+  const initializeTree = useChatStore((state) => state.initializeTree);
   const setConversationId = useChatStore((state) => state.setConversationId);
 
   useEffect(() => {
@@ -68,33 +115,32 @@ export function useConversationLoader(conversationId: string | undefined) {
           return;
         }
 
-        const mapped = (conversation.messages ?? []).map((msg) => ({
-          role: msg.role,
-          blocks: Array.isArray(msg.blocks)
-            ? msg.blocks.map((block) =>
-                block.type === "research"
-                  ? {
-                      ...block,
-                      items: block.items.map((item) => ({ ...item })),
-                    }
-                  : block.type === "attachments"
-                  ? {
-                      ...block,
-                      attachments: restoreDisplayUrls(
-                        Array.isArray(block.attachments) ? block.attachments : []
-                      ),
-                    }
-                  : { ...block }
-              )
-            : [],
-        }));
+        const mappedMessages = (conversation.messages ?? []).map((msg) =>
+          hydrateMessage(msg)
+        );
+        let mappedTree = conversation.messageTree
+          ? hydrateTree(conversation.messageTree)
+          : null;
+
+        if (!mappedTree || Object.keys(mappedTree.nodes ?? {}).length === 0) {
+          mappedTree = migrateMessagesToTree(mappedMessages);
+          if (mappedMessages.length > 0) {
+            const updated_at = conversation.updated_at ?? new Date().toISOString();
+            await localDB.save({
+              ...conversation,
+              messageTree: mappedTree,
+              messages: mappedMessages,
+              updated_at,
+            });
+          }
+        }
 
         if (canceled || signal.aborted) {
           return;
         }
 
         setConversationId(conversationId);
-        setMessages(mapped);
+        initializeTree(mappedMessages, mappedTree);
       } catch (error) {
         if (canceled || signal.aborted) {
           return;
@@ -118,7 +164,7 @@ export function useConversationLoader(conversationId: string | undefined) {
     currentConversationId,
     router,
     setConversationId,
-    setMessages,
+    initializeTree,
   ]);
 
   return { isLoading: conversationId !== currentConversationId };

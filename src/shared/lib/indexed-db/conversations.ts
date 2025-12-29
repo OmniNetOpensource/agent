@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { Message } from "@/src/features/chat/types/chat";
+import type { Message, MessageTree } from "@/src/features/chat/types/chat";
 
 const DB_NAME = "aether_local";
 const DB_VERSION = 2;
@@ -8,7 +8,8 @@ const STORE_CONVERSATIONS = "conversations";
 export type LocalConversation = {
   id: string;
   title: string | null;
-  messages: Message[];
+  messageTree?: MessageTree;
+  messages?: Message[];
   created_at: string;
   updated_at: string;
 };
@@ -112,10 +113,12 @@ export const localDB = {
 
     const db = await openDatabase();
     const all = await db.getAll(STORE_CONVERSATIONS);
-    const messageCount = all.reduce(
-      (sum, conv) => sum + (conv.messages?.length ?? 0),
-      0
-    );
+    const messageCount = all.reduce((sum, conv) => {
+      if (conv.messageTree?.nodes) {
+        return sum + Object.keys(conv.messageTree.nodes).length;
+      }
+      return sum + (conv.messages?.length ?? 0);
+    }, 0);
 
     return { conversationCount: all.length, messageCount };
   },
