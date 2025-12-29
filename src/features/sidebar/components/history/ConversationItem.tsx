@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontal, Pin, PinOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MoreHorizontal, Pin, PinOff, Trash2 } from "lucide-react";
 import type { Conversation } from "@/types/conversation";
 import {
   DropdownMenu,
@@ -52,11 +53,15 @@ export function ConversationItem({
 
   const pending = useChatStore((state) => state.pending);
   const stop = useChatStore((state) => state.stop);
+  const router = useRouter();
   const pinConversation = useConversationsStore(
     (state) => state.pinConversation
   );
   const unpinConversation = useConversationsStore(
     (state) => state.unpinConversation
+  );
+  const deleteConversation = useConversationsStore(
+    (state) => state.deleteConversation
   );
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -84,6 +89,21 @@ export function ConversationItem({
   const handleMenuClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "确定要删除这个会话吗？删除后无法恢复。"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await deleteConversation(conversation.id);
+
+    if (isActive) {
+      router.push("/app");
+    }
   };
 
   return (
@@ -138,6 +158,15 @@ export function ConversationItem({
               置顶会话
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            onSelect={() => {
+              void handleDelete();
+            }}
+            className="text-destructive"
+          >
+            <Trash2 className="size-4" />
+            删除会话
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </Link>

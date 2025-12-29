@@ -1,12 +1,10 @@
 import { create } from "zustand";
 import type { Conversation } from "@/types/conversation";
-import {
-  localDB,
-  type LocalConversation,
-} from "@/src/shared/lib/indexed-db";
+import { localDB, type LocalConversation } from "@/src/shared/lib/indexed-db";
 
 type ConversationsState = {
-  conversations: Conversation[];
+  pinnedConversations: Conversation[];
+  normalConversations: Conversation[];
   conversationsLoading: boolean;
   hasLoadedLocal: boolean;
 };
@@ -18,15 +16,63 @@ type ConversationsActions = {
   clearLocal: () => Promise<void>;
   pinConversation: (id: string) => Promise<void>;
   unpinConversation: (id: string) => Promise<void>;
+  deleteConversation: (id: string) => Promise<void>;
 };
 
-const mergeAndSortConversations = (
-  existing: Conversation[],
+const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
+  const sorted = [...conversations];
+  sorted.sort((a, b) => {
+    const aPinnedAt = a.pinned_at ?? a.updated_at ?? "";
+    const bPinnedAt = b.pinned_at ?? b.updated_at ?? "";
+    if (!aPinnedAt && !bPinnedAt) return 0;
+    if (!aPinnedAt) return 1;
+    if (!bPinnedAt) return -1;
+    return bPinnedAt.localeCompare(aPinnedAt);
+  });
+  return sorted;
+};
+
+const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
+  const sorted = [...conversations];
+  sorted.sort((a, b) => {
+    if (!a.updated_at && !b.updated_at) return 0;
+    if (!a.updated_at) return 1;
+    if (!b.updated_at) return -1;
+    return b.updated_at.localeCompare(a.updated_at);
+  });
+  return sorted;
+};
+
+const splitAndSortConversations = (conversations: Conversation[]) => {
+  const pinned: Conversation[] = [];
+  const normal: Conversation[] = [];
+
+  for (const conversation of conversations) {
+    if (conversation.pinned) {
+      pinned.push(conversation);
+    } else {
+      normal.push(conversation);
+    }
+  }
+
+  return {
+    pinnedConversations: sortByPinnedAt(pinned),
+    normalConversations: sortByUpdatedAt(normal),
+  };
+};
+
+const mergeConversations = (
+  pinnedConversations: Conversation[],
+  normalConversations: Conversation[],
   incoming: Conversation[]
-): Conversation[] => {
+) => {
   const map = new Map<string, Conversation>();
 
-  for (const conv of existing) {
+  for (const conv of pinnedConversations) {
+    map.set(conv.id, conv);
+  }
+
+  for (const conv of normalConversations) {
     map.set(conv.id, conv);
   }
 
@@ -34,36 +80,10 @@ const mergeAndSortConversations = (
     map.set(conv.id, conv);
   }
 
-  const merged = Array.from(map.values());
-  merged.sort((a, b) => {
-    const aPinned = Boolean(a.pinned);
-    const bPinned = Boolean(b.pinned);
-
-    if (aPinned !== bPinned) {
-      return aPinned ? -1 : 1;
-    }
-
-    if (aPinned && bPinned) {
-      const aPinnedAt = a.pinned_at ?? a.updated_at ?? "";
-      const bPinnedAt = b.pinned_at ?? b.updated_at ?? "";
-      if (!aPinnedAt && !bPinnedAt) return 0;
-      if (!aPinnedAt) return 1;
-      if (!bPinnedAt) return -1;
-      return bPinnedAt.localeCompare(aPinnedAt);
-    }
-
-    if (!a.updated_at && !b.updated_at) return 0;
-    if (!a.updated_at) return 1;
-    if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
-  });
-
-  return merged;
+  return splitAndSortConversations(Array.from(map.values()));
 };
 
-const mapLocalToConversation = (
-  local: LocalConversation
-): Conversation => ({
+const mapLocalToConversation = (local: LocalConversation): Conversation => ({
   id: local.id,
   title: local.title,
   created_at: local.created_at,
@@ -76,26 +96,29 @@ const mapLocalToConversation = (
 export const useConversationsStore = create<
   ConversationsState & ConversationsActions
 >((set, get) => ({
-  conversations: [],
+  pinnedConversations: [],
+  normalConversations: [],
   conversationsLoading: false,
   hasLoadedLocal: false,
 
   addConversation: (conversation) =>
     set((state) => {
-      const next: Conversation = { ...conversation };
-      const filtered = state.conversations.filter(
-        (item) => item.id !== next.id
+      const merged = mergeConversations(
+        state.pinnedConversations,
+        state.normalConversations,
+        [conversation]
       );
-
-      const merged = mergeAndSortConversations(filtered, [next]);
-      return { conversations: merged };
+      return { ...state, ...merged };
     }),
 
   setConversations: (conversations) =>
     set((state) => ({
-      conversations: mergeAndSortConversations(state.conversations, [
-        ...conversations,
-      ]),
+      ...state,
+      ...mergeConversations(
+        state.pinnedConversations,
+        state.normalConversations,
+        conversations
+      ),
     })),
 
   loadLocalConversations: async () => {
@@ -113,7 +136,12 @@ export const useConversationsStore = create<
       );
 
       set((state) => ({
-        conversations: mergeAndSortConversations(state.conversations, mapped),
+        ...state,
+        ...mergeConversations(
+          state.pinnedConversations,
+          state.normalConversations,
+          mapped
+        ),
         hasLoadedLocal: true,
         conversationsLoading: false,
       }));
@@ -136,14 +164,15 @@ export const useConversationsStore = create<
 
     set((state) => ({
       ...state,
-      conversations: [],
+      pinnedConversations: [],
+      normalConversations: [],
       hasLoadedLocal: true,
     }));
   },
 
   pinConversation: async (id) => {
-    const { conversations } = get();
-    const target = conversations.find((item) => item.id === id);
+    const { normalConversations } = get();
+    const target = normalConversations.find((item) => item.id === id);
     if (!target) {
       return;
     }
@@ -157,10 +186,13 @@ export const useConversationsStore = create<
 
     set((state) => ({
       ...state,
-      conversations: mergeAndSortConversations(
-        state.conversations.filter((item) => item.id !== id),
-        [updated]
+      normalConversations: state.normalConversations.filter(
+        (item) => item.id !== id
       ),
+      pinnedConversations: sortByPinnedAt([
+        updated,
+        ...state.pinnedConversations.filter((item) => item.id !== id),
+      ]),
     }));
 
     try {
@@ -178,8 +210,8 @@ export const useConversationsStore = create<
   },
 
   unpinConversation: async (id) => {
-    const { conversations } = get();
-    const target = conversations.find((item) => item.id === id);
+    const { pinnedConversations } = get();
+    const target = pinnedConversations.find((item) => item.id === id);
     if (!target) {
       return;
     }
@@ -192,10 +224,13 @@ export const useConversationsStore = create<
 
     set((state) => ({
       ...state,
-      conversations: mergeAndSortConversations(
-        state.conversations.filter((item) => item.id !== id),
-        [updated]
+      pinnedConversations: state.pinnedConversations.filter(
+        (item) => item.id !== id
       ),
+      normalConversations: sortByUpdatedAt([
+        updated,
+        ...state.normalConversations.filter((item) => item.id !== id),
+      ]),
     }));
 
     try {
@@ -209,6 +244,24 @@ export const useConversationsStore = create<
       }
     } catch (error) {
       console.error("Failed to unpin conversation:", error);
+    }
+  },
+
+  deleteConversation: async (id) => {
+    set((state) => ({
+      ...state,
+      pinnedConversations: state.pinnedConversations.filter(
+        (item) => item.id !== id
+      ),
+      normalConversations: state.normalConversations.filter(
+        (item) => item.id !== id
+      ),
+    }));
+
+    try {
+      await localDB.delete(id);
+    } catch (error) {
+      console.error("Failed to delete local conversation:", error);
     }
   },
 }));

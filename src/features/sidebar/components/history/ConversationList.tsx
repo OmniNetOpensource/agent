@@ -7,7 +7,12 @@ import { useConversationsStore } from "@/src/features/sidebar/store/useConversat
 import { ConversationItem } from "./ConversationItem";
 
 export function ConversationList() {
-  const conversations = useConversationsStore((state) => state.conversations);
+  const pinnedConversations = useConversationsStore(
+    (state) => state.pinnedConversations
+  );
+  const normalConversations = useConversationsStore(
+    (state) => state.normalConversations
+  );
   const conversationsLoading = useConversationsStore(
     (state) => state.conversationsLoading
   );
@@ -30,7 +35,11 @@ export function ConversationList() {
     );
   }
 
-  if (!conversations.length && hasLoadedLocal) {
+  if (
+    !pinnedConversations.length &&
+    !normalConversations.length &&
+    hasLoadedLocal
+  ) {
     return (
       <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-center text-xs text-(--text-tertiary)">
         暂无会话，发送第一条消息后会自动出现在这里。
@@ -38,14 +47,8 @@ export function ConversationList() {
     );
   }
 
-  const pinnedConversations = conversations.filter((conversation) =>
-    Boolean(conversation.pinned)
-  );
-  const regularConversations = conversations.filter(
-    (conversation) => !conversation.pinned
-  );
   const hasPinned = pinnedConversations.length > 0;
-  const hasRegular = regularConversations.length > 0;
+  const hasRegular = normalConversations.length > 0;
 
   return (
     <div className="flex flex-col gap-1">
@@ -74,7 +77,7 @@ export function ConversationList() {
             最近
           </div>
           <div className="flex flex-col gap-1">
-            {regularConversations.map((conversation) => (
+            {normalConversations.map((conversation) => (
               <ConversationItem
                 key={conversation.id}
                 conversation={conversation}

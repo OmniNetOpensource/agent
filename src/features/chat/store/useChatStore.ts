@@ -589,8 +589,12 @@ const startChatRequest = async (
     const existing = await localDB.get(id);
     const messageTree = options?.messageTree ?? get().messageTree;
     const currentMessages = cloneMessages(options?.messages ?? get().messages);
-    const { conversations } = useConversationsStore.getState();
-    const storedConversation = conversations.find((item) => item.id === id);
+    const { pinnedConversations, normalConversations } =
+      useConversationsStore.getState();
+    const storedConversation = [
+      ...pinnedConversations,
+      ...normalConversations,
+    ].find((item) => item.id === id);
     const pinned = storedConversation?.pinned ?? existing?.pinned;
     const pinned_at = storedConversation?.pinned_at ?? existing?.pinned_at;
     const resolvedTitleSource =
@@ -681,12 +685,16 @@ const startChatRequest = async (
         if (id) {
           void persistLocalConversation(id, { updated_at, titleSource });
 
-          const { conversations, setConversations } =
+          const { pinnedConversations, normalConversations, setConversations } =
             useConversationsStore.getState();
-          const existing = conversations.find((item) => item.id === id);
+          const allConversations = [
+            ...pinnedConversations,
+            ...normalConversations,
+          ];
+          const existing = allConversations.find((item) => item.id === id);
           if (existing) {
             const updated = { ...existing, updated_at };
-            const remaining = conversations.filter((item) => item.id !== id);
+            const remaining = allConversations.filter((item) => item.id !== id);
             setConversations([updated, ...remaining]);
           }
         }
