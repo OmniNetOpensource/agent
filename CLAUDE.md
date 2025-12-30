@@ -5,11 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 **Aether** is an AI chat application built with Next.js that provides a conversational interface with:
-- Multi-model LLM support via OpenRouter
-- Real-time web search and URL fetching capabilities
-- Message attachments (images, videos, audio, files)
-- Persistent conversation history with local IndexedDB
-- Research tracking (thinking processes and tool execution visibility)
+- Multi-model LLM support via OpenRouter (model picker persisted in localStorage)
+- Streaming SSE responses with thinking/tool progress
+- Tools for web search and URL fetching (brave_search, fetch_url)
+- Message attachments (image, video, audio, file) serialized to base64 for requests
+- Local-first persistence in IndexedDB (message tree, pinned conversations)
+- Message editing, retry, and branching with branch navigation
+- Code preview panel for HTML/CSS/JS code blocks
+- Theme toggle and mobile layout detection
 
 ## Common Development Commands
 
@@ -22,102 +25,47 @@ pnpm lint          # ESLint check
 pnpm check         # Full validation: type-check + lint + build
 ```
 
-**Note**: ESLint disables `react-hooks/exhaustive-deps` to allow flexible dependency arrays in hooks like `useEffect`. TypeScript runs in strict mode.
+**Note**: ESLint uses Next.js core-web-vitals + TypeScript configs with react-hooks recommended rules. TypeScript runs in strict mode.
 
 ## Architecture & Structure
 
-### Frontend Structure (`src/`)
+### App Routes (`src/app/`)
+- `api/chat` - Streaming chat endpoint (OpenRouter + tools)
+- `api/dashboard/stats` - Local-only stats
+- `api/sync` - Disabled (returns 501)
+- `page.tsx` - Root redirect to `/app`
+- `app/page.tsx` - New chat screen
+- `app/c/[conversationId]/page.tsx` - Conversation screen
+- `app/layout.tsx` - App shell with Sidebar + top bar
+- `dashboard/page.tsx` - Local stats screen
 
-- **`src/app/`** - Next.js app directory (routes and layouts)
-  - `api/` - Server-side API routes (chat, dashboard, sync)
-  - `page.tsx` - Root page that redirects to `/app`
-  - `app/page.tsx` - Home chat page at `/app` (renders new conversation UI)
-  - `app/c/[conversationId]/page.tsx` - Chat conversation page
-  - `app/layout.tsx` - App layout with Sidebar + Header
-  - `layout.tsx` - Root layout (fonts, theme initialization, providers)
+### Feature Folders (`src/features/`)
+- `chat/` - Chat UI, state, and request flow
+  - `components/` - Composer, MessageList, MessageItem, MessageEditor, BranchNavigator
+  - `hooks/` - Conversation loader, system prompt presets
+  - `lib/` - chat-client, chat-request, message-tree, block-operations, serialization, model-config
+  - `store/` - `useChatStore`
+- `sidebar/` - Conversation list with pin/unpin + delete
+- `preview/` - Code preview panel + `usePreviewStore`
+- `dashboard/` - Local stats + sync UI
+- `theme/` - Theme switching hook
 
-- **`src/features/`** - Feature-based organization
-  - `chat/` - Chat UI components (MessageList, Composer, Header) and state (useChatStore)
-    - `types/chat.ts` - Message, ContentBlock, ResearchItem type definitions
-    - `lib/` - Chat client, streaming parser, model configuration
-    - Components handle message rendering, tool progress, research visibility
-  - `sidebar/` - Conversation history and user profile
-    - `useConversationsStore` - Manages local conversation list
-  - `preview/` - Preview panel (usePreviewStore for preview state)
-  - `dashboard/` - Dashboard stats (local-only)
-  - `theme/` - Theme switching (dark/light mode)
+### Shared (`src/shared/`)
+- `components/` - Markdown, CodeBlock, ImagePreview
+- `lib/tools/` + `lib/tools.ts` - Tool specs and dispatcher
+- `lib/openrouter/` - OpenRouter streaming helpers
+- `lib/indexed-db/` - Local IndexedDB persistence
+- `lib/conversation-logger.ts` - Dev logs to `logs/conversations`
+- `mobile/`, `toast/`, `utils/`
 
-- **`src/shared/`** - Shared utilities and components
-  - `components/` - Shared UI (Markdown, CodeBlock, etc.)
-  - `lib/tools/` - Tool definitions (brave-search.ts, fetch.ts)
-  - `lib/openrouter/` - OpenRouter client and streaming helpers
-  - `lib/indexed-db/` - Browser IndexedDB storage for guest conversations
-  - `mobile/` - Mobile layout detection/context
-  - `toast/` - Toast store and presenter
-  - `utils/` - Utility functions (chat formatting, file helpers)
+### Root-level
+- `components/ui/` - shadcn + Radix UI primitives
+- `lib/utils.ts` - `cn` helper
 
-### Key Type System (`types/conversation.ts`)
+### Key Type System
 
-```typescript
-Conversation    // DB record with id, user_id, title, timestamps
-DbMessage       // DB message with id, blocks, role, timestamps
-ContentBlock    // "content" | "attachments" | "research" | "error"
-Message         // Frontend message: role + blocks[]
-ResearchItem    // "thinking" or "tool" execution record
-```
-
-## State Management (Zustand)
-
-**`useChatStore`** - Manages chat session state:
-- `messages[]` - Conversation history
-- `input` - User input text
-- `pending` - Loading state during API calls
-- `chatClient` - Active SSE chat client instance (or `null`)
-- `currentModel` - Selected LLM model (from `MODEL_CONFIGS`)
-- `pendingAttachments[]` - Files being attached
-- `uploading` - Whether attachments are uploading
-- `conversationId` - Current conversation ID (or `null` when starting a new chat)
-- `searchEnabled` - Whether tools (search/fetch) are allowed for this request
-- `systemInstruction` - Optional custom system prompt
-- Actions: `setInput`, `sendMessage`, `appendToAssistant`, `stop`, `setCurrentModel`, `setSearchEnabled`, `setSystemInstruction`, scroll helpers, etc.
-
-**`useConversationsStore`** - Manages conversation list:
-- `conversations[]` - Loaded local conversations
-- `conversationsLoading` - Fetch state
-- `hasLoadedLocal` - Whether local IndexedDB conversations have been loaded
-- `loadLocalConversations()` - Loads conversations from IndexedDB
-- `clearLocal()` - Clears local IndexedDB conversations/messages
-
-**`usePreviewStore`** - Manages preview panel state
-
-## API Routes
-
-### `POST /api/chat`
-Core chat endpoint that:
-1. Receives conversation history + selected model + optional flags
-2. Streams response via Server-Sent Events (SSE)
-3. Executes tools (brave_search, fetch_url) in a loop up to 20 iterations
-4. Broadcasts events: thinking, tool_call, tool_progress, tool_result, content, error
-5. Emits `conversation_created` / `conversation_updated` events for local persistence
-6. Returns structured message blocks with research items
-
-**Request**: `{ conversationHistory, conversationId, model, searchEnabled?, systemInstruction? }`
-**Response**: SSE stream with events (type + data)
-**Implementation**: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
-
-### `GET /api/dashboard/stats`
-Returns local-only dashboard statistics:
-
-- `userMessageCount` - Count of local messages (0 when unavailable)
-- `conversationCount` - Count of local conversations (0 when unavailable)
-- `isLocalOnly` - Always `true`
-
-### `POST /api/sync`
-Sync endpoint is disabled in local-only mode and returns `501`.
-
-## Message Block Architecture
-
-Messages use a block-based structure to handle multiple content types:
+- `types/conversation.ts` - `Conversation`, `DbMessage`
+- `src/features/chat/types/chat.ts` - `ContentBlock`, `Attachment`, `ResearchItem`, `Message`, `MessageTree`, `EditingState`
 
 ```typescript
 ContentBlock =
@@ -128,14 +76,45 @@ ContentBlock =
 
 ResearchItem =
   | { kind: "thinking"; text: string }
-  | { kind: "tool"; data: ToolExecution }
+  | { kind: "tool"; data: { call; progress?; result? } }
 ```
 
-This allows:
-- User messages with text + multiple attachments
-- Assistant messages with thinking process + tool calls/results + final text
-- Error blocks for surfacing API / tool / network errors in the UI
-- Progressive rendering as stream arrives
+Message branching is stored in `MessageTree` (nodes + rootIds + currentPath).
+
+## State Management (Zustand)
+
+**`useChatStore`**
+- `messageTree` is the source of truth; `messages` are derived from the current path
+- Tracks `editingState`, `activeRequestId`, `pending`, `chatClient`, `currentModel`
+- `searchEnabled` + `systemInstruction` control tool usage and system prompt
+- Handles attachments (`pendingAttachments`, `uploading`)
+- Actions include `sendMessage`, `appendToAssistant`, `stop`, `startEditing`, `submitEdit`, `retryFromMessage`, `branchToNewConversation`, `navigateBranch`
+
+**`useConversationsStore`**
+- Splits `pinnedConversations` and `normalConversations`
+- Loads from IndexedDB and supports pin/unpin, delete, and clear
+
+**`usePreviewStore`**
+- Drives the code preview panel (open/close/reset)
+
+## API Routes
+
+### `POST /api/chat`
+Core chat endpoint that:
+1. Builds the system prompt with local date/time and optional user instruction
+2. Streams OpenRouter responses via SSE and loops tool calls (max 20 iterations)
+3. Preserves `reasoning_details` for Gemini models
+4. Emits `content`, `thinking`, `tool_call`, `tool_progress`, `tool_result`, `error`, `conversation_created`, `conversation_updated`
+5. Writes dev logs to `logs/conversations` via `conversation-logger`
+
+### `GET /api/dashboard/stats`
+Returns local-only dashboard statistics:
+- `userMessageCount` - Count of local messages (0 when unavailable)
+- `conversationCount` - Count of local conversations (0 when unavailable)
+- `isLocalOnly` - Always `true`
+
+### `POST /api/sync`
+Sync endpoint is disabled in local-only mode and returns `501`.
 
 ## Streaming Architecture
 
@@ -144,18 +123,19 @@ The `/api/chat` endpoint implements Server-Sent Events (SSE) for real-time respo
 1. **Stream Format**: Each update is a JSON object on a single line prefixed with `data: `
 2. **Event Types**:
    - `content` - Text chunks (final response, can span multiple events)
-   - `thinking` - Model's reasoning process
+   - `thinking` - Model reasoning stream
    - `tool_call` - Function call initiated (brave_search, fetch_url)
-   - `tool_progress` - Intermediate tool execution status
+   - `tool_progress` - Tool execution progress (stage/message/bytes)
    - `tool_result` - Tool execution result
    - `conversation_created` / `conversation_updated` - Local persistence events
+   - `error` - Error messages
 3. **Client-Side**: `src/features/chat/lib/chat-client.ts` parses events and dispatches to `useChatStore`
 4. **Tool Loop**: Server executes tools up to 20 iterations per request, collecting results before final response
 
-**Key Implementation Details:**
-- Tools only execute if their API keys are configured (e.g., BRAVE_API_KEY)
-- Each tool execution updates the research block progressively
-- System prompt is in Chinese, instructing thorough search before answering
+## Persistence
+
+- IndexedDB (`localDB`) stores conversations with `messageTree`, pinned state, and legacy `messages`
+- localStorage keys: `selected-model`, `search-enabled`, `system-prompts`, `selected-prompt-id`, `theme`
 
 ## Environment Variables
 
@@ -165,31 +145,29 @@ Required in `.env.local`:
 Optional:
 - `OPENROUTER_HTTP_REFERER` - HTTP referer header
 - `OPENROUTER_X_TITLE` - App title for OpenRouter
-- `BRAVE_API_KEY` - Enables web search tool (optional, `fetch_url` always available)
+- `BRAVE_API_KEY` - Enables web search tool (`fetch_url` always available)
 
 ## Theme System & CSS Variables
 
-**Theme Switching**: [src/features/theme/hooks/useTheme.ts](src/features/theme/hooks/useTheme.ts) manages dark/light mode toggled from the settings menu.
+**Theme Switching**: `src/features/theme/hooks/useTheme.ts` manages dark/light mode toggled from the settings menu. Theme selection is stored in localStorage and mirrored to a cookie for server render.
 
-**CSS Variables** are defined in [src/app/globals.css](src/app/globals.css) using Tailwind v4 format. These are the source of truth for all colors and should be used instead of hardcoded colors:
-- Foreground/background colors
-- Text colors
-- Border colors
-- Accent colors
+**CSS Variables** are defined in `src/app/globals.css` (Tailwind v4 format). These are the source of truth for all colors and should be used instead of hardcoded colors.
 
 **Theme Initialization**: The root layout includes an in-head script that sets the theme before React hydrates to prevent flash of wrong theme.
 
 ## Development Notes
 
-**Attachment Handling**: User-uploaded files are stored in `pendingAttachments` in `useChatStore` and included in the request to `/api/chat`. The server then formats them into ContentBlock structures for persistence.
+**Attachment Handling**: User-uploaded files live in `pendingAttachments` and are serialized to base64 for `/api/chat` via `serialization.ts`.
 
-**Message Rendering**: [src/features/chat/components/MessageItem.tsx](src/features/chat/components/MessageItem.tsx) renders messages based on their blocks. Each block type (content, attachments, research) has specialized rendering logic in subcomponents.
+**Message Editing + Branching**: `messageTree` supports edits, retries, and branching. UI lives in `MessageEditor` and `BranchNavigator`.
 
-**Research Visibility**: The research/thinking process is progressively streamed and rendered by [src/features/chat/components/message/research/](src/features/chat/components/message/research/) components. Users can expand/collapse research sections.
+**System Prompts**: Presets are stored in localStorage via `useSystemPrompts` and set `systemInstruction` on `useChatStore`.
 
-**Conversation Loading**: New conversations start without a `conversationId` (`null`). After the first request, a conversation ID is generated and `conversation_created` is emitted. Conversations and messages are stored in IndexedDB via `localDB`.
+**Model Selection + Search Toggle**: Values are stored in localStorage in `ComposerToolbar`.
 
-**Model Selection**: Available models are defined statically in `MODEL_CONFIGS` (`src/features/chat/lib/model-config.ts`) and selected via `ModelSelector`. The `currentModel` value in `useChatStore` must be set (the selector defaults to the first config) before sending a message.
+**Code Preview**: `CodeBlock` can open HTML/CSS/JS in `PreviewPanel`.
+
+**Conversation Logging**: `/api/chat` logs to `logs/conversations` in non-production.
 
 ## Tools Available During Chat
 
@@ -202,7 +180,7 @@ Tools are defined in `src/shared/lib/tools.ts` and sent to OpenRouter as functio
 
 2. **fetch_url** - Fetch and parse URL content
    - Input: `{ url: string }`
-   - Returns: Plain text content (via Jina Reader when possible, with progress events)
+   - Returns: Plain text content (tries Jina Reader first, then direct fetch)
 
 Tools are called via `/api/chat` streaming loop. The system prompt is in Chinese and instructs the model to search thoroughly before answering.
 
@@ -232,37 +210,46 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 ### UI Framework
 - React 19 with Next.js 16
 - Tailwind CSS v4
+- shadcn/ui + Radix UI primitives
 - Lucide React for icons
 - Framer Motion for animations
-- React Markdown for message rendering
+- React Markdown, KaTeX, highlight.js for message rendering
 
 ## File Locations Reference
 
 **Entry & Layout:**
-- Root redirect: [src/app/page.tsx](src/app/page.tsx)
-- Main chat page: [src/app/app/page.tsx](src/app/app/page.tsx)
-- App layout (Sidebar + Header): [src/app/app/layout.tsx](src/app/app/layout.tsx)
-- Root layout: [src/app/layout.tsx](src/app/layout.tsx)
-- Global styles: [src/app/globals.css](src/app/globals.css)
+- Root redirect: `src/app/page.tsx`
+- Main chat page: `src/app/app/page.tsx`
+- Conversation page: `src/app/app/c/[conversationId]/page.tsx`
+- App layout (Sidebar + Header): `src/app/app/layout.tsx`
+- Root layout: `src/app/layout.tsx`
+- Global styles: `src/app/globals.css`
 
 **Chat Feature:**
-- Chat API: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
-- Chat components: [src/features/chat/components/](src/features/chat/components/)
-- Chat store: [src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)
-- Chat types: [src/features/chat/types/chat.ts](src/features/chat/types/chat.ts)
-- SSE client: [src/features/chat/lib/chat-client.ts](src/features/chat/lib/chat-client.ts)
+- Chat API: `src/app/api/chat/route.ts`
+- System prompt + message conversion: `src/app/api/chat/utils.ts`
+- Chat components: `src/features/chat/components/`
+- Chat store: `src/features/chat/store/useChatStore.ts`
+- Chat types: `src/features/chat/types/chat.ts`
+- Message tree: `src/features/chat/lib/message-tree.ts`
+- Chat request: `src/features/chat/lib/chat-request.ts`
+- SSE client: `src/features/chat/lib/chat-client.ts`
 
 **Other Features:**
-- Conversation store: [src/features/sidebar/store/useConversationsStore.ts](src/features/sidebar/store/useConversationsStore.ts)
-- Theme hook: [src/features/theme/hooks/useTheme.ts](src/features/theme/hooks/useTheme.ts)
-- Dashboard page: [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
-- Dashboard sync hook: [src/features/dashboard/hooks/useSync.ts](src/features/dashboard/hooks/useSync.ts)
+- Conversation store: `src/features/sidebar/store/useConversationsStore.ts`
+- Theme hook: `src/features/theme/hooks/useTheme.ts`
+- Dashboard page: `src/app/dashboard/page.tsx`
+- Dashboard sync hook: `src/features/dashboard/hooks/useSync.ts`
+- Preview panel: `src/features/preview/components/PreviewPanel.tsx`
 
 **Shared Utilities:**
-- Tools definition: [src/shared/lib/tools.ts](src/shared/lib/tools.ts)
-- OpenRouter client: [src/shared/lib/openrouter/server.ts](src/shared/lib/openrouter/server.ts)
-- Local IndexedDB store: [src/shared/lib/indexed-db/](src/shared/lib/indexed-db/)
-- File utilities: [src/shared/utils/file.ts](src/shared/utils/file.ts)
+- Tools definition: `src/shared/lib/tools.ts`
+- Tool implementations: `src/shared/lib/tools/`
+- OpenRouter streaming: `src/shared/lib/openrouter/server.ts`
+- Local IndexedDB store: `src/shared/lib/indexed-db/`
+- Conversation logger: `src/shared/lib/conversation-logger.ts`
+- Code block UI: `src/shared/components/CodeBlock.tsx`
+- File utilities: `src/shared/utils/file.ts`
 
 ## Developer Preferences
 
@@ -271,3 +258,4 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 - Use plain, natural language (avoid jargon)
 - Take time with implementation; be detailed
 - Don't run pnpm unless necessary
+- Do not use `useCallback` or `useMemo`

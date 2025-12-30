@@ -12,7 +12,7 @@ export const generateMessageId = () =>
     ? crypto.randomUUID()
     : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-const cloneResearchItem = (item: ResearchItem): ResearchItem => {
+export const cloneResearchItem = (item: ResearchItem): ResearchItem => {
   if (item.kind === "thinking") {
     return { ...item };
   }
@@ -32,7 +32,7 @@ const cloneResearchItem = (item: ResearchItem): ResearchItem => {
   };
 };
 
-const cloneBlocks = (blocks: ContentBlock[]): ContentBlock[] =>
+export const cloneBlocks = (blocks: ContentBlock[]): ContentBlock[] =>
   blocks.map((block) => {
     if (block.type === "research") {
       return {
@@ -122,5 +122,69 @@ export const getBranchInfo = (
     currentIndex,
     total: siblingIds.length,
     siblingIds,
+  };
+};
+
+export const createEmptyMessageTree = (): MessageTree => ({
+  nodes: {},
+  rootIds: [],
+  currentPath: [],
+});
+
+export const insertNode = (
+  tree: MessageTree,
+  node: MessageNode,
+  parentId: string | null
+): MessageTree => {
+  const nextNodes = { ...tree.nodes, [node.id]: node };
+  let nextRootIds = tree.rootIds;
+
+  if (parentId) {
+    const parent = tree.nodes[parentId];
+    if (parent) {
+      nextNodes[parentId] = {
+        ...parent,
+        children: [...parent.children, node.id],
+      };
+    }
+  } else {
+    nextRootIds = [...tree.rootIds, node.id];
+  }
+
+  return {
+    ...tree,
+    nodes: nextNodes,
+    rootIds: nextRootIds,
+  };
+};
+
+export const followFirstChildPath = (
+  tree: MessageTree,
+  startId: string
+): string[] => {
+  const path: string[] = [];
+  let currentId: string | undefined = startId;
+
+  while (currentId) {
+    path.push(currentId);
+    const node: MessageNode | undefined = tree.nodes[currentId];
+    const nextId: string | undefined = node?.children?.[0];
+    currentId = nextId;
+  }
+
+  return path;
+};
+
+export const ensureTreePath = (tree: MessageTree): MessageTree => {
+  if (tree.currentPath.length > 0) {
+    return tree;
+  }
+  const firstRoot = tree.rootIds[0];
+  if (!firstRoot) {
+    return tree;
+  }
+  return {
+    ...tree,
+    currentPath: followFirstChildPath(tree, firstRoot),
   };
 };

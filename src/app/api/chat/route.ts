@@ -152,7 +152,6 @@ export async function POST(req: Request) {
         const researchItems: ResearchItem[] = [];
         const maxIterations = 20;
         let iteration = 0;
-        let finalAssistantMessage: string | null = null;
         let streamClosed = false;
 
         const sendToClient = (eventType: string, data: unknown) => {
@@ -422,14 +421,12 @@ export async function POST(req: Request) {
               logger?.log("OPENROUTER", "Conversation completed", {
                 messageLength: assistantMessage.length,
               });
-              finalAssistantMessage = assistantMessage;
               closeStream();
               break;
             }
 
             if (toolCalls.length === 0) {
               logger?.log("OPENROUTER", "No tool calls, ending conversation");
-              finalAssistantMessage = assistantMessage;
               closeStream();
               break;
             }
@@ -591,8 +588,6 @@ export async function POST(req: Request) {
             sendToClient("error", {
               message: "[已达到最大工具调用次数限制]",
             });
-            finalAssistantMessage =
-              finalAssistantMessage ?? "\n\n[已达到最大工具调用次数限制]";
             closeStream();
           }
 

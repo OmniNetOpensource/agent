@@ -6,113 +6,69 @@ This file provides guidance to AI coding agents (Claude Code, GPT-based tools, e
 
 **Aether** is an AI chat application built with Next.js that provides a conversational interface with:
 
-- Multi-model LLM support via OpenRouter
-- Real-time web search and URL fetching capabilities
-- Message attachments (images, videos, audio, files)
-- Persistent conversation history with local IndexedDB storage
-- Research tracking (thinking processes and tool execution visibility)
+- Multi-model LLM support via OpenRouter (model picker persisted in localStorage)
+- Streaming SSE responses with thinking/tool progress
+- Tools for web search and URL fetching (brave_search, fetch_url)
+- Message attachments (image, video, audio, file) serialized to base64 for requests
+- Local-first persistence in IndexedDB (message tree, pinned conversations)
+- Message editing, retry, and branching with branch navigation
+- Code preview panel for HTML/CSS/JS code blocks
+- Theme toggle and mobile layout detection
+
+## Common Development Commands
+
+```bash
+pnpm dev           # Start development server (http://localhost:3000)
+pnpm build         # Production build
+pnpm start         # Start production server
+pnpm type-check    # TypeScript validation (no emit)
+pnpm lint          # ESLint check
+pnpm check         # Full validation: type-check + lint + build
+```
 
 ## Architecture & Structure
 
-### Frontend Structure (`src/`)
+### App Routes (`src/app/`)
 
-- **`src/app/`** - Next.js app directory (routes and layouts)
+- `api/chat` - Streaming chat endpoint (OpenRouter + tools)
+- `api/dashboard/stats` - Local-only stats
+- `api/sync` - Disabled (returns 501)
+- `page.tsx` - Root redirect to `/app`
+- `app/page.tsx` - New chat screen
+- `app/c/[conversationId]/page.tsx` - Conversation screen
+- `app/layout.tsx` - App shell with Sidebar + top bar
+- `dashboard/page.tsx` - Local stats screen
 
-  - `api/` - Server-side API routes (chat, dashboard, sync)
-  - `page.tsx` - Root page that redirects to `/app`
-  - `app/page.tsx` - Home chat page at `/app` (renders new conversation UI)
-  - `app/c/[conversationId]/page.tsx` - Chat conversation page
-  - `app/layout.tsx` - App layout with Sidebar + Header
-  - `layout.tsx` - Root layout (fonts, theme initialization, providers)
+### Feature Folders (`src/features/`)
 
-- **`src/features/`** - Feature-based organization
+- `chat/` - Chat UI, state, and request flow
+  - `components/` - Composer, MessageList, MessageItem, MessageEditor, BranchNavigator
+  - `hooks/` - Conversation loader, system prompt presets
+  - `lib/` - chat-client, chat-request, message-tree, block-operations, serialization, model-config
+  - `store/` - `useChatStore`
+- `sidebar/` - Conversation list with pin/unpin + delete
+- `preview/` - Code preview panel + `usePreviewStore`
+- `dashboard/` - Local stats + sync UI
+- `theme/` - Theme switching hook
 
-  - `chat/` - Chat UI components (MessageList, Composer, Header) and state (useChatStore)
-    - `types/chat.ts` - Message, ContentBlock, ResearchItem type definitions
-    - `lib/` - Chat client, streaming parser, model configuration
-    - Components handle message rendering, tool progress, research visibility
-  - `sidebar/` - Conversation history and user profile
-    - `useConversationsStore` - Manages local conversation list
-  - `preview/` - Preview panel (usePreviewStore for preview state)
-  - `dashboard/` - Dashboard stats (local-only mode)
-  - `theme/` - Theme switching (dark/light mode)
+### Shared (`src/shared/`)
 
-- **`src/shared/`** - Shared utilities and components
-  - `components/` - Shared UI (Markdown, CodeBlock, etc.)
-  - `lib/tools/` - Tool definitions (brave-search.ts, fetch.ts)
-  - `lib/openrouter/` - OpenRouter client and streaming helpers
-  - `lib/indexed-db/` - Browser IndexedDB storage for guest conversations
-  - `mobile/` - Mobile layout detection/context
-  - `toast/` - Toast store and presenter
-  - `utils/` - Utility functions (chat formatting, file helpers)
+- `components/` - Markdown, CodeBlock, ImagePreview
+- `lib/tools/` + `lib/tools.ts` - Tool specs and dispatcher
+- `lib/openrouter/` - OpenRouter streaming helpers
+- `lib/indexed-db/` - Local IndexedDB persistence
+- `lib/conversation-logger.ts` - Dev logs to `logs/conversations`
+- `mobile/`, `toast/`, `utils/`
 
-### Key Type System (`types/conversation.ts`)
+### Root-level
 
-```typescript
-Conversation; // DB record with id, user_id, title, timestamps
-DbMessage; // DB message with id, blocks, role, timestamps
-ContentBlock; // "content" | "attachments" | "research" | "error"
-Message; // Frontend message: role + blocks[]
-ResearchItem; // "thinking" or "tool" execution record
-```
+- `components/ui/` - shadcn + Radix UI primitives
+- `lib/utils.ts` - `cn` helper
 
-## State Management (Zustand)
+## Data Model & Message Blocks
 
-**`useChatStore`** - Manages chat session state:
-
-- `messages[]` - Conversation history
-- `input` - User input text
-- `pending` - Loading state during API calls
-- `chatClient` - Active SSE chat client instance (or `null`)
-- `currentModel` - Selected LLM model
-- `pendingAttachments[]` - Files being attached
-- `uploading` - Whether attachments are uploading
-- `conversationId` - Current conversation ID (or `null` when starting a new chat)
-- `searchEnabled` - Whether tools (search/fetch) are allowed for this request
-- `systemInstruction` - Optional custom system prompt
-- Actions: `setInput`, `sendMessage`, `appendToAssistant`, `stop`, `setCurrentModel`, `setSearchEnabled`, `setSystemInstruction`, scroll helpers, etc.
-
-**`useConversationsStore`** - Manages conversation list:
-
-- `conversations[]` - Loaded local conversations
-- `conversationsLoading` - Fetch state
-- `hasLoadedLocal` - Whether local IndexedDB conversations have been loaded
-- `loadLocalConversations()` - Loads conversations from IndexedDB
-- `clearLocal()` - Clears local IndexedDB conversations/messages
-
-**`usePreviewStore`** - Manages preview panel state
-
-## API Routes
-
-### `POST /api/chat`
-
-Core chat endpoint that:
-
-1. Receives conversation history + selected model + optional flags
-2. Streams response via Server-Sent Events (SSE)
-3. Executes tools (brave_search, fetch_url) in a loop up to 20 iterations
-4. Broadcasts events: thinking, tool_call, tool_progress, tool_result, content, error
-5. Emits `conversation_created` / `conversation_updated` events for local persistence
-6. Returns structured message blocks with research items
-
-**Request**: `{ conversationHistory, conversationId, model, searchEnabled?, systemInstruction? }`  
-**Response**: SSE stream with events (type + data)
-
-### `GET /api/dashboard/stats`
-
-Returns local-only dashboard statistics:
-
-- `userMessageCount` - Count of local messages (0 when unavailable)
-- `conversationCount` - Count of local conversations (0 when unavailable)
-- `isLocalOnly` - Always `true`
-
-### `POST /api/sync`
-
-Sync endpoint is disabled in local-only mode and returns `501`.
-
-## Message Block Architecture
-
-Messages use a block-based structure to handle multiple content types:
+- `types/conversation.ts` - `Conversation`, `DbMessage`
+- `src/features/chat/types/chat.ts` - `ContentBlock`, `Attachment`, `ResearchItem`, `Message`, `MessageTree`, `EditingState`
 
 ```typescript
 ContentBlock =
@@ -123,92 +79,79 @@ ContentBlock =
 
 ResearchItem =
   | { kind: "thinking"; text: string }
-  | { kind: "tool"; data: ToolExecution }
+  | { kind: "tool"; data: { call; progress?; result? } }
 ```
 
-This allows:
+Message branching is stored in `MessageTree` (nodes + rootIds + currentPath).
 
-- User messages with text + multiple attachments
-- Assistant messages with thinking process + tool calls/results + final text
-- Error blocks for surfacing API / tool / network errors in the UI
-- Progressive rendering as stream arrives
+## State Management (Zustand)
+
+**`useChatStore`**
+- `messageTree` is the source of truth; `messages` are derived from the current path
+- Tracks `editingState`, `activeRequestId`, `pending`, `chatClient`, `currentModel`
+- `searchEnabled` + `systemInstruction` control tool usage and system prompt
+- Handles attachments (`pendingAttachments`, `uploading`)
+- Actions include `sendMessage`, `appendToAssistant`, `stop`, `startEditing`, `submitEdit`, `retryFromMessage`, `branchToNewConversation`, `navigateBranch`
+
+**`useConversationsStore`**
+- Splits `pinnedConversations` and `normalConversations`
+- Loads from IndexedDB and supports pin/unpin, delete, and clear
+
+**`usePreviewStore`**
+- Drives the code preview panel (open/close/reset)
+
+## Chat API + Streaming
+
+**`POST /api/chat`**
+- Builds the system prompt with local date/time and optional user instruction
+- Streams OpenRouter responses via SSE and loops tool calls (max 20 iterations)
+- Preserves `reasoning_details` for Gemini models
+- Emits `content`, `thinking`, `tool_call`, `tool_progress`, `tool_result`, `error`, `conversation_created`, `conversation_updated`
+- Writes dev logs to `logs/conversations` via `conversation-logger`
+
+**`GET /api/dashboard/stats`** returns local-only stats. **`POST /api/sync`** returns 501.
+
+## Persistence
+
+- IndexedDB (`localDB`) stores conversations with `messageTree`, pinned state, and legacy `messages`
+- localStorage keys: `selected-model`, `search-enabled`, `system-prompts`, `selected-prompt-id`, `theme`
 
 ## Environment Variables
 
 Required in `.env.local`:
-
-- `OPENROUTER_API_KEY` - OpenRouter API key
+- `OPENROUTER_API_KEY`
 
 Optional:
-
-- `OPENROUTER_HTTP_REFERER` - HTTP referer header for OpenRouter
-- `OPENROUTER_X_TITLE` - App title for OpenRouter
-- `BRAVE_API_KEY` - Enables `brave_search` tool (optional; `fetch_url` is always available)
+- `OPENROUTER_HTTP_REFERER`
+- `OPENROUTER_X_TITLE`
+- `BRAVE_API_KEY` (enables `brave_search`)
 
 ## Tools Available During Chat
 
-Tools are defined in `src/shared/lib/tools.ts` and sent to OpenRouter as function definitions:
-
-1. **brave_search** - Query web search
-
+1. **brave_search**
    - Input: `{ query: string }`
-   - Returns: Search results
-   - Only enabled when `BRAVE_API_KEY` is configured
+   - Only enabled when `BRAVE_API_KEY` is set
 
-2. **fetch_url** - Fetch and parse URL content
+2. **fetch_url**
    - Input: `{ url: string }`
-   - Returns: Plain text content (via Jina Reader when possible, with progress events)
-
-Tools are called via `/api/chat` streaming loop. The system prompt is in Chinese and instructs the model to search thoroughly before answering.
-
-## Important Patterns & Conventions
-
-### SSE Event Stream Format
-
-Streamed from `/api/chat`:
-
-```
-data: {"type": "content", "content": "..."}
-data: {"type": "thinking", "content": "..."}
-data: {"type": "tool_call", "tool": "...", "args": {...}}
-data: {"type": "tool_progress", "tool": "...", "stage": "...", ...}
-data: {"type": "tool_result", "tool": "...", "result": "..."}
-data: {"type": "error", "message": "..."}
-data: {"type": "conversation_created", "conversationId": "...", ...}
-data: {"type": "conversation_updated", "conversationId": "...", ...}
-```
-
-### URL Path Aliases
-
-TypeScript path alias configured:
-
-- `@/*` resolves to project root or `./src/*`
-- Use for imports: `import { x } from "@/src/features/chat/..."`
-
-### CSS Variables
-
-Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use these for frontend styling instead of hardcoded colors.
-
-### UI Framework
-
-- React 19 with Next.js 16
-- Tailwind CSS v4
-- Lucide React for icons
-- Framer Motion for animations
-- React Markdown for message rendering
+   - Tries Jina Reader first, falls back to direct fetch + text cleanup
+   - Emits `tool_progress` updates during download/parse
 
 ## File Locations Reference
 
-- Main chat page: [src/app/app/page.tsx](src/app/app/page.tsx)
-- Root layout: [src/app/layout.tsx](src/app/layout.tsx)
-- App layout (Sidebar + Header): [src/app/app/layout.tsx](src/app/app/layout.tsx)
-- Chat API: [src/app/api/chat/route.ts](src/app/api/chat/route.ts)
-- Chat UI: [src/features/chat/components/](src/features/chat/components/)
-- Chat store: [src/features/chat/store/useChatStore.ts](src/features/chat/store/useChatStore.ts)
-- Types: [src/features/chat/types/chat.ts](src/features/chat/types/chat.ts)
-- Conversation store: [src/features/sidebar/store/useConversationsStore.ts](src/features/sidebar/store/useConversationsStore.ts)
-- Local IndexedDB store: [src/shared/lib/indexed-db/](src/shared/lib/indexed-db/)
-- Tools: [src/shared/lib/tools.ts](src/shared/lib/tools.ts)
+- Chat API: `src/app/api/chat/route.ts`
+- System prompt + message conversion: `src/app/api/chat/utils.ts`
+- Message tree logic: `src/features/chat/lib/message-tree.ts`
+- Chat request orchestration: `src/features/chat/lib/chat-request.ts`
+- Chat UI: `src/features/chat/components/`
+- Message rendering: `src/features/chat/components/message/MessageItem.tsx`
+- Composer + toolbar: `src/features/chat/components/composer/Composer.tsx`
+- System prompt UI: `src/features/chat/components/composer/SystemPromptPopover.tsx`
+- Model configs: `src/features/chat/lib/model-config.ts`
+- Preview panel: `src/features/preview/components/PreviewPanel.tsx`
+- Code block preview: `src/shared/components/CodeBlock.tsx`
+- Local DB: `src/shared/lib/indexed-db/conversations.ts`
+- Tools: `src/shared/lib/tools.ts`
 
 ## Developer Preferences
 
@@ -218,3 +161,4 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 - Take time with implementation; be detailed
 - frontend style need to fit in the current project's style
 - be flexible
+- Do not use `useCallback` or `useMemo`

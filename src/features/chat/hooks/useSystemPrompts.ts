@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export interface SystemPrompt {
   id: string;
@@ -58,29 +58,27 @@ const generateName = (prompts: SystemPrompt[]) => {
   return `指令 ${max + 1}`;
 };
 
+const getInitialPrompts = (): SystemPrompt[] => {
+  if (typeof window === "undefined") return [];
+  return normalizePrompts(window.localStorage.getItem(SYSTEM_PROMPTS_KEY));
+};
+
+const getInitialSelectedId = (prompts: SystemPrompt[]): string | null => {
+  if (typeof window === "undefined") return null;
+  const storedSelectedId = window.localStorage.getItem(SELECTED_PROMPT_KEY);
+  const isValidSelection =
+    storedSelectedId && prompts.some((prompt) => prompt.id === storedSelectedId);
+  if (!isValidSelection && storedSelectedId) {
+    window.localStorage.removeItem(SELECTED_PROMPT_KEY);
+  }
+  return isValidSelection ? storedSelectedId : null;
+};
+
 export function useSystemPrompts() {
-  const [prompts, setPrompts] = useState<SystemPrompt[]>([]);
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const storedPrompts = normalizePrompts(
-      window.localStorage.getItem(SYSTEM_PROMPTS_KEY)
-    );
-    setPrompts(storedPrompts);
-
-    const storedSelectedId = window.localStorage.getItem(SELECTED_PROMPT_KEY);
-    const isValidSelection =
-      storedSelectedId &&
-      storedPrompts.some((prompt) => prompt.id === storedSelectedId);
-    const nextSelectedId = isValidSelection ? storedSelectedId : null;
-    setSelectedPromptId(nextSelectedId);
-
-    if (!nextSelectedId) {
-      window.localStorage.removeItem(SELECTED_PROMPT_KEY);
-    }
-  }, []);
+  const [prompts, setPrompts] = useState<SystemPrompt[]>(getInitialPrompts);
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(() =>
+    getInitialSelectedId(prompts)
+  );
 
   const persistPrompts = useCallback((nextPrompts: SystemPrompt[]) => {
     setPrompts(nextPrompts);

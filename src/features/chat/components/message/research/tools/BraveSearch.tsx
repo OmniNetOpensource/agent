@@ -138,15 +138,18 @@ function SearchResultCard({
       {/* Thumbnail */}
       <div className="relative h-20 w-full overflow-hidden rounded-md bg-(--surface-hover)">
         {showImage ? (
-          <img
-            src={thumbnailSrc}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-            onError={() => setImageFailed(true)}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={thumbnailSrc}
+              alt={title}
+              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={() => setImageFailed(true)}
+            />
+          </>
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-(--surface-hover) via-(--surface-muted) to-(--surface-card)">
             <ImageIcon className="h-4 w-4 text-(--text-tertiary)" />

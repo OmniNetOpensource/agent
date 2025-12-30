@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { PanelLeft, X } from "lucide-react";
 
 import { ConversationList } from "./history/ConversationList";
