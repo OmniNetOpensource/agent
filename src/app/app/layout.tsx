@@ -1,13 +1,20 @@
-import { Header } from "@/src/features/chat/components/Header";
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
+import { NewChatButton } from "@/src/features/sidebar/components/NewChatButton";
+import { SidebarToggleButton } from "@/src/features/sidebar/components/SidebarToggleButton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen w-screen bg-background text-foreground">
+    <div className="relative flex h-screen w-screen bg-background text-foreground">
       <Sidebar />
-      <div className="relative flex-1 overflow-hidden flex flex-col">
-        <Header />
-        <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+      <div className="relative flex-1 min-w-0 flex flex-col p-3 md:p-4 lg:p-5">
+        <div className="flex items-center h-12 px-1 border border-b-0 border-(--border-subtle) rounded-t-2xl bg-(--surface-base)">
+          <SidebarToggleButton />
+          <div className="flex-1" />
+          <NewChatButton variant="topbar" />
+        </div>
+        <div className="flex-1 min-h-0 flex flex-col border border-t-0 border-(--border-subtle) rounded-b-2xl bg-(--surface-base) overflow-hidden">
+          {children}
+        </div>
       </div>
     </div>
   );

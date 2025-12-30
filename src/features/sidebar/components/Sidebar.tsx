@@ -8,49 +8,30 @@ import { ConversationList } from "./history/ConversationList";
 import { ProfileMenu } from "./profile/ProfileMenu";
 import { NewChatButton } from "./NewChatButton";
 import { useIsMobile } from "@/src/shared/mobile/MobileContext";
+import { useSidebarStore } from "@/src/features/sidebar/store/useSidebarStore";
 
-function SidebarToggle({
+function MobileSidebarToggle({
   isOpen,
   setIsOpen,
-  isMobile,
 }: {
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
-  isMobile: boolean;
 }) {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsOpen(!isOpen);
   };
 
-  if (isMobile) {
-    return (
-      <button
-        type="button"
-        onClick={isOpen ? undefined : handleClick}
-        aria-label={isOpen ? "关闭侧边栏" : "打开侧边栏"}
-        className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${
-          isOpen ? "pointer-events-none" : ""
-        }`}
-      >
-        <PanelLeft className="h-5 w-5" />
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
-      onClick={handleClick}
-      aria-label={isOpen ? "收起侧边栏" : "展开侧边栏"}
-      className="absolute top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-all duration-500 hover:bg-accent hover:text-accent-foreground active:scale-95"
-      style={{ right: isOpen ? 12 : 4 }}
+      onClick={isOpen ? undefined : handleClick}
+      aria-label={isOpen ? "关闭侧边栏" : "打开侧边栏"}
+      className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${
+        isOpen ? "pointer-events-none" : ""
+      }`}
     >
-      <PanelLeft
-        className={`h-5 w-5 transition-transform duration-500 ${
-          isOpen ? "" : "rotate-180"
-        }`}
-      />
+      <PanelLeft className="h-5 w-5" />
     </button>
   );
 }
@@ -107,42 +88,27 @@ function MobileSidebarWrapper({
 }
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const isOpen = useSidebarStore((state) => state.isOpen);
 
   if (isMobile) {
     return (
       <>
-        <SidebarToggle isOpen={isOpen} setIsOpen={setIsOpen} isMobile={true} />
-        <MobileSidebarWrapper isOpen={isOpen} onClose={() => setIsOpen(false)}>
-          <div className="flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/80 backdrop-blur-md">
+        <MobileSidebarToggle
+          isOpen={isMobileOpen}
+          setIsOpen={setIsMobileOpen}
+        />
+        <MobileSidebarWrapper
+          isOpen={isMobileOpen}
+          onClose={() => setIsMobileOpen(false)}
+        >
+          <div className="flex h-full flex-col bg-background">
             <div className="flex items-center justify-between px-3 h-14 shrink-0">
-              <Link
-                href="/app"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
-                aria-label="返回首页"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 100 100"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-6 w-6"
-                  aria-label="Aether"
-                >
-                  <circle cx="50" cy="50" r="18" />
-                  <path
-                    d="M 26 26 A 34 34 0 1 1 74 74"
-                    transform="rotate(-45 50 50)"
-                  />
-                </svg>
-              </Link>
+              <div className="h-10 w-10" aria-hidden="true" />
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={() => setIsMobileOpen(false)}
                 aria-label="关闭侧边栏"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
@@ -169,86 +135,25 @@ export default function Sidebar() {
 
   return (
     <aside
-      onClick={(e) => {
-        const target = e.target;
-        if (
-          target instanceof Element &&
-          target.closest("button, a, input, textarea, select, [role='button']")
-        ) {
-          return;
-        }
-        setIsOpen(!isOpen);
-      }}
-      className={`relative flex h-full flex-col border-r border-(--border-subtle) bg-(--surface-muted)/50 backdrop-blur-md transition-[width] duration-500 cursor-ew-resize ${
-        isOpen ? "w-52" : "w-12 "
+      className={`relative flex h-full flex-col overflow-hidden bg-background transition-[width] duration-300 ${
+        isOpen ? "w-52 shrink-0" : "w-0"
       }`}
     >
-      <div
-        className="absolute top-0 left-0 right-0 h-16 flex items-center transition-all duration-500"
-        style={{ paddingLeft: isOpen ? 12 : 4, paddingRight: isOpen ? 12 : 4 }}
-      >
-        <Link
-          href="/app"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-primary transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
-          aria-label="返回首页"
-          style={{
-            opacity: isOpen ? 1 : 0,
-            pointerEvents: isOpen ? "auto" : "none",
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 100 100"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-6 w-6"
-            aria-label="Aether"
-          >
-            <circle cx="50" cy="50" r="18" />
-            <path
-              d="M 26 26 A 34 34 0 1 1 74 74"
-              transform="rotate(-45 50 50)"
-            />
-          </svg>
-        </Link>
-
-        <SidebarToggle isOpen={isOpen} setIsOpen={setIsOpen} isMobile={false} />
-      </div>
-
-      <div className="pt-16 flex-1 flex flex-col min-h-0">
-        <div
-          className="pb-4 shrink-0 flex transition-all duration-500"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            paddingLeft: isOpen ? 12 : 4,
-            paddingRight: isOpen ? 12 : 4,
-          }}
-        >
-          <NewChatButton isCollapsed={!isOpen} />
-        </div>
-
-        <div
-          className={`flex-1 min-h-0 overflow-x-hidden px-4 py-2 ${
-            !isOpen ? "overflow-y-hidden" : "overflow-y-auto"
-          }`}
-        >
-          <div
-            className={`flex flex-col gap-3 transition-opacity duration-300 ${
-              !isOpen ? "opacity-0 invisible" : "opacity-100 visible"
-            }`}
-          >
-            <ConversationList />
+      {isOpen ? (
+        <>
+          <div className="flex items-center px-3 h-14 shrink-0">
+            <div className="h-10 w-10" aria-hidden="true" />
           </div>
-        </div>
 
-        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-          <ProfileMenu isCollapsed={!isOpen} />
-        </div>
-      </div>
+          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
+            <div className="flex h-full flex-col gap-3">
+              <ConversationList />
+            </div>
+          </div>
+
+          <ProfileMenu isCollapsed={false} />
+        </>
+      ) : null}
     </aside>
   );
 }
