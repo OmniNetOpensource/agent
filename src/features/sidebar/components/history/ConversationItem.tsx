@@ -18,37 +18,11 @@ type ConversationItemProps = {
   isActive: boolean;
 };
 
-const formatTime = (timestamp: string) => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return sameDay
-    ? date.toLocaleTimeString("zh-CN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : date.toLocaleDateString("zh-CN", {
-        month: "2-digit",
-        day: "2-digit",
-      });
-};
-
 export function ConversationItem({
   conversation,
   isActive,
 }: ConversationItemProps) {
   const title = conversation.title || "未命名会话";
-  const timeLabel = conversation.updated_at
-    ? formatTime(conversation.updated_at)
-    : "";
   const isPinned = Boolean(conversation.pinned);
 
   const pending = useChatStore((state) => state.pending);
@@ -92,9 +66,7 @@ export function ConversationItem({
   };
 
   const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "确定要删除这个会话吗？删除后无法恢复。"
-    );
+    const confirmed = window.confirm("确定要删除这个会话吗？删除后无法恢复。");
     if (!confirmed) {
       return;
     }
@@ -108,7 +80,7 @@ export function ConversationItem({
 
   return (
     <div
-      className={`group relative flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
+      className={`group relative flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-0 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
         isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
       }`}
     >
@@ -120,15 +92,12 @@ export function ConversationItem({
       />
       <div className="min-w-0 flex-1 pointer-events-none relative z-10">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
             {title}
           </span>
           {isPinned ? (
             <Pin className="size-3.5 text-(--text-tertiary)" />
           ) : null}
-        </div>
-        <div className="mt-0.5 text-[11px] text-(--text-tertiary)">
-          {timeLabel || "刚刚更新"}
         </div>
       </div>
       <div className="relative z-20">

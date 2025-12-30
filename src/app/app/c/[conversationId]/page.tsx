@@ -2,7 +2,6 @@
 
 import { use } from "react";
 import { Composer } from "@/src/features/chat/components/composer/Composer";
-import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { useConversationLoader } from "@/src/features/chat/hooks/useConversationLoader";
 
@@ -25,7 +24,6 @@ export default function ConversationPage({ params }: Props) {
           <MessageList />
           <Composer />
         </div>
-        <PreviewPanel />
       </main>
     </div>
   );

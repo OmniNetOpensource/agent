@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { Composer } from "@/src/features/chat/components/composer/Composer";
-import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
@@ -31,7 +30,6 @@ export default function HomePage() {
           )}
           <Composer />
         </div>
-        <PreviewPanel />
       </main>
     </div>
   );

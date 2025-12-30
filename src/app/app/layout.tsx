@@ -1,6 +1,7 @@
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
 import { NewChatButton } from "@/src/features/sidebar/components/NewChatButton";
 import { SidebarToggleButton } from "@/src/features/sidebar/components/SidebarToggleButton";
+import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
+      <PreviewPanel />
     </div>
   );
 }

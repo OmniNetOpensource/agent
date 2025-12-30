@@ -78,7 +78,7 @@ export function PreviewPanel() {
       rafId = requestAnimationFrame(() => {
         if (!containerRef.current) return;
         const newWidth = containerRight - moveEvent.clientX;
-        const clampedWidth = Math.min(900, Math.max(200, newWidth));
+        const clampedWidth = Math.min(700, Math.max(300, newWidth));
         containerRef.current.style.width = `${clampedWidth}px`;
         rafId = null;
       });
@@ -111,7 +111,7 @@ export function PreviewPanel() {
   return (
     <div
       ref={containerRef}
-      className="hidden md:flex h-full border-l border-(--border-subtle) bg-background flex-col relative"
+      className="relative hidden md:flex h-full flex-col p-3 md:p-4 lg:p-5 shrink-0"
       style={{ width: DEFAULT_WIDTH }}
     >
       {/* 拖拽分隔线 */}
@@ -130,10 +130,11 @@ export function PreviewPanel() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-3 shrink-0">
+      <div className="flex items-center h-12 border border-b-0 border-(--border-subtle) rounded-t-2xl bg-(--surface-base) px-4 shrink-0">
         <div className="text-sm font-semibold text-(--text-secondary)">
           实时预览 {language ? `· ${language.toUpperCase()}` : ""}
         </div>
+        <div className="flex-1" />
         <button
           type="button"
           onClick={closePreview}
@@ -145,13 +146,15 @@ export function PreviewPanel() {
       </div>
 
       {/* Preview iframe */}
-      <div className="flex-1 min-h-0 bg-background">
-        <iframe
-          title="代码预览"
-          srcDoc={srcDoc}
-          className="h-full w-full border-0"
-          sandbox="allow-scripts"
-        />
+      <div className="flex-1 min-h-0 flex flex-col border border-t-0 border-(--border-subtle) rounded-b-2xl bg-(--surface-base) overflow-hidden">
+        <div className="flex-1 min-h-0 bg-background">
+          <iframe
+            title="代码预览"
+            srcDoc={srcDoc}
+            className="h-full w-full border-0"
+            sandbox="allow-scripts"
+          />
+        </div>
       </div>
     </div>
   );
