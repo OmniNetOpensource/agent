@@ -276,7 +276,7 @@ export const MessageItem = memo(function MessageItem({
               })}
             </div>
           ) : (
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-4 min-w-0 w-full">
               {contentBlocks.map((block, blockIndex) => {
                 const blockKey = `${index}-${blockIndex}`;
                 if (block.type === "research") {

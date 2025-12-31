@@ -1,0 +1,116 @@
+import { NextResponse } from "next/server";
+import type { SerializedMessage } from "@/src/features/chat/types/chat";
+import {
+  OPENROUTER_BASE_URL,
+  getOpenRouterHeaders,
+} from "@/src/shared/lib/openrouter/server";
+
+const TITLE_MODEL = "google/gemini-3-flash-preview";
+const FALLBACK_TITLE = "New Chat";
+const MAX_TITLE_CHARS = 50;
+const MAX_INPUT_CHARS = 400;
+
+const extractContent = (message?: SerializedMessage) => {
+  if (!message?.blocks) {
+    return "";
+  }
+
+  return message.blocks
+    .filter((block) => block.type === "content")
+    .map((block) => block.content)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const clampText = (text: string, limit: number) => {
+  if (text.length <= limit) {
+    return text;
+  }
+  return text.slice(0, limit).trim();
+};
+
+const sanitizeTitle = (value: string) => {
+  const trimmed = value
+    .replace(/^["'`]+|["'`]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clampText(trimmed, MAX_TITLE_CHARS);
+};
+
+export async function POST(req: Request) {
+  let body: { messages?: SerializedMessage[] };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { messages } = body ?? {};
+  if (!Array.isArray(messages)) {
+    return NextResponse.json({ error: "Missing messages" }, { status: 400 });
+  }
+
+  const userMessage = messages.find((message) => message?.role === "user");
+  const assistantMessage = messages.find(
+    (message) => message?.role === "assistant"
+  );
+  const userText = extractContent(userMessage);
+  const assistantText = extractContent(assistantMessage);
+
+  if (!assistantText) {
+    return NextResponse.json({ title: FALLBACK_TITLE });
+  }
+
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "Missing OPENROUTER_API_KEY" },
+      { status: 500 }
+    );
+  }
+
+  const promptLines = [
+    `Based on this conversation, generate a short title (max ${MAX_TITLE_CHARS} chars, no quotes). Use the same language as the conversation.`,
+    userText ? `User: ${clampText(userText, MAX_INPUT_CHARS)}` : "",
+    `Assistant: ${clampText(assistantText, MAX_INPUT_CHARS)}`,
+  ].filter((line) => line.length > 0);
+
+  const prompt = promptLines.join("\n");
+
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      ...getOpenRouterHeaders(),
+    },
+    body: JSON.stringify({
+      model: TITLE_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 50,
+      temperature: 0.2,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Title generation failed:", response.status, errorText);
+    return NextResponse.json(
+      { error: "Title generation failed" },
+      { status: 502 }
+    );
+  }
+
+  const data = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const rawTitle = data?.choices?.[0]?.message?.content;
+  const title = typeof rawTitle === "string" ? sanitizeTitle(rawTitle) : "";
+
+  if (!title) {
+    return NextResponse.json({ title: FALLBACK_TITLE });
+  }
+
+  return NextResponse.json({ title });
+}

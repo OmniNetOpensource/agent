@@ -67,7 +67,8 @@ const parseBraveSearchResults = (
           }
           if (thumbnail && typeof thumbnail === "object") {
             if (typeof thumbnail.src === "string") return thumbnail.src;
-            if (typeof thumbnail.original === "string") return thumbnail.original;
+            if (typeof thumbnail.original === "string")
+              return thumbnail.original;
           }
           return undefined;
         })();

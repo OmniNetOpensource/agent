@@ -10,12 +10,74 @@ import type {
   SerializedMessage,
 } from "@/src/features/chat/types/chat";
 import { serializeMessagesForRequest } from "./serialization";
-import { cloneMessages, type AssistantAddition } from "./block-operations";
+import {
+  cloneMessages,
+  extractContentFromBlocks,
+  type AssistantAddition,
+} from "./block-operations";
 
 const generateLocalMessageId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const DEFAULT_CONVERSATION_TITLE = "New Chat";
+
+const isFirstRound = (messages: Message[]) => {
+  const userCount = messages.filter((message) => message.role === "user").length;
+  const assistantCount = messages.filter(
+    (message) => message.role === "assistant"
+  ).length;
+  return userCount === 1 && assistantCount === 1;
+};
+
+const buildTitleMessages = (messages: Message[]): SerializedMessage[] =>
+  messages.map((message) => ({
+    role: message.role,
+    blocks: message.blocks
+      .filter((block) => block.type === "content")
+      .map((block) => ({ type: "content", content: block.content })),
+  }));
+
+const generateTitle = async (conversationId: string, messages: Message[]) => {
+  const assistantMessage = messages.find(
+    (message) => message.role === "assistant"
+  );
+  const assistantText = assistantMessage
+    ? extractContentFromBlocks(assistantMessage.blocks).trim()
+    : "";
+
+  if (!assistantText) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/chat/title", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conversationId,
+        messages: buildTitleMessages(messages),
+      }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = (await response.json()) as { title?: string };
+    const title = typeof data.title === "string" ? data.title.trim() : "";
+
+    if (!title || title === DEFAULT_CONVERSATION_TITLE) {
+      return;
+    }
+
+    const { updateConversationTitle } = useConversationsStore.getState();
+    await updateConversationTitle(conversationId, title);
+  } catch (error) {
+    console.error("Failed to generate conversation title:", error);
+  }
+};
 
 export type StoreGetter = () => {
   messageTree: MessageTree;
@@ -116,7 +178,7 @@ export const startChatRequest = async (
       existing?.title ??
       (resolvedTitleSource
         ? buildConversationTitle(resolvedTitleSource)
-        : "新会话");
+        : DEFAULT_CONVERSATION_TITLE);
     const created_at = options?.created_at ?? existing?.created_at ?? now;
 
     await localDB.save({
@@ -146,7 +208,9 @@ export const startChatRequest = async (
           }));
 
           const serverTitle =
-            typeof data.title === "string" ? data.title : "新会话";
+            typeof data.title === "string"
+              ? data.title
+              : DEFAULT_CONVERSATION_TITLE;
           const fallbackTitle = titleSource
             ? buildConversationTitle(titleSource)
             : serverTitle;
@@ -315,6 +379,14 @@ export const startChatRequest = async (
           updated_at: now,
           titleSource,
         });
+      }
+
+      const currentMessages = get().messages;
+      if (
+        currentConversationId &&
+        isFirstRound(currentMessages)
+      ) {
+        void generateTitle(currentConversationId, currentMessages);
       }
     },
   });

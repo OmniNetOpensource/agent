@@ -17,6 +17,7 @@ type ConversationsActions = {
   pinConversation: (id: string) => Promise<void>;
   unpinConversation: (id: string) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
+  updateConversationTitle: (id: string, title: string) => Promise<void>;
 };
 
 const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
@@ -262,6 +263,35 @@ export const useConversationsStore = create<
       await localDB.delete(id);
     } catch (error) {
       console.error("Failed to delete local conversation:", error);
+    }
+  },
+  updateConversationTitle: async (id, title) => {
+    const { pinnedConversations, normalConversations } = get();
+    const allConversations = [...pinnedConversations, ...normalConversations];
+    const target = allConversations.find((item) => item.id === id);
+
+    if (!target) {
+      return;
+    }
+
+    const updated: Conversation = { ...target, title };
+
+    set((state) => ({
+      ...state,
+      ...mergeConversations(
+        state.pinnedConversations,
+        state.normalConversations,
+        [updated]
+      ),
+    }));
+
+    try {
+      const existing = await localDB.get(id);
+      if (existing) {
+        await localDB.save({ ...existing, title });
+      }
+    } catch (error) {
+      console.error("Failed to update conversation title:", error);
     }
   },
 }));

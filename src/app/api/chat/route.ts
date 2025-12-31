@@ -23,7 +23,6 @@ import {
   ConversationLogger,
   createConversationLogger,
 } from "@/src/shared/lib/conversation-logger";
-import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 
 const encoder = new TextEncoder();
 
@@ -119,7 +118,7 @@ export async function POST(req: Request) {
     if (!activeConversationId) {
       const newId = generateConversationId();
       activeConversationId = newId;
-      const title = buildConversationTitle(latestUserMessage);
+      const title = "New Chat";
       const now = new Date().toISOString();
       conversationCreatedEvent = {
         type: "conversation_created",

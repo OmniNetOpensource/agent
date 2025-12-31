@@ -595,7 +595,6 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       messages: nextMessages,
       navigate,
       titleSource: { role: "user", blocks: userNode.blocks },
-      preferLocalTitle: tree.currentPath.length === 0,
     });
   },
 }));
