@@ -120,7 +120,7 @@ export const ResearchBlock = memo(function ResearchBlock({
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="max-h-[500px] overflow-y-auto overscroll-contain divide-y divide-border/40 bg-transparent py-1">
+        <div className="max-h-[500px] overflow-y-auto overscroll-contain bg-transparent">
           {items.map((item, itemIndex) => {
             const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
             return (
@@ -128,7 +128,7 @@ export const ResearchBlock = memo(function ResearchBlock({
             );
           })}
           {isActive && (
-            <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 px-3 py-1 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               <span>Analyzing...</span>
             </div>

@@ -239,7 +239,7 @@ export function BraveSearch({ tool }: BraveSearchProps) {
       result.result.startsWith("Error:"));
 
   return (
-    <div className="px-3 py-2">
+    <div className="px-3 py-1">
       {/* Searching State */}
       {!result && (
         <div className="flex items-center gap-2 text-xs text-(--text-secondary)">

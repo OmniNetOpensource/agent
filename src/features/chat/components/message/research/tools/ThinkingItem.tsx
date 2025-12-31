@@ -26,7 +26,7 @@ export const ThinkingItem = memo(function ThinkingItem({
         type="button"
         onClick={toggleItem}
         className={cn(
-          "flex w-full items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-accent",
+          "flex w-full items-center gap-2 px-3 py-1 text-xs transition-colors hover:bg-accent",
           isExpanded ? "bg-accent" : "bg-transparent"
         )}
         aria-expanded={isExpanded}
@@ -55,7 +55,7 @@ export const ThinkingItem = memo(function ThinkingItem({
           isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="overflow-x-auto bg-(--surface-muted) px-3 py-2 text-xs text-(--text-secondary)">
+        <div className="overflow-x-auto bg-(--surface-muted) px-3 py-1 text-xs text-(--text-secondary)">
           <Markdown content={item.text} />
         </div>
       </div>
