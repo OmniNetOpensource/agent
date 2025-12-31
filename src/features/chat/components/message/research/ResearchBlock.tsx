@@ -51,7 +51,7 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           );
         }
         return (
-          <div className="px-3 py-2 text-xs font-mono text-destructive/80">
+          <div className="px-3 py-1 text-xs font-mono text-destructive/80">
             Missing UI for tool: <strong>{toolName}</strong>
           </div>
         );
@@ -94,11 +94,7 @@ export const ResearchBlock = memo(function ResearchBlock({
 
         <div className="relative z-10 flex items-center gap-2">
           <div className="flex min-w-0 items-baseline gap-2">
-            <span
-              className={cn(
-                "truncate text-sm font-medium tracking-tight"
-              )}
-            >
+            <span className={cn("truncate text-sm font-medium tracking-tight")}>
               {isActive ? "Researching…" : "Research completed"}
             </span>
             {items.length > 0 && (

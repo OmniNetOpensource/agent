@@ -21,7 +21,7 @@ export const ThinkingItem = memo(function ThinkingItem({
   const contentId = `thinking-item-${itemKey}`;
 
   return (
-    <div className="group last:border-0">
+    <div className="group">
       <button
         type="button"
         onClick={toggleItem}
