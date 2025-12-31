@@ -146,7 +146,8 @@ export const buildAssistantBlocks = (
 ): ContentBlock[] => {
   const blocks: ContentBlock[] = [];
   if (items.length > 0) {
-    blocks.push({ type: "research", items });
+    const now = Date.now();
+    blocks.push({ type: "research", items, startTime: now, endTime: now });
   }
   if (content) {
     blocks.push({ type: "content", content });

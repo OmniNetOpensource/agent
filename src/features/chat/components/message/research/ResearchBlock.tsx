@@ -19,6 +19,8 @@ type ResearchBlockProps = {
   blockIndex: number;
   messageIndex: number;
   isActive?: boolean;
+  startTime: number;
+  endTime: number;
 };
 
 type ResearchBlockItemProps = {
@@ -61,13 +63,26 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   return null;
 });
 
+const formatElapsedTime = (ms: number) => {
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
+};
+
 export const ResearchBlock = memo(function ResearchBlock({
   items,
   blockIndex,
   messageIndex,
   isActive,
+  startTime,
+  endTime,
 }: ResearchBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const elapsed = endTime - startTime;
 
   return (
     <Collapsible
@@ -99,7 +114,7 @@ export const ResearchBlock = memo(function ResearchBlock({
             </span>
             {items.length > 0 && (
               <span className="text-xs text-muted-foreground tabular-nums">
-                {items.length} steps
+                {items.length} steps · {formatElapsedTime(elapsed)}
               </span>
             )}
           </div>

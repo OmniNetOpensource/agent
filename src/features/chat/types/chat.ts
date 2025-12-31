@@ -52,16 +52,23 @@ export type ChatContentPart =
   | { type: "video_url"; videoUrl: { url: string } }
   | { type: "input_audio"; inputAudio: { data: string; format: string } };
 
+export type ResearchBlock = {
+  type: "research";
+  items: ResearchItem[];
+  startTime: number;
+  endTime: number;
+};
+
 export type ContentBlock =
   | { type: "content"; content: string }
   | { type: "attachments"; attachments: Attachment[] }
-  | { type: "research"; items: ResearchItem[] }
+  | ResearchBlock
   | { type: "error"; message: string };
 
 export type SerializedContentBlock =
   | { type: "content"; content: string }
   | { type: "attachments"; attachments: SerializedAttachment[] }
-  | { type: "research"; items: ResearchItem[] }
+  | ResearchBlock
   | { type: "error"; message: string };
 
 export type MessageBase<Block> = { role: "user" | "assistant"; blocks: Block[] };
