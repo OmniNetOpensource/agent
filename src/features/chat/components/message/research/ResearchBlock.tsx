@@ -1,13 +1,11 @@
 "use client";
 
 import { memo, useState } from "react";
-import { motion } from "framer-motion";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
-import { cn } from "@/lib/utils";
 import { FetchUrl } from "./tools/FetchUrl";
 import { BraveSearch } from "./tools/BraveSearch";
 import { ThinkingItem } from "./tools/ThinkingItem";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -66,11 +64,81 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
 const formatElapsedTime = (ms: number) => {
   const seconds = Math.floor(ms / 1000);
   if (seconds < 60) {
-    return `${seconds}s`;
+    return `${seconds} seconds`;
   }
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${minutes}m ${remainingSeconds}s`;
+  return `${minutes} minutes ${remainingSeconds} seconds`;
+};
+
+const getLatestStatus = (items: ResearchItemData[]): string => {
+  if (items.length === 0) return "Researching...";
+
+  const lastItem = items[items.length - 1];
+
+  if (lastItem.kind === "thinking") {
+    return "Thinking...";
+  }
+
+  if (lastItem.kind === "tool") {
+    const toolName = lastItem.data.call.tool;
+    const args = lastItem.data.call.args;
+
+    if (toolName === "brave_search") {
+      const query = args.query as string;
+      return `Searching "${query}"`;
+    }
+
+    if (toolName === "fetch_url") {
+      const url = args.url as string;
+      try {
+        const hostname = new URL(url).hostname;
+        return `Fetching ${hostname}`;
+      } catch {
+        return `Fetching URL`;
+      }
+    }
+
+    return `Running ${toolName}`;
+  }
+
+  return "Researching...";
+};
+
+const ShimmerText = ({ children }: { children: string }) => {
+  return (
+    <>
+      <style>
+        {`
+          @keyframes research-shimmer {
+            0% { background-position: 200% 50%; }
+            100% { background-position: -200% 50%; }
+          }
+        `}
+      </style>
+      <span
+        style={{
+          display: "inline-block",
+          fontSize: "14px",
+          fontWeight: 500,
+          color: "transparent",
+          backgroundImage: `linear-gradient(90deg,
+            var(--text-tertiary) 0%,
+            var(--text-tertiary) 35%,
+            var(--text-primary) 50%,
+            var(--text-tertiary) 65%,
+            var(--text-tertiary) 100%)`,
+          backgroundSize: "400% 100%",
+          backgroundClip: "text",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          animation: "research-shimmer 2.5s linear infinite",
+        }}
+      >
+        {children}
+      </span>
+    </>
+  );
 };
 
 export const ResearchBlock = memo(function ResearchBlock({
@@ -91,43 +159,15 @@ export const ResearchBlock = memo(function ResearchBlock({
       className="my-2"
     >
       <CollapsibleTrigger
-        className={cn(
-          "relative flex w-full items-center justify-between gap-3 overflow-hidden px-1.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
-          isActive ? "text-foreground" : "text-(--text-secondary)",
-          "hover:text-foreground"
-        )}
+        className="w-full px-1.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
       >
-        {isActive && (
-          <motion.span
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-(--surface-hover) to-transparent opacity-70"
-            initial={{ x: "0%" }}
-            animate={{ x: "200%" }}
-            transition={{ duration: 1.6, ease: "linear", repeat: Infinity }}
-          />
+        {isActive ? (
+          <ShimmerText>{getLatestStatus(items)}</ShimmerText>
+        ) : (
+          <span className="text-sm text-(--text-secondary) transition-colors hover:text-foreground">
+            researched for {formatElapsedTime(elapsed)}
+          </span>
         )}
-
-        <div className="relative z-10 flex items-center gap-2">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className={cn("truncate text-sm font-medium tracking-tight")}>
-              {isActive ? "Researching…" : "Research completed"}
-            </span>
-            {items.length > 0 && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {items.length} steps · {formatElapsedTime(elapsed)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "relative z-10 flex h-4 w-4 items-center justify-center text-muted-foreground transition-transform duration-200",
-            isExpanded && "rotate-90"
-          )}
-        >
-          <ChevronRight className="h-3.5 w-3.5" />
-        </div>
       </CollapsibleTrigger>
 
       <CollapsibleContent>

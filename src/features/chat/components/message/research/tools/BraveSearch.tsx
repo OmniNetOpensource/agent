@@ -275,11 +275,7 @@ export function BraveSearch({ tool }: BraveSearchProps) {
           {isExpanded && (
             <>
               {braveResults && braveResults.length > 0 ? (
-                <div className="relative bg-(--surface-muted) rounded-lg group/scroll">
-                  {/* Scroll indicators */}
-                  <div className="absolute left-0 top-0 bottom-0 w-4 bg-linear-to-r from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none rounded-l-lg" />
-                  <div className="absolute right-0 top-0 bottom-0 w-4 bg-linear-to-l from-(--surface-muted) to-transparent z-[var(--z-card-inner)] pointer-events-none rounded-r-lg" />
-
+                <div className="relative group/scroll">
                   <div className="overflow-x-auto p-2">
                     <div className="flex gap-2 w-max pb-1">
                       {braveResults.map((result, index) => (
