@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { BarChart3, Settings, User2 } from "lucide-react";
+import { Settings, User2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -109,11 +108,6 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
                 <Settings className="h-4 w-4" />
                 设置
               </button>
-
-              <Link href="/dashboard" className={menuItemClass}>
-                <BarChart3 className="h-4 w-4" />
-                Dashboard / 数据面板
-              </Link>
 
             </PopoverContent>
           </Popover>

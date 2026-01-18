@@ -114,21 +114,4 @@ export const localDB = {
     const db = await openDatabase();
     await db.clear(STORE_CONVERSATIONS);
   },
-
-  async getStats(): Promise<{ conversationCount: number; messageCount: number }> {
-    if (!supportsIndexedDB) {
-      return { conversationCount: 0, messageCount: 0 };
-    }
-
-    const db = await openDatabase();
-    const all = await db.getAll(STORE_CONVERSATIONS);
-    const messageCount = all.reduce((sum, conv) => {
-      if (conv.messageTree?.nodes) {
-        return sum + Object.keys(conv.messageTree.nodes).length;
-      }
-      return sum + (conv.messages?.length ?? 0);
-    }, 0);
-
-    return { conversationCount: all.length, messageCount };
-  },
 };

@@ -31,13 +31,10 @@ pnpm check         # Full validation: type-check + lint + build
 
 ### App Routes (`src/app/`)
 - `api/chat` - Streaming chat endpoint (OpenRouter + tools)
-- `api/dashboard/stats` - Local-only stats
-- `api/sync` - Disabled (returns 501)
 - `page.tsx` - Root redirect to `/app`
 - `app/page.tsx` - New chat screen
 - `app/c/[conversationId]/page.tsx` - Conversation screen
 - `app/layout.tsx` - App shell with Sidebar + top bar
-- `dashboard/page.tsx` - Local stats screen
 
 ### Feature Folders (`src/features/`)
 - `chat/` - Chat UI, state, and request flow
@@ -47,7 +44,6 @@ pnpm check         # Full validation: type-check + lint + build
   - `store/` - `useChatStore`
 - `sidebar/` - Conversation list with pin/unpin + delete
 - `preview/` - Code preview panel + `usePreviewStore`
-- `dashboard/` - Local stats + sync UI
 - `theme/` - Theme switching hook
 
 ### Shared (`src/shared/`)
@@ -106,15 +102,6 @@ Core chat endpoint that:
 3. Preserves `reasoning_details` for Gemini models
 4. Emits `content`, `thinking`, `tool_call`, `tool_progress`, `tool_result`, `error`, `conversation_created`, `conversation_updated`
 5. Writes dev logs to `logs/conversations` via `conversation-logger`
-
-### `GET /api/dashboard/stats`
-Returns local-only dashboard statistics:
-- `userMessageCount` - Count of local messages (0 when unavailable)
-- `conversationCount` - Count of local conversations (0 when unavailable)
-- `isLocalOnly` - Always `true`
-
-### `POST /api/sync`
-Sync endpoint is disabled in local-only mode and returns `501`.
 
 ## Streaming Architecture
 
@@ -238,8 +225,6 @@ Global CSS variables defined in `src/app/globals.css` (Tailwind v4 format). Use 
 **Other Features:**
 - Conversation store: `src/features/sidebar/store/useConversationsStore.ts`
 - Theme hook: `src/features/theme/hooks/useTheme.ts`
-- Dashboard page: `src/app/dashboard/page.tsx`
-- Dashboard sync hook: `src/features/dashboard/hooks/useSync.ts`
 - Preview panel: `src/features/preview/components/PreviewPanel.tsx`
 
 **Shared Utilities:**

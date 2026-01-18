@@ -45,6 +45,11 @@ export type StreamChunk = {
   }>;
 };
 
+function supportsReasoning(model: string): boolean {
+  // Gemini models support reasoning/thinking
+  return model.startsWith("google/gemini");
+}
+
 export async function streamChatCompletion(params: {
   model: string;
   messages: ChatMessage[];
@@ -80,6 +85,27 @@ export async function streamChatCompletion(params: {
     return newMsg;
   });
 
+  // 构建请求体
+  const requestBody: Record<string, unknown> = {
+    model: params.model,
+    messages,
+    stream: true,
+  };
+
+  if (params.tools && params.tools.length > 0) {
+    requestBody.tools = params.tools;
+  }
+
+  // 为支持思考的模型启用思考能力（设置为 high）
+  if (supportsReasoning(params.model)) {
+    requestBody.extra_body = {
+      reasoning: {
+        effort: "high",
+        enabled: true,
+      },
+    };
+  }
+
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -87,7 +113,7 @@ export async function streamChatCompletion(params: {
       "Content-Type": "application/json",
       ...getOpenRouterHeaders(),
     },
-    body: JSON.stringify({ ...params, messages, stream: true }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok || !response.body) {

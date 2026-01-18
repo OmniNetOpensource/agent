@@ -9,5 +9,5 @@ Next.js App Router 的根目录，负责全局布局、样式和顶层路由组�
 - 包含 API 路由与 UI 路由的目录结构。
 
 ## 内容
-- 子目录：api、app、dashboard
+- 子目录：api、app
 - 文件：favicon.ico、globals.css、layout.tsx、not-found.tsx、page.tsx
