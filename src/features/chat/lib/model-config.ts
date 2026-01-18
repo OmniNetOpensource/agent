@@ -1,6 +1,11 @@
+export type ProviderPreferences = {
+  order: string[];
+};
+
 export type ModelConfig = {
   id: string;
   label: string;
+  provider?: ProviderPreferences;
 };
 
 export const MODEL_CONFIGS: ModelConfig[] = [
@@ -11,6 +16,21 @@ export const MODEL_CONFIGS: ModelConfig[] = [
   {
     id: "anthropic/claude-sonnet-4.5",
     label: "claude-sonnet-4.5",
+  },
+  {
+    id: "anthropic/claude-haiku-4.5",
+    label: "claude-haiku-4.5",
+  },
+  {
+    id: "anthropic/claude-opus-4.5",
+    label: "claude-opus-4.5",
+  },
+  {
+    id: "openai/gpt-oss-120b",
+    label: "gpt-oss-120b",
+    provider: {
+      order: ["Cerebras"],
+    },
   },
 ];
 

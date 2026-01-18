@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       conversationHistory,
       conversationId,
       model,
+      provider,
       searchEnabled,
       systemInstruction,
     } = (await req.json()) as ChatRequest;
@@ -160,7 +161,18 @@ export async function POST(req: Request) {
               : { type: eventType, data };
           const line = `data: ${JSON.stringify(eventData)}\n\n`;
           controller.enqueue(encoder.encode(line));
-          logger?.log("FRONTEND", `Sent SSE event: ${eventType}`, eventData);
+          // 创建用于日志的 eventData，移除 tool_result 的 result 字段
+          const logEventData =
+            eventType === "tool_result" &&
+            typeof eventData === "object" &&
+            eventData !== null &&
+            "result" in eventData
+              ? (() => {
+                  const { result, ...rest } = eventData as { result?: unknown };
+                  return rest;
+                })()
+              : eventData;
+          logger?.log("FRONTEND", `Sent SSE event: ${eventType}`, logEventData);
         };
 
         if (conversationCreatedEvent) {
@@ -266,11 +278,23 @@ export async function POST(req: Request) {
                 model: requestedModel,
                 messages: currentMessages,
                 tools: tools.length > 0 ? tools : undefined,
+                provider,
+              };
+              // 创建用于日志的 payload，移除 tool 消息的 content
+              const logPayload = {
+                ...requestPayload,
+                messages: requestPayload.messages.map((msg) => {
+                  if (msg.role === "tool") {
+                    const { content, ...rest } = msg;
+                    return rest;
+                  }
+                  return msg;
+                }),
               };
               logger?.log(
                 "OPENROUTER",
                 "Sending chat completion request",
-                requestPayload
+                logPayload
               );
               stream = await streamChatCompletion(requestPayload);
               logger?.log("OPENROUTER", "Chat completion stream started");

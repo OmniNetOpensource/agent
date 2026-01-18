@@ -107,10 +107,15 @@ export type EditingState = {
   editedAttachments: Attachment[];
 };
 
+export type ProviderPreferences = {
+  order: string[];
+};
+
 export type ChatRequest = {
   conversationHistory: SerializedMessage[];
   conversationId?: string | null;
   model?: string;
+  provider?: ProviderPreferences;
   searchEnabled?: boolean;
   systemInstruction?: string;
 };

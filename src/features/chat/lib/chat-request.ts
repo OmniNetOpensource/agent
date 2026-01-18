@@ -15,6 +15,7 @@ import {
   extractContentFromBlocks,
   type AssistantAddition,
 } from "./block-operations";
+import { getModelConfig } from "./model-config";
 
 const generateLocalMessageId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -404,11 +405,13 @@ export const startChatRequest = async (
     });
   }
 
+  const modelConfig = getModelConfig(selectedModel);
   chatClient.sendMessage(
     serializedMessages,
     selectedModel,
     currentConversationId,
     searchEnabled,
-    systemInstruction
+    systemInstruction,
+    modelConfig?.provider
   );
 };

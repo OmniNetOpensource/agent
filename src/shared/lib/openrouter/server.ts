@@ -45,10 +45,15 @@ export type StreamChunk = {
   }>;
 };
 
+export type ProviderPreferences = {
+  order: string[];
+};
+
 export async function streamChatCompletion(params: {
   model: string;
   messages: ChatMessage[];
   tools?: unknown[];
+  provider?: ProviderPreferences;
 }): Promise<ReadableStream<Uint8Array>> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -94,6 +99,10 @@ export async function streamChatCompletion(params: {
 
   if (params.tools && params.tools.length > 0) {
     requestBody.tools = params.tools;
+  }
+
+  if (params.provider) {
+    requestBody.provider = params.provider;
   }
 
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
