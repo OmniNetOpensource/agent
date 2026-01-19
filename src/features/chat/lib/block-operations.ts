@@ -63,8 +63,7 @@ export const applyAssistantAddition = (
   const ensureResearchBlock = (targetBlocks: ContentBlock[]) => {
     const lastBlock = targetBlocks[targetBlocks.length - 1];
     if (!lastBlock || lastBlock.type !== "research") {
-      const now = Date.now();
-      targetBlocks.push({ type: "research", items: [], startTime: now, endTime: now });
+      targetBlocks.push({ type: "research", items: [] });
       return targetBlocks.length - 1;
     }
     return targetBlocks.length - 1;
@@ -105,7 +104,7 @@ export const applyAssistantAddition = (
         items.push({ ...addition });
       }
 
-      nextBlocks[researchIndex] = { ...researchBlock, items, endTime: Date.now() };
+      nextBlocks[researchIndex] = { ...researchBlock, items };
       return nextBlocks;
     }
 
@@ -119,7 +118,6 @@ export const applyAssistantAddition = (
       nextBlocks[researchIndex] = {
         ...researchBlock,
         items: [...researchBlock.items, { ...addition }],
-        endTime: Date.now(),
       };
       return nextBlocks;
     }
@@ -163,7 +161,7 @@ export const applyAssistantAddition = (
         }
       }
 
-      nextBlocks[researchIndex] = { ...researchBlock, items, endTime: Date.now() };
+      nextBlocks[researchIndex] = { ...researchBlock, items };
       return nextBlocks;
     }
 
@@ -197,7 +195,7 @@ export const applyAssistantAddition = (
         }
       }
 
-      nextBlocks[researchIndex] = { ...researchBlock, items, endTime: Date.now() };
+      nextBlocks[researchIndex] = { ...researchBlock, items };
       return nextBlocks;
     }
   }
@@ -207,12 +205,9 @@ export const applyAssistantAddition = (
       const normalizedItems = addition.items.map((item) =>
         item.kind === "thinking" ? { ...item } : cloneResearchItem(item)
       );
-      const now = Date.now();
       nextBlocks.push({
         type: "research",
         items: normalizedItems,
-        startTime: addition.startTime ?? now,
-        endTime: addition.endTime ?? now,
       });
       return nextBlocks;
     }

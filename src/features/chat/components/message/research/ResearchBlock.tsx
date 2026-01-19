@@ -16,8 +16,6 @@ type ResearchBlockProps = {
   blockIndex: number;
   messageIndex: number;
   isActive?: boolean;
-  startTime: number;
-  endTime: number;
 };
 
 type ResearchBlockItemProps = {
@@ -59,16 +57,6 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
 
   return null;
 });
-
-const formatElapsedTime = (ms: number) => {
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) {
-    return `${seconds} seconds`;
-  }
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes} minutes ${remainingSeconds} seconds`;
-};
 
 const getLatestStatus = (items: ResearchItemData[]): string => {
   if (items.length === 0) return "Researching...";
@@ -145,11 +133,8 @@ export const ResearchBlock = memo(function ResearchBlock({
   blockIndex,
   messageIndex,
   isActive,
-  startTime,
-  endTime,
 }: ResearchBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const elapsed = endTime - startTime;
 
   return (
     <Collapsible
@@ -164,7 +149,7 @@ export const ResearchBlock = memo(function ResearchBlock({
           <ShimmerText>{getLatestStatus(items)}</ShimmerText>
         ) : (
           <span className="text-sm font-medium text-(--text-tertiary) transition-colors hover:text-(--text-secondary)">
-            researched for {formatElapsedTime(elapsed)}
+            Research Completed
           </span>
         )}
       </CollapsibleTrigger>

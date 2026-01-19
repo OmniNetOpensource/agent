@@ -289,8 +289,6 @@ export const MessageItem = memo(function MessageItem({
                       isActive={
                         isStreaming && blockIndex === contentBlocks.length - 1
                       }
-                      startTime={block.startTime}
-                      endTime={block.endTime}
                     />
                   );
                 }

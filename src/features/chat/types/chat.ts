@@ -55,8 +55,6 @@ export type ChatContentPart =
 export type ResearchBlock = {
   type: "research";
   items: ResearchItem[];
-  startTime: number;
-  endTime: number;
 };
 
 export type ContentBlock =
