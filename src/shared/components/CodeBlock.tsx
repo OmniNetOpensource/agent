@@ -1,16 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  Download,
-  Eye,
-} from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Copy, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import { Button } from "@/components/ui/button";
 
 type CodeBlockProps = {
@@ -45,8 +37,6 @@ const languageToExtension: Record<string, string> = {
   sql: "sql",
 };
 
-const previewableLanguages = new Set(["html", "css", "javascript", "js"]);
-
 const normalizeLanguage = (language?: string) => {
   if (!language) return "";
   const match = language.match(/language-([\w-]+)/);
@@ -63,16 +53,9 @@ export default function CodeBlock({
   const normalizedLanguage = normalizeLanguage(language);
   const hasCode = code.trim().length > 0;
   const extension = languageToExtension[normalizedLanguage] ?? "txt";
-  const canPreview = previewableLanguages.has(normalizedLanguage);
 
   const [isCopied, setIsCopied] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const {
-    isOpen,
-    code: previewCode,
-    openPreview,
-    closePreview,
-  } = usePreviewStore();
 
   const handleCopy = async () => {
     if (!hasCode || typeof navigator === "undefined") return;
@@ -107,15 +90,6 @@ export default function CodeBlock({
     URL.revokeObjectURL(url);
   };
 
-  const handlePreview = () => {
-    if (!canPreview || !hasCode) return;
-    if (isOpen && previewCode === code) {
-      closePreview();
-    } else {
-      openPreview(code, normalizedLanguage);
-    }
-  };
-
   return (
     <div className="group rounded-lg border bg-muted/50">
       {/* Header */}
@@ -147,20 +121,6 @@ export default function CodeBlock({
           className="flex items-center gap-1"
           onClick={(e) => e.stopPropagation()}
         >
-          {canPreview && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePreview}
-              title="预览代码"
-              aria-label="预览代码"
-              disabled={!hasCode}
-              className="h-7 gap-1 px-2 text-[11px]"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">预览</span>
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="sm"

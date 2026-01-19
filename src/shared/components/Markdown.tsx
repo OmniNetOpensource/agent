@@ -40,7 +40,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h1
       {...props}
       className={cn(
-        "mt-6 mb-3 last:mb-0 text-lg font-semibold leading-tight text-foreground",
+        "mt-8 mb-4 first:mt-0 last:mb-0 text-xl font-bold leading-snug tracking-tight text-foreground",
         className
       )}
     />
@@ -49,7 +49,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h2
       {...props}
       className={cn(
-        "mt-5 mb-3 last:mb-0 text-base font-semibold leading-tight text-foreground",
+        "mt-7 mb-3 first:mt-0 last:mb-0 text-lg font-semibold leading-snug text-foreground",
         className
       )}
     />
@@ -58,7 +58,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h3
       {...props}
       className={cn(
-        "mt-4 mb-2 last:mb-0 text-sm font-semibold text-foreground",
+        "mt-6 mb-2.5 first:mt-0 last:mb-0 text-base font-semibold text-foreground",
         className
       )}
     />
@@ -67,7 +67,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <h4
       {...props}
       className={cn(
-        "mt-3 mb-2 last:mb-0 text-sm font-medium text-foreground",
+        "mt-5 mb-2 first:mt-0 last:mb-0 text-sm font-semibold text-foreground",
         className
       )}
     />
@@ -76,7 +76,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <p
       {...props}
       className={cn(
-        "mb-2 last:mb-0 leading-relaxed text-(--text-secondary)",
+        "mb-4 last:mb-0 leading-[1.75] text-(--text-secondary)",
         className
       )}
     />
@@ -85,7 +85,10 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <ul
       {...props}
       className={cn(
-        "mb-2 last:mb-0 ml-4 list-disc space-y-1 text-(--text-secondary)",
+        "mb-4 last:mb-0 pl-6 space-y-1.5 text-(--text-secondary) list-none",
+        "[&>li]:relative [&>li]:before:absolute [&>li]:before:-left-4 [&>li]:before:top-[0.6em] [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rounded-full [&>li]:before:bg-(--color-primary)/70",
+        "[&_ul]:mt-1.5 [&_ul]:mb-0 [&_ul>li]:before:h-1 [&_ul>li]:before:w-1 [&_ul>li]:before:bg-(--text-tertiary)",
+        "[&_ul_ul>li]:before:rounded-none [&_ul_ul>li]:before:h-0.5 [&_ul_ul>li]:before:w-2",
         className
       )}
     />
@@ -94,19 +97,24 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <ol
       {...props}
       className={cn(
-        "mb-2 last:mb-0 ml-4 list-decimal space-y-1 text-(--text-secondary)",
+        "mb-4 last:mb-0 pl-6 space-y-1.5 text-(--text-secondary) list-none [counter-reset:list-counter]",
+        "[&>li]:relative [&>li]:[counter-increment:list-counter] [&>li]:before:absolute [&>li]:before:-left-6 [&>li]:before:w-5 [&>li]:before:text-right [&>li]:before:content-[counter(list-counter)_'.'] [&>li]:before:text-xs [&>li]:before:font-medium [&>li]:before:text-(--color-primary)/80",
+        "[&_ol]:mt-1.5 [&_ol]:mb-0 [&_ol>li]:before:text-(--text-tertiary)",
         className
       )}
     />
   ),
   li: ({ className, ...props }) => (
-    <li {...props} className={cn("leading-relaxed text-current", className)} />
+    <li
+      {...props}
+      className={cn("leading-[1.7] text-current pl-1", className)}
+    />
   ),
   blockquote: ({ className, ...props }) => (
     <blockquote
       {...props}
       className={cn(
-        "my-3 last:mb-0 border-l-2 border-(--border-subtle) pl-3 text-(--text-secondary) italic",
+        "my-4 last:mb-0 border-l-[3px] border-(--color-primary)/40 bg-(--surface-muted)/50 rounded-r-lg pl-4 pr-3 py-2.5 text-(--text-secondary) italic",
         className
       )}
     />
@@ -114,7 +122,10 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
   hr: ({ className, ...props }) => (
     <hr
       {...props}
-      className={cn("my-4 last:mb-0 border-(--border-subtle)", className)}
+      className={cn(
+        "my-6 last:mb-0 border-0 h-px bg-gradient-to-r from-transparent via-(--border-strong) to-transparent",
+        className
+      )}
     />
   ),
   strong: ({ className, ...props }) => (
@@ -130,7 +141,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <a
       {...props}
       className={cn(
-        "text-(--color-primary) underline underline-offset-2 hover:text-(--color-primary-hover)",
+        "text-(--color-primary) font-medium underline decoration-1 underline-offset-2 hover:text-(--color-primary-hover) hover:decoration-2 transition-all",
         className
       )}
       target="_blank"
@@ -154,9 +165,11 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     );
 
     return (
-      <CodeBlock language={language} code={rawCode} className={className}>
-        {children}
-      </CodeBlock>
+      <div className="my-4 last:mb-0 first:mt-0">
+        <CodeBlock language={language} code={rawCode} className={className}>
+          {children}
+        </CodeBlock>
+      </div>
     );
   },
   code: ({ className, ...props }) => {
@@ -165,14 +178,14 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
       return (
         <code
           {...props}
-          className="rounded-md bg-(--code-inline-bg) px-1.5 py-0.5 font-mono text-[0.85em] text-(--text-code)"
+          className="rounded-md bg-(--code-inline-bg) ring-1 ring-(--border-subtle) px-1.5 py-0.5 font-mono text-[0.85em] text-(--text-code) font-medium"
         />
       );
     }
     return <code {...props} className={className} />;
   },
   table: ({ className, ...props }) => (
-    <div className="overflow-x-auto">
+    <div className="my-4 last:mb-0 first:mt-0 overflow-x-auto rounded-lg border border-(--border-subtle)">
       <table
         {...props}
         className={cn("w-full border-collapse text-left text-sm", className)}
@@ -183,7 +196,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <th
       {...props}
       className={cn(
-        "border border-(--border-subtle) bg-(--surface-muted) px-3 py-2 text-left text-(--text-secondary)",
+        "border-b border-(--border-subtle) bg-(--surface-muted) px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-(--text-secondary)",
         className
       )}
     />
@@ -192,7 +205,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <td
       {...props}
       className={cn(
-        "border border-(--border-subtle) px-3 py-2 align-top text-(--text-secondary)",
+        "border-b border-(--border-subtle) px-4 py-2.5 align-top text-(--text-secondary)",
         className
       )}
     />
@@ -201,7 +214,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
 
 export default function Markdown({ content }: Props) {
   return (
-    <div className="markdown-body space-y-2 text-sm leading-relaxed text-(--text-secondary)">
+    <div className="markdown-body text-sm leading-relaxed text-(--text-secondary)">
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}
