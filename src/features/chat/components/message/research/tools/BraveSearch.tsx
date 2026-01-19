@@ -7,7 +7,6 @@ import {
   Zap,
   Globe,
   ChevronRight,
-  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getToolLifecycle } from "../utils";
@@ -107,7 +106,6 @@ function tryGetHostname(url: string) {
 type SearchResultCardProps = {
   title: string;
   url: string;
-  description?: string;
   thumbnailSrc?: string;
   delay?: number;
 };
@@ -115,7 +113,6 @@ type SearchResultCardProps = {
 function SearchResultCard({
   title,
   url,
-  description,
   thumbnailSrc,
   delay = 0,
 }: SearchResultCardProps) {
@@ -244,7 +241,6 @@ export function BraveSearch({ tool }: BraveSearchProps) {
                           key={`${result.url}-${index}`}
                           title={result.title}
                           url={result.url}
-                          description={result.description}
                           thumbnailSrc={result.thumbnailSrc}
                           delay={index * 90}
                         />

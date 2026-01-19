@@ -168,7 +168,8 @@ export async function POST(req: Request) {
             eventData !== null &&
             "result" in eventData
               ? (() => {
-                  const { result, ...rest } = eventData as { result?: unknown };
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  const { result: _result, ...rest } = eventData as { result?: unknown };
                   return rest;
                 })()
               : eventData;
@@ -285,7 +286,8 @@ export async function POST(req: Request) {
                 ...requestPayload,
                 messages: requestPayload.messages.map((msg) => {
                   if (msg.role === "tool") {
-                    const { content, ...rest } = msg;
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { content: _content, ...rest } = msg;
                     return rest;
                   }
                   return msg;
