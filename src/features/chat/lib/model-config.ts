@@ -18,14 +18,6 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     label: "claude-haiku-4.5",
   },
   {
-    id: "anthropic/claude-sonnet-4.5",
-    label: "claude-sonnet-4.5",
-  },
-  {
-    id: "anthropic/claude-opus-4.5",
-    label: "claude-opus-4.5",
-  },
-  {
     id: "openai/gpt-oss-120b",
     label: "gpt-oss-120b",
     provider: {
