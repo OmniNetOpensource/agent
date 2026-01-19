@@ -5,7 +5,6 @@ import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types
 import { FetchUrl } from "./tools/FetchUrl";
 import { BraveSearch } from "./tools/BraveSearch";
 import { ThinkingItem } from "./tools/ThinkingItem";
-import { Loader2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -178,12 +177,6 @@ export const ResearchBlock = memo(function ResearchBlock({
               <ResearchBlockItem key={itemKey} item={item} itemKey={itemKey} />
             );
           })}
-          {isActive && (
-            <div className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-(--text-tertiary)">
-              <Loader2 className="h-3 w-3 animate-spin text-foreground" />
-              <span>Analyzing...</span>
-            </div>
-          )}
         </div>
       </CollapsibleContent>
     </Collapsible>
