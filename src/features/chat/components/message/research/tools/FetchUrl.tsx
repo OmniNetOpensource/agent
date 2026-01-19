@@ -24,27 +24,27 @@ export function FetchUrl({ tool }: FetchUrlProps) {
   const isError = result?.result?.startsWith("Error");
 
   return (
-    <div className="px-3 py-1">
-      <div className="flex items-center gap-2 text-xs text-(--text-secondary)">
+    <div className="px-3 py-1 group/fetch">
+      <div className="flex items-center gap-2 text-xs font-medium text-(--text-tertiary) group-hover/fetch:text-(--text-secondary) transition-colors">
         {!result ? (
           <>
             <Loader2 className="h-3 w-3 animate-spin text-foreground" />
             <span>
-              Fetching <span className="text-foreground">{hostname}</span>
+              Fetching <span>{hostname}</span>
             </span>
           </>
         ) : isError ? (
           <>
             <X className="h-3 w-3 text-(--color-destructive)" />
             <span>
-              Fetch failed <span className="text-foreground">{hostname}</span>
+              Fetch failed <span>{hostname}</span>
             </span>
           </>
         ) : (
           <>
             <Check className="h-3 w-3 text-(--color-success)" />
             <span>
-              Fetch success <span className="text-foreground">{hostname}</span>
+              Fetch success <span>{hostname}</span>
             </span>
           </>
         )}

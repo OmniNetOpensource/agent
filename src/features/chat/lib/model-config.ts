@@ -14,16 +14,8 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     label: "gemini-3-flash-preview",
   },
   {
-    id: "anthropic/claude-sonnet-4.5",
-    label: "claude-sonnet-4.5",
-  },
-  {
     id: "anthropic/claude-haiku-4.5",
     label: "claude-haiku-4.5",
-  },
-  {
-    id: "anthropic/claude-opus-4.5",
-    label: "claude-opus-4.5",
   },
   {
     id: "openai/gpt-oss-120b",
@@ -31,6 +23,10 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     provider: {
       order: ["Cerebras"],
     },
+  },
+  {
+    id: "xiaomi/mimo-v2-flash:free",
+    label: "mimo-v2-flash",
   },
 ];
 

@@ -132,7 +132,7 @@ const ShimmerText = ({ children }: { children: string }) => {
           backgroundClip: "text",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          animation: "research-shimmer 2.5s linear infinite",
+          animation: "research-shimmer 4s linear infinite",
         }}
       >
         {children}
@@ -164,7 +164,7 @@ export const ResearchBlock = memo(function ResearchBlock({
         {isActive ? (
           <ShimmerText>{getLatestStatus(items)}</ShimmerText>
         ) : (
-          <span className="text-sm text-(--text-secondary) transition-colors hover:text-foreground">
+          <span className="text-sm font-medium text-(--text-tertiary) transition-colors hover:text-(--text-secondary)">
             researched for {formatElapsedTime(elapsed)}
           </span>
         )}
@@ -179,8 +179,8 @@ export const ResearchBlock = memo(function ResearchBlock({
             );
           })}
           {isActive && (
-            <div className="flex items-center gap-2 px-3 py-1 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
+            <div className="flex items-center gap-2 px-3 py-1 text-xs font-medium text-(--text-tertiary)">
+              <Loader2 className="h-3 w-3 animate-spin text-foreground" />
               <span>Analyzing...</span>
             </div>
           )}

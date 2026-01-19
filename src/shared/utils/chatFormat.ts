@@ -31,5 +31,5 @@ export const buildConversationTitle = (message: MessageLike) => {
   }
 
   const normalized = text.replace(/\r?\n/g, " ").trim();
-  return normalized.length > 50 ? `${normalized.slice(0, 50)}...` : normalized;
+  return normalized;
 };

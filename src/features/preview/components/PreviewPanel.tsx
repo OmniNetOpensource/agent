@@ -130,7 +130,7 @@ export function PreviewPanel() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center h-12 border border-b-0 border-(--border-subtle) rounded-t-2xl bg-(--surface-base) px-4 shrink-0">
+      <div className="flex items-center h-12 border border-b-0 border-(--border-subtle) rounded-t-xl bg-(--surface-base) px-4 shrink-0">
         <div className="text-sm font-semibold text-(--text-secondary)">
           实时预览 {language ? `· ${language.toUpperCase()}` : ""}
         </div>
@@ -146,7 +146,7 @@ export function PreviewPanel() {
       </div>
 
       {/* Preview iframe */}
-      <div className="flex-1 min-h-0 flex flex-col border border-t-0 border-(--border-subtle) rounded-b-2xl bg-(--surface-base) overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col border border-t-0 border-(--border-subtle) rounded-b-xl bg-(--surface-base) overflow-hidden">
         <div className="flex-1 min-h-0 bg-background">
           <iframe
             title="代码预览"

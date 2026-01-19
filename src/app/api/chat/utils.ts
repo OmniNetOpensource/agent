@@ -49,6 +49,7 @@ export const buildSystemPrompt = (
 
   let prompt = `
 今天的日期和时间是：${localDate} (时区: ${timezone})
+不需要在回答时引用出处。
 `;
 
   const trimmedInstruction = customInstruction?.trim();

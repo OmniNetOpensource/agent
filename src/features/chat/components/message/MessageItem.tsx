@@ -227,7 +227,7 @@ export const MessageItem = memo(function MessageItem({
               ) : (
                 <div
                   key={attachment.id}
-                  className="flex w-[220px] shrink-0 items-center gap-3 rounded-xl border bg-card px-3 py-2"
+                  className="flex w-[220px] shrink-0 items-center gap-3 rounded-lg border bg-card px-3 py-2"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-background text-muted-foreground">
                     <Paperclip className="h-5 w-5" />
@@ -254,7 +254,7 @@ export const MessageItem = memo(function MessageItem({
           ) : isUser ? (
             <div
               className={cn(
-                "space-y-4 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6",
+                "space-y-2 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3",
                 "bg-muted text-foreground w-fit",
               )}
             >
@@ -276,7 +276,7 @@ export const MessageItem = memo(function MessageItem({
               })}
             </div>
           ) : (
-            <div className="flex flex-col space-y-4 min-w-0 w-full">
+            <div className="flex flex-col space-y-3 min-w-0 w-full">
               {contentBlocks.map((block, blockIndex) => {
                 const blockKey = `${index}-${blockIndex}`;
                 if (block.type === "research") {
@@ -299,7 +299,7 @@ export const MessageItem = memo(function MessageItem({
                   return (
                     <div
                       key={blockKey}
-                      className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                      className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <div className="flex-1 whitespace-pre-wrap">

@@ -224,13 +224,13 @@ const braveSearchSpec: ChatTool = {
   function: {
     name: "brave_search",
     description:
-      "Search the web using Brave Search API. Get real-time, up-to-date information from the internet. Supports web search, news, and image results.",
+      "Search the web using Brave Search API. Get real-time, up-to-date information from the internet. Supports web search, news, and image results. Note: the search query should be concise and not exceed 10 keywords.",
     parameters: {
       type: "object",
       properties: {
         query: {
           type: "string",
-          description: "The search query",
+          description: "The search query (maximum 10 keywords)",
         },
         freshness: {
           type: "string",

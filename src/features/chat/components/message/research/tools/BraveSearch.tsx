@@ -5,7 +5,6 @@ import Markdown from "@/src/shared/components/Markdown";
 import {
   Search,
   Zap,
-  ExternalLink,
   Globe,
   ChevronRight,
   Image as ImageIcon,
@@ -130,39 +129,30 @@ function SearchResultCard({
       target="_blank"
       rel="noreferrer noopener"
       className={cn(
-        "group relative flex w-60 shrink-0 flex-col gap-2 rounded-lg p-3 transition-all duration-300 ease-out",
-        "bg-card",
-        "hover:-translate-y-1"
+        "group relative flex w-full flex-col gap-1.5 rounded-md p-2",
+        "bg-card border border-transparent hover:border-(--border-subtle) hover:bg-(--surface-hover) transition-all duration-200"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* Thumbnail */}
-      <div className="relative h-20 w-full overflow-hidden rounded-md bg-(--surface-hover)">
-        {showImage ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={thumbnailSrc}
-              alt={title}
-              className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              onError={() => setImageFailed(true)}
-            />
-          </>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-(--surface-hover) via-(--surface-muted) to-(--surface-card)">
-            <ImageIcon className="h-4 w-4 text-(--text-tertiary)" />
-          </div>
-        )}
-        <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-(--border-subtle)" />
-      </div>
-
       {/* Header */}
-      <div className="flex items-start gap-2">
-        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-(--surface-hover) text-(--text-secondary)">
-          <Globe className="h-3 w-3" />
+      <div className="flex items-start gap-1.5">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-(--surface-hover)">
+          {showImage ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={thumbnailSrc}
+                alt={title}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+                referrerPolicy="no-referrer"
+                onError={() => setImageFailed(true)}
+              />
+            </>
+          ) : (
+            <Globe className="h-4 w-4 text-(--text-secondary)" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-0.5 text-[10px] font-medium text-(--text-tertiary) uppercase truncate">
@@ -179,35 +169,6 @@ function SearchResultCard({
           >
             {title}
           </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="min-h-[32px]">
-        {description ? (
-          <p
-            className="text-[10px] leading-relaxed text-(--text-secondary)"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {description}
-          </p>
-        ) : (
-          <p className="text-[10px] italic text-(--text-tertiary)">
-            No description
-          </p>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-end pt-2 mt-auto">
-        <div className="flex items-center gap-1 text-(--text-tertiary) group-hover:text-(--color-brand) transition-colors">
-          <span className="text-[9px] font-medium">VISIT</span>
-          <ExternalLink className="h-2.5 w-2.5" />
         </div>
       </div>
     </a>
@@ -242,13 +203,13 @@ export function BraveSearch({ tool }: BraveSearchProps) {
     <div className="px-3 py-1">
       {/* Searching State */}
       {!result && (
-        <div className="flex items-center gap-2 text-xs text-(--text-secondary)">
+        <div className="flex items-center gap-2 text-xs font-medium text-(--text-tertiary)">
           <div className="relative flex h-3 w-3 items-center justify-center">
             <div className="absolute inset-0 animate-ping rounded-full bg-(--text-tertiary) opacity-20" />
             <Search className="relative h-3 w-3 animate-pulse text-foreground" />
           </div>
-          <span className="font-medium">
-            Searching for: <span className="text-foreground">{query}</span>
+          <span>
+            Searching for: <span className="text-(--text-secondary)">{query}</span>
           </span>
         </div>
       )}
@@ -266,7 +227,7 @@ export function BraveSearch({ tool }: BraveSearchProps) {
             </div>
             <ChevronRight
               className={cn(
-                "h-3 w-3 text-muted-foreground transition-transform duration-200",
+                "h-3 w-3 text-muted-foreground transition-all duration-200 group-hover:text-(--text-secondary)",
                 isExpanded && "rotate-90"
               )}
             />
@@ -276,8 +237,8 @@ export function BraveSearch({ tool }: BraveSearchProps) {
             <>
               {braveResults && braveResults.length > 0 ? (
                 <div className="relative group/scroll">
-                  <div className="overflow-x-auto p-2">
-                    <div className="flex gap-2 w-max pb-1">
+                  <div className="p-2">
+                    <div className="flex flex-col gap-2 w-full max-h-[340px] overflow-y-auto">
                       {braveResults.map((result, index) => (
                         <SearchResultCard
                           key={`${result.url}-${index}`}
@@ -292,15 +253,15 @@ export function BraveSearch({ tool }: BraveSearchProps) {
                   </div>
                 </div>
               ) : braveResults && braveResults.length === 0 ? (
-                <div className="rounded-lg bg-(--surface-muted) p-3 text-center text-xs text-(--text-tertiary)">
+                <div className="px-3 py-1 text-center text-xs text-(--text-tertiary)">
                   No results found
                 </div>
               ) : isError ? (
-                <div className="rounded-lg bg-(--surface-muted) p-3 text-xs text-destructive">
+                <div className="px-3 py-1 text-xs text-destructive">
                   <Markdown content={result.result} />
                 </div>
               ) : (
-                <div className="overflow-x-auto bg-(--surface-muted) p-3 text-xs rounded-lg text-(--text-secondary)">
+                <div className="overflow-x-auto px-3 py-1 text-xs text-(--text-secondary)">
                   <Markdown content={result.result} />
                 </div>
               )}

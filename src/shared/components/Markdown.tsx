@@ -76,7 +76,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <p
       {...props}
       className={cn(
-        "mb-3 last:mb-0 leading-relaxed text-(--text-secondary)",
+        "mb-2 last:mb-0 leading-relaxed text-(--text-secondary)",
         className
       )}
     />
@@ -85,7 +85,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <ul
       {...props}
       className={cn(
-        "mb-3 last:mb-0 ml-4 list-disc space-y-2 text-(--text-secondary)",
+        "mb-2 last:mb-0 ml-4 list-disc space-y-1 text-(--text-secondary)",
         className
       )}
     />
@@ -94,7 +94,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <ol
       {...props}
       className={cn(
-        "mb-3 last:mb-0 ml-4 list-decimal space-y-2 text-(--text-secondary)",
+        "mb-2 last:mb-0 ml-4 list-decimal space-y-1 text-(--text-secondary)",
         className
       )}
     />
@@ -201,7 +201,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
 
 export default function Markdown({ content }: Props) {
   return (
-    <div className="markdown-body space-y-3 text-sm leading-relaxed text-(--text-secondary)">
+    <div className="markdown-body space-y-2 text-sm leading-relaxed text-(--text-secondary)">
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

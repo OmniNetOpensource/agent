@@ -7,8 +7,6 @@ import {
 
 const TITLE_MODEL = "google/gemini-3-flash-preview";
 const FALLBACK_TITLE = "New Chat";
-const MAX_TITLE_CHARS = 50;
-const MAX_INPUT_CHARS = 400;
 
 const extractContent = (message?: SerializedMessage) => {
   if (!message?.blocks) {
@@ -23,19 +21,11 @@ const extractContent = (message?: SerializedMessage) => {
     .trim();
 };
 
-const clampText = (text: string, limit: number) => {
-  if (text.length <= limit) {
-    return text;
-  }
-  return text.slice(0, limit).trim();
-};
-
 const sanitizeTitle = (value: string) => {
-  const trimmed = value
+  return value
     .replace(/^["'`]+|["'`]+$/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return clampText(trimmed, MAX_TITLE_CHARS);
 };
 
 export async function POST(req: Request) {
@@ -71,9 +61,9 @@ export async function POST(req: Request) {
   }
 
   const promptLines = [
-    `Based on this conversation, generate a short title (max ${MAX_TITLE_CHARS} chars, no quotes). Use the same language as the conversation.`,
-    userText ? `User: ${clampText(userText, MAX_INPUT_CHARS)}` : "",
-    `Assistant: ${clampText(assistantText, MAX_INPUT_CHARS)}`,
+    `Based on this conversation, generate a short title (max 10 chars, no quotes). Use the same language as the conversation.`,
+    userText ? `User: ${userText}` : "",
+    `Assistant: ${assistantText}`,
   ].filter((line) => line.length > 0);
 
   const prompt = promptLines.join("\n");

@@ -170,7 +170,7 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
   };
 
   return (
-    <div className="relative flex w-full flex-col gap-2 rounded-2xl border bg-card p-3 shadow-sm">
+    <div className="relative flex w-full flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm">
       <Button
         type="button"
         variant="ghost"
@@ -212,7 +212,7 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
             ) : (
               <div
                 key={attachment.id}
-                className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-xl border bg-background p-2 pr-3"
+                className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-lg border bg-background p-2 pr-3"
               >
                 <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
                   <div className="flex h-full w-full items-center justify-center text-muted-foreground">

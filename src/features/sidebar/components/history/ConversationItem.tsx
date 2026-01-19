@@ -92,7 +92,7 @@ export function ConversationItem({
       />
       <div className="min-w-0 flex-1 pointer-events-none relative z-10">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
+          <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground">
             {title}
           </span>
           {isPinned ? (
