@@ -143,10 +143,10 @@ export function Composer() {
 
   const formClassName = isNewchat
     ? // 移除了 px-3 sm:px-4 md:px-6
-      "flex flex-col flex-1 items-center justify-center py-12 w-[90%] md:w-[60%] mx-auto gap-3"
+      "flex flex-col flex-1 items-center justify-center py-12 w-[90%] md:w-[50%] mx-auto gap-3"
     : // 1. 移除了 px-3 sm:px-4 md:px-6
       // 2. 将 py-4 md:py-6 改为了 mb-4 md:mb-6 (仅底部外边距)
-      "absolute inset-x-0 bottom-0 z-(--z-composer) flex flex-col w-[90%] md:w-[60%] mx-auto mb-4 md:mb-6 gap-3";
+      "absolute inset-x-0 bottom-0 z-(--z-composer) flex flex-col w-[90%] md:w-[50%] mx-auto mb-4 md:mb-6 gap-3";
 
   return (
     <form

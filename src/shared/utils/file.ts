@@ -1,6 +1,6 @@
 import type { AttachmentKind } from "@/src/features/chat/types/chat";
 
-export const MAX_ATTACHMENT_SIZE = 1 * 1024 * 1024; // 1MB
+export const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function detectAttachmentKind(
   mimeType: string | undefined

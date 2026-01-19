@@ -330,7 +330,7 @@ export const MessageItem = memo(function MessageItem({
       {shouldShowToolbar && (
         <div
           className={cn(
-            "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            "flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
             isUser ? "justify-end" : "justify-start",
           )}
         >
@@ -364,7 +364,7 @@ export const MessageItem = memo(function MessageItem({
       {branchInfo && !isEditing && (
         <div
           className={cn(
-            "flex items-center gap-1.5 px-1 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            "flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
             isUser ? "justify-end" : "justify-start",
           )}
         >

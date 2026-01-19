@@ -1,6 +1,5 @@
 "use client";
 
-import { flushSync } from "react-dom";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/src/features/theme/hooks/useTheme";
 import {
@@ -20,45 +19,8 @@ type SettingsModalProps = {
 export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const { theme, toggleTheme } = useTheme();
 
-  const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (
-      !(document as Document).startViewTransition ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      toggleTheme();
-      return;
-    }
-
-    const x = e.clientX;
-    const y = e.clientY;
-    const endRadius = Math.hypot(
-      Math.max(x, innerWidth - x),
-      Math.max(y, innerHeight - y)
-    );
-
-    const transition = (document as Document).startViewTransition(() => {
-      flushSync(() => {
-        toggleTheme();
-      });
-    });
-
-    transition.ready.then(() => {
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`,
-      ];
-
-      document.documentElement.animate(
-        {
-          clipPath: clipPath,
-        },
-        {
-          duration: 300,
-          easing: "ease-in",
-          pseudoElement: "::view-transition-new(root)",
-        }
-      );
-    });
+  const handleThemeToggle = () => {
+    toggleTheme();
   };
 
   return (

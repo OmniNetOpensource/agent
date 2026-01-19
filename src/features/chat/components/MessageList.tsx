@@ -27,7 +27,9 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      setIsAtBottom(atBottom);
+      if(atBottom !== isAtBottom) {
+        setIsAtBottom(atBottom);
+      }
     };
 
     // 初始化时同步一次状态
@@ -38,7 +40,7 @@ export function MessageList() {
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [messages, isAtBottom]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
@@ -58,7 +60,7 @@ export function MessageList() {
         <div
           role="log"
           aria-live="polite"
-          className="flex-1 min-h-0 flex flex-col py-4 px-3 sm:px-4 md:px-0 pb-44 md:pb-52 mx-auto w-full md:w-[60%] space-y-2 md:space-y-3"
+          className="flex-1 min-h-0 flex flex-col py-4 px-3 sm:px-4 md:px-0 pb-44 md:pb-52 mx-auto w-full md:w-[50%] space-y-2 md:space-y-3"
         >
           {messages.map((message, index) => {
             const isLastMessage = index === messages.length - 1;
@@ -88,7 +90,7 @@ export function MessageList() {
 
       {messages.length > 0 && !isAtBottom && (
         <div className="absolute bottom-32 md:bottom-36 left-0 right-0 flex justify-end px-3 sm:px-4 md:px-0 pointer-events-none z-(--z-sticky)">
-          <div className="w-full md:w-[60%] mx-auto flex justify-end pr-1">
+          <div className="w-full md:w-[50%] mx-auto flex justify-end pr-1">
             <Button
               type="button"
               variant="secondary"

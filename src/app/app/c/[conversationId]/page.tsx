@@ -1,9 +1,11 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { Composer } from "@/src/features/chat/components/composer/Composer";
 import { MessageList } from "@/src/features/chat/components/MessageList";
 import { useConversationLoader } from "@/src/features/chat/hooks/useConversationLoader";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
+import { localDB } from "@/src/shared/lib/indexed-db";
 
 type Props = {
   params: Promise<{ conversationId: string }>;
@@ -12,6 +14,56 @@ type Props = {
 export default function ConversationPage({ params }: Props) {
   const { conversationId } = use(params);
   const { isLoading } = useConversationLoader(conversationId);
+  
+  // 从 store 中获取当前对话的标题
+  const pinnedConversations = useConversationsStore((s) => s.pinnedConversations);
+  const normalConversations = useConversationsStore((s) => s.normalConversations);
+  
+  const currentConversation = [...pinnedConversations, ...normalConversations]
+    .find((c) => c.id === conversationId);
+  const storeTitle = currentConversation?.title;
+  
+  // 如果 store 中没有标题，尝试从 IndexedDB 读取（后备方案）
+  const [dbTitle, setDbTitle] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (storeTitle || !conversationId) {
+      return;
+    }
+    
+    const loadTitle = async () => {
+      try {
+        const conversation = await localDB.get(conversationId);
+        if (conversation?.title) {
+          setDbTitle(conversation.title);
+        }
+      } catch (error) {
+        console.error("Failed to load conversation title:", error);
+      }
+    };
+    
+    void loadTitle();
+  }, [conversationId, storeTitle]);
+  
+  const title = storeTitle ?? dbTitle;
+
+  // 动态更新页面标题
+  useEffect(() => {
+    const defaultTitle = "Aether";
+    
+    if (title) {
+      // 截断过长的标题（保留50个字符）
+      const truncatedTitle = title.length > 50 ? `${title.slice(0, 50)}...` : title;
+      document.title = `${truncatedTitle} - Aether`;
+    } else {
+      document.title = defaultTitle;
+    }
+    
+    // 清理：离开页面时恢复默认标题
+    return () => {
+      document.title = defaultTitle;
+    };
+  }, [title]);
 
   if (isLoading) {
     return null;
