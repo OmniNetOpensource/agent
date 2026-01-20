@@ -2,7 +2,7 @@
 
 import { memo, useState } from "react";
 import { Brain, ChevronRight } from "lucide-react";
-import Markdown from "@/src/shared/components/LazyMarkdown";
+import Markdown from "@/src/shared/components/Markdown";
 import type { ResearchItem } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 

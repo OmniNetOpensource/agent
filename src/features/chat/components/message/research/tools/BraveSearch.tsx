@@ -1,7 +1,7 @@
 "use client";
 
 import type { Tool } from "@/src/features/chat/types/chat";
-import Markdown from "@/src/shared/components/LazyMarkdown";
+import Markdown from "@/src/shared/components/Markdown";
 import {
   Search,
   Zap,
