@@ -342,15 +342,17 @@ export const MessageItem = memo(function MessageItem({
             />
           )}
           <CopyButton blocks={message.blocks} />
-          <ActionButton
-            onClick={() =>
-              retryFromMessage(messageId, (path) => router.push(path))
-            }
-            disabled={pending}
-            title="重试生成"
-            icon={<RotateCcw className="h-3.5 w-3.5" />}
-            label="重试"
-          />
+          {!isUser && (
+            <ActionButton
+              onClick={() =>
+                retryFromMessage(messageId, (path) => router.push(path))
+              }
+              disabled={pending}
+              title="重试生成"
+              icon={<RotateCcw className="h-3.5 w-3.5" />}
+              label="重试"
+            />
+          )}
           {!isUser && !isStreaming && (
             <BranchConversationButton
               messageId={messageId}

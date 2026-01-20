@@ -144,6 +144,10 @@ export default function Sidebar() {
             <div className="h-10 w-10" aria-hidden="true" />
           </div>
 
+          <div className="px-3 pb-4">
+            <NewChatButton isCollapsed={false} />
+          </div>
+
           <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
             <div className="flex h-full flex-col gap-3">
               <ConversationList />
