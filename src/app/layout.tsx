@@ -12,8 +12,15 @@ import "katex/dist/katex.min.css";
 export const metadata: Metadata = {
   title: "Aether",
   description: "The invisible medium of knowledge.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Aether",
+  },
   icons: {
     icon: "/aether-logo.svg",
+    apple: "/apple-touch-icon.png",
   },
 };
 
