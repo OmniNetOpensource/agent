@@ -1,5 +1,3 @@
-import type { ContentBlock } from "@/src/features/chat/types/chat";
-
 export type Conversation = {
   id: string;
   user_id: string;
@@ -8,12 +6,4 @@ export type Conversation = {
   updated_at: string;
   pinned?: boolean;
   pinned_at?: string;
-};
-
-export type DbMessage = {
-  id: string;
-  conversation_id: string;
-  role: "user" | "assistant";
-  blocks: ContentBlock[];
-  created_at: string;
 };

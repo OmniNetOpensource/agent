@@ -1,4 +1,4 @@
-export type ToolCall = {
+type ToolCall = {
   tool: string;
   args: Record<string, unknown>;
 };
@@ -26,7 +26,7 @@ export type ResearchItem =
 
 export type AttachmentKind = "image" | "file" | "video" | "audio";
 
-export type AttachmentBase = {
+type AttachmentBase = {
   id: string;
   kind: AttachmentKind;
   name: string;
@@ -45,14 +45,7 @@ export type SerializedAttachment = AttachmentBase & {
 
 export type LegacyAttachment = SerializedAttachment;
 
-export type ChatContentPart =
-  | { type: "text"; text: string }
-  | { type: "image_url"; imageUrl: { url: string } }
-  | { type: "file"; file: { filename: string; file_data: string } }
-  | { type: "video_url"; videoUrl: { url: string } }
-  | { type: "input_audio"; inputAudio: { data: string; format: string } };
-
-export type ResearchBlock = {
+type ResearchBlock = {
   type: "research";
   items: ResearchItem[];
 };
@@ -69,7 +62,7 @@ export type SerializedContentBlock =
   | ResearchBlock
   | { type: "error"; message: string };
 
-export type MessageBase<Block> = { role: "user" | "assistant"; blocks: Block[] };
+type MessageBase<Block> = { role: "user" | "assistant"; blocks: Block[] };
 
 export type Message = MessageBase<ContentBlock>;
 

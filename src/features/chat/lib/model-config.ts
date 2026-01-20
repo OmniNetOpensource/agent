@@ -1,8 +1,8 @@
-export type ProviderPreferences = {
+type ProviderPreferences = {
   order: string[];
 };
 
-export type ModelConfig = {
+type ModelConfig = {
   id: string;
   label: string;
   provider?: ProviderPreferences;

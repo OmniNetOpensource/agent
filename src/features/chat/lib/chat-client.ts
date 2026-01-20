@@ -4,7 +4,7 @@ import {
 } from "@/src/features/chat/types/chat";
 import { StreamParser, StreamEvent } from "./stream-parser";
 
-export type ChatClientOptions = {
+type ChatClientOptions = {
   onEvent: (event: StreamEvent) => void;
   onError: (error: Error) => void;
   onFinish?: () => void;

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
-import { Nunito, Geist_Mono } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileProvider } from "@/src/shared/mobile/MobileContext";
@@ -9,15 +8,6 @@ import { ToastContainer } from "@/components/ui/toast-container";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Aether",
@@ -76,7 +66,7 @@ export default async function RootLayout({
           </>
         )}
       </head>
-      <body className={`${nunito.variable} ${geistMono.variable} antialiased`}>
+      <body className="antialiased">
         <MobileProvider initialIsMobile={isMobile}>
           <TooltipProvider>
             {children}

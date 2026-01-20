@@ -80,7 +80,7 @@ const generateTitle = async (conversationId: string, messages: Message[]) => {
   }
 };
 
-export type StoreGetter = () => {
+type StoreGetter = () => {
   messageTree: MessageTree;
   messages: Message[];
   conversationId: string | null;
@@ -101,7 +101,7 @@ type StoreState = {
   activeRequestId: string | null;
 };
 
-export type StoreSetter = (
+type StoreSetter = (
   partial:
     | Partial<StoreState>
     | ((state: StoreState) => Partial<StoreState>)

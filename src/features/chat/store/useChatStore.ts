@@ -40,7 +40,7 @@ import {
 } from "@/src/features/chat/lib/attachment-operations";
 import { startChatRequest } from "@/src/features/chat/lib/chat-request";
 
-export type ChatState = {
+type ChatState = {
   messages: Message[];
   messageTree: MessageTree;
   editingState: EditingState | null;
@@ -56,7 +56,7 @@ export type ChatState = {
   activeRequestId: string | null;
 };
 
-export type ChatActions = {
+type ChatActions = {
   setInput: (value: string) => void;
   setMessages: (messages: Message[]) => void;
   setConversationId: (id: string | null) => void;

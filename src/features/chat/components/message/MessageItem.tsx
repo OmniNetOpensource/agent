@@ -2,7 +2,7 @@
 
 import { memo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import Markdown from "@/src/shared/components/Markdown";
+import Markdown from "@/src/shared/components/LazyMarkdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import { BranchInfo, Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";

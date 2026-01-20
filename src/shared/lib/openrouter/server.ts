@@ -1,4 +1,3 @@
-import { OpenRouter } from "@openrouter/sdk";
 import type { ChatMessage, ReasoningDetail } from "@/src/app/api/chat/utils";
 import type { StreamToolCall } from "@/src/app/api/chat/utils";
 
@@ -21,19 +20,7 @@ export function getOpenRouterHeaders() {
   return headers;
 }
 
-export function getOpenRouterClient() {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing OPENROUTER_API_KEY");
-  }
-
-  return new OpenRouter({
-    apiKey,
-    serverURL: OPENROUTER_BASE_URL,
-  });
-}
-
-export type StreamChunk = {
+type StreamChunk = {
   choices?: Array<{
     delta?: {
       content?: string;
@@ -45,7 +32,7 @@ export type StreamChunk = {
   }>;
 };
 
-export type ProviderPreferences = {
+type ProviderPreferences = {
   order: string[];
 };
 

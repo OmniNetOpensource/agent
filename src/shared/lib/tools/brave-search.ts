@@ -4,7 +4,7 @@ import {
   ToolHandler,
 } from "./types";
 
-export type BraveSearchArgs = {
+type BraveSearchArgs = {
   query: string;
   freshness?: "pd" | "pw" | "pm" | "py";
 };
@@ -26,7 +26,7 @@ type BraveSearchPayload = {
   rawResults: BraveWebResult[];
 };
 
-export const parseBraveSearchArgs = (args: unknown): BraveSearchArgs => {
+const parseBraveSearchArgs = (args: unknown): BraveSearchArgs => {
   if (!args || typeof args !== "object") {
     throw new Error("brave_search requires an object with a query");
   }

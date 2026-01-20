@@ -6,11 +6,11 @@ import {
   cleanHtmlToText,
 } from "./types";
 
-export type FetchUrlArgs = {
+type FetchUrlArgs = {
   url: string;
 };
 
-export const parseFetchUrlArgs = (args: unknown): FetchUrlArgs => {
+const parseFetchUrlArgs = (args: unknown): FetchUrlArgs => {
   if (!args || typeof args !== "object") {
     throw new Error("fetch_url requires an object with a URL");
   }

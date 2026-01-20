@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-export interface SystemPrompt {
+interface SystemPrompt {
   id: string;
   name: string;
   content: string;

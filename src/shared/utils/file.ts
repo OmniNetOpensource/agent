@@ -31,26 +31,6 @@ export function formatFileSize(bytes: number): string {
   return `${formatted} ${units[unitIndex]}`;
 }
 
-export function convertFileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("Failed to read file as base64"));
-      }
-    };
-
-    reader.onerror = () => {
-      reject(reader.error ?? new Error("Failed to read file as base64"));
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
 export function createBlobUrl(blob: Blob): string {
   return URL.createObjectURL(blob);
 }

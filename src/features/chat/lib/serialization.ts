@@ -8,7 +8,7 @@ import type {
 } from "@/src/features/chat/types/chat";
 import { convertBlobToBase64 } from "@/src/shared/utils/file";
 
-export const serializeAttachments = async (
+const serializeAttachments = async (
   attachments: Attachment[]
 ): Promise<SerializedAttachment[]> => {
   const serialized: SerializedAttachment[] = [];
@@ -28,7 +28,7 @@ export const serializeAttachments = async (
   return serialized;
 };
 
-export const serializeBlocks = async (
+const serializeBlocks = async (
   blocks: ContentBlock[]
 ): Promise<SerializedContentBlock[]> =>
   Promise.all(

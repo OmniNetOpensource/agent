@@ -26,7 +26,7 @@ export type StreamEvent =
       updated_at: string;
     };
 
-export type StreamParserCallbacks = {
+type StreamParserCallbacks = {
   onEvent: (event: StreamEvent) => void;
   onError: (error: Error) => void;
 };

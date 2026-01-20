@@ -1,5 +1,5 @@
-import { braveSearchTool, type BraveSearchArgs } from "./tools/brave-search";
-import { fetchUrlTool, type FetchUrlArgs } from "./tools/fetch";
+import { braveSearchTool } from "./tools/brave-search";
+import { fetchUrlTool } from "./tools/fetch";
 import {
   type ChatTool,
   type ToolDefinition,
@@ -63,4 +63,3 @@ export const callToolByName = async (
   }
 };
 
-export type { BraveSearchArgs, FetchUrlArgs };

@@ -7,7 +7,7 @@ import type {
 } from "@/src/features/chat/types/chat";
 import { cloneBlocks, cloneResearchItem } from "./message-tree";
 
-export type ToolLifecycleUpdate =
+type ToolLifecycleUpdate =
   | ({ kind: "tool_progress"; tool: string } & ToolProgress)
   | { kind: "tool_result"; tool: string; result: string };
 

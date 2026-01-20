@@ -1,8 +1,4 @@
-import {
-  ContentBlock,
-  ResearchItem,
-  SerializedMessage,
-} from "@/src/features/chat/types/chat";
+import { SerializedMessage } from "@/src/features/chat/types/chat";
 
 export type StreamToolCall = {
   index?: number;
@@ -141,16 +137,3 @@ export const toChatMessages = (history: SerializedMessage[]): ChatMessage[] =>
       return Array.isArray(msg.content) && msg.content.length > 0;
     });
 
-export const buildAssistantBlocks = (
-  items: ResearchItem[],
-  content: string | null
-): ContentBlock[] => {
-  const blocks: ContentBlock[] = [];
-  if (items.length > 0) {
-    blocks.push({ type: "research", items });
-  }
-  if (content) {
-    blocks.push({ type: "content", content });
-  }
-  return blocks;
-};
