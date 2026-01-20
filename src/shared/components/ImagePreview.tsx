@@ -5,7 +5,6 @@ import type {
   MouseEvent as ReactMouseEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
-import Image from "next/image";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -123,14 +122,11 @@ export function ImagePreview({
         title={previewLabel}
         aria-label={`预览图片 ${name}`}
       >
-        <Image
+        <img
           src={url}
           alt={name}
-          width={80}
-          height={80}
           className="h-full w-full object-cover"
           draggable={false}
-          unoptimized
         />
       </button>
 
@@ -168,14 +164,11 @@ export function ImagePreview({
                       transformOrigin: "center",
                     }}
                   >
-                    <Image
+                    <img
                       src={url}
                       alt={name}
-                      width={800}
-                      height={600}
-                      className="pointer-events-none max-h-[50vh] max-w-[50vw] select-none object-contain"
+                      className="pointer-events-none max-h-[80vh] max-w-[80vw] select-none object-contain"
                       draggable={false}
-                      unoptimized
                     />
                   </div>
                 </motion.div>

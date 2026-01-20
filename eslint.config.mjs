@@ -20,6 +20,7 @@ const eslintConfig = defineConfig([
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "@next/next/no-img-element": "off",
     },
   },
 ]);
