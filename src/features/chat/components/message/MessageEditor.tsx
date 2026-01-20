@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardEvent, useEffect, useRef } from "react";
+import { ClipboardEvent, KeyboardEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Paperclip, X } from "lucide-react";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
@@ -169,6 +169,15 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
     void handleAddAttachments(pastedFiles);
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (!sendDisabled) {
+        submitEdit((path) => router.push(path));
+      }
+    }
+  };
+
   return (
     <div className="relative flex w-full flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm">
       <Button
@@ -253,6 +262,7 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
         ref={textareaRef}
         value={editedContent}
         onChange={(event) => updateEditContent(event.target.value)}
+        onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         rows={1}
         placeholder="编辑消息内容..."

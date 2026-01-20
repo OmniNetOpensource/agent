@@ -50,8 +50,10 @@ export const ThinkingItem = memo(function ThinkingItem({
       <div
         id={contentId}
         className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          "transition-all duration-300 ease-in-out",
+          isExpanded
+            ? "max-h-[500px] opacity-100 overflow-y-auto"
+            : "max-h-0 opacity-0 overflow-hidden"
         )}
       >
         <div className="overflow-x-auto px-3 py-1 text-xs text-(--text-secondary)">
