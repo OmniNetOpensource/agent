@@ -86,7 +86,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
       {...props}
       className={cn(
         "mb-4 last:mb-0 pl-6 space-y-1.5 text-(--text-secondary) list-none",
-        "[&>li]:relative [&>li]:before:absolute [&>li]:before:-left-4 [&>li]:before:top-[0.6em] [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rounded-full [&>li]:before:bg-(--color-primary)/70",
+        "[&>li]:relative [&>li]:before:absolute [&>li]:before:-left-4 [&>li]:before:top-[0.6em] [&>li]:before:h-1.5 [&>li]:before:w-1.5 [&>li]:before:rounded-full [&>li]:before:bg-primary/70",
         "[&_ul]:mt-1.5 [&_ul]:mb-0 [&_ul>li]:before:h-1 [&_ul>li]:before:w-1 [&_ul>li]:before:bg-(--text-tertiary)",
         "[&_ul_ul>li]:before:rounded-none [&_ul_ul>li]:before:h-0.5 [&_ul_ul>li]:before:w-2",
         className
@@ -98,7 +98,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
       {...props}
       className={cn(
         "mb-4 last:mb-0 pl-6 space-y-1.5 text-(--text-secondary) list-none [counter-reset:list-counter]",
-        "[&>li]:relative [&>li]:[counter-increment:list-counter] [&>li]:before:absolute [&>li]:before:-left-6 [&>li]:before:w-5 [&>li]:before:text-right [&>li]:before:content-[counter(list-counter)_'.'] [&>li]:before:text-xs [&>li]:before:font-medium [&>li]:before:text-(--color-primary)/80",
+        "[&>li]:relative [&>li]:[counter-increment:list-counter] [&>li]:before:absolute [&>li]:before:-left-6 [&>li]:before:w-5 [&>li]:before:text-right [&>li]:before:content-[counter(list-counter)_'.'] [&>li]:before:text-xs [&>li]:before:font-medium [&>li]:before:text-primary/80",
         "[&_ol]:mt-1.5 [&_ol]:mb-0 [&_ol>li]:before:text-(--text-tertiary)",
         className
       )}
@@ -114,7 +114,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <blockquote
       {...props}
       className={cn(
-        "my-4 last:mb-0 border-l-[3px] border-(--color-primary)/40 bg-(--surface-muted)/50 rounded-r-lg pl-4 pr-3 py-2.5 text-(--text-secondary) italic",
+        "my-4 last:mb-0 border-l-[3px] border-primary/40 bg-(--surface-muted)/50 rounded-r-lg pl-4 pr-3 py-2.5 text-(--text-secondary) italic",
         className
       )}
     />
@@ -123,7 +123,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
     <hr
       {...props}
       className={cn(
-        "my-6 last:mb-0 border-0 h-px bg-gradient-to-r from-transparent via-(--border-strong) to-transparent",
+        "my-6 last:mb-0 border-0 h-px bg-linear-to-r from-transparent via-(--border-strong) to-transparent",
         className
       )}
     />

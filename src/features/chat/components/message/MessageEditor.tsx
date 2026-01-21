@@ -87,6 +87,12 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    if (state && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [state?.messageId]);
+
+  useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) {
       return;

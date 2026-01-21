@@ -333,13 +333,24 @@ export const MessageItem = memo(function MessageItem({
           )}
         >
           {isUser && (
-            <ActionButton
-              onClick={() => startEditing(messageId)}
-              disabled={pending}
-              title="编辑消息"
-              icon={<Pencil className="h-3.5 w-3.5" />}
-              label="编辑"
-            />
+            <>
+              <ActionButton
+                onClick={() => startEditing(messageId)}
+                disabled={pending}
+                title="编辑消息"
+                icon={<Pencil className="h-3.5 w-3.5" />}
+                label="编辑"
+              />
+              <ActionButton
+                onClick={() =>
+                  retryFromMessage(messageId, (path) => router.push(path))
+                }
+                disabled={pending}
+                title="重试生成"
+                icon={<RotateCcw className="h-3.5 w-3.5" />}
+                label="重试"
+              />
+            </>
           )}
           <CopyButton blocks={message.blocks} />
           {!isUser && (

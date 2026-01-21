@@ -135,18 +135,15 @@ function SearchResultCard({
       <div className="flex items-start gap-1.5">
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-(--surface-hover)">
           {showImage ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={thumbnailSrc}
-                alt={title}
-                className="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-                referrerPolicy="no-referrer"
-                onError={() => setImageFailed(true)}
-              />
-            </>
+            <img
+              src={thumbnailSrc}
+              alt={title}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={() => setImageFailed(true)}
+            />
           ) : (
             <Globe className="h-4 w-4 text-(--text-secondary)" />
           )}

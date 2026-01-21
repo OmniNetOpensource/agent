@@ -51,3 +51,6 @@ nul
 .vscode/
 .windsurf/
 opencode.json
+
+# resume
+resume*
