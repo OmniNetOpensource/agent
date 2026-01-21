@@ -365,8 +365,43 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    const baseIndex =
-      targetNode.role === "assistant" ? targetIndex - 1 : targetIndex;
+    // 用户消息重试：复制创建新的用户消息分支
+    if (targetNode.role === "user") {
+      const parentId = targetNode.parentId ?? null;
+      const newNode: MessageNode = {
+        id: generateMessageId(),
+        role: "user",
+        blocks: cloneBlocks(targetNode.blocks ?? []),
+        parentId,
+        children: [],
+        createdAt: new Date().toISOString(),
+      };
+
+      let nextTree = insertNode(tree, newNode, parentId);
+      const prefix = targetIndex > 0 ? currentPath.slice(0, targetIndex) : [];
+      nextTree = {
+        ...nextTree,
+        currentPath: [...prefix, newNode.id],
+      };
+
+      const nextMessages = computeMessagesFromPath(nextTree);
+
+      set({
+        messageTree: nextTree,
+        messages: nextMessages,
+        editingState: null,
+      });
+
+      await startChatRequest(get, set, {
+        messages: nextMessages,
+        navigate,
+        titleSource: { role: "user", blocks: newNode.blocks },
+      });
+      return;
+    }
+
+    // 助手消息重试：重新生成回复
+    const baseIndex = targetIndex - 1;
     if (baseIndex < 0) {
       return;
     }
