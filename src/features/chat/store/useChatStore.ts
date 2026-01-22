@@ -2,8 +2,6 @@ import {
   Attachment,
   EditingState,
   Message,
-  MessageNode,
-  MessageTree,
   BranchInfo,
 } from "@/src/features/chat/types/chat";
 import { revokeBlobUrl } from "@/src/shared/utils/file";
@@ -13,14 +11,14 @@ import { toast } from "@/src/shared/toast";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 import {
+  addMessage,
+  buildCurrentPath,
   computeMessagesFromPath,
-  generateMessageId,
+  createEmptyMessageState,
+  createLinearMessages,
+  editMessage,
   getBranchInfo,
-  migrateMessagesToTree,
-  createEmptyMessageTree,
-  insertNode,
-  followFirstChildPath,
-  ensureTreePath,
+  switchBranch,
   cloneBlocks,
 } from "@/src/features/chat/lib/message-tree";
 import {
@@ -42,7 +40,9 @@ import { startChatRequest } from "@/src/features/chat/lib/chat-request";
 
 type ChatState = {
   messages: Message[];
-  messageTree: MessageTree;
+  currentPath: number[];
+  latestRootId: number | null;
+  nextId: number;
   editingState: EditingState | null;
   input: string;
   pending: boolean;
@@ -65,22 +65,30 @@ type ChatActions = {
   removeAttachment: (id: string) => void;
   appendToAssistant: (addition: AssistantAddition) => void;
   sendMessage: (navigate?: (path: string) => void) => Promise<void>;
-  startEditing: (messageId: string) => void;
+  startEditing: (messageId: number) => void;
   updateEditContent: (content: string) => void;
   updateEditAttachments: (attachments: Attachment[]) => void;
   cancelEditing: () => void;
-  submitEdit: (navigate?: (path: string) => void) => Promise<void>;
+  submitEdit: (depth: number, navigate?: (path: string) => void) => Promise<void>;
   retryFromMessage: (
-    messageId: string,
+    messageId: number,
+    depth: number,
     navigate?: (path: string) => void
   ) => Promise<void>;
   branchToNewConversation: (
-    messageId: string,
+    messageId: number,
     navigate: (path: string) => void
   ) => Promise<void>;
-  getBranchInfo: (messageId: string) => BranchInfo | null;
-  navigateBranch: (messageId: string, direction: "prev" | "next") => void;
-  initializeTree: (messages?: Message[], tree?: MessageTree | null) => void;
+  getBranchInfo: (messageId: number) => BranchInfo | null;
+  navigateBranch: (
+    messageId: number,
+    depth: number,
+    direction: "prev" | "next"
+  ) => void;
+  initializeTree: (
+    messages?: Message[],
+    currentPath?: number[]
+  ) => void;
   getMessagesFromPath: () => Message[];
   stop: () => void;
   setCurrentModel: (model: string) => void;
@@ -88,14 +96,14 @@ type ChatActions = {
   setSystemInstruction: (instruction: string) => void;
 };
 
+// Create a stable-ish client id without requiring a backend.
 const generateConversationId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
-  messages: [],
-  messageTree: createEmptyMessageTree(),
+  ...createEmptyMessageState(),
   editingState: null,
   input: "",
   pending: false,
@@ -109,33 +117,55 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   activeRequestId: null,
   setInput: (value) => set({ input: value }),
   setMessages: (messages) => {
-    const existingTree = get().messageTree;
-    if (Object.keys(existingTree.nodes).length > 0) {
-      revokeTreeAttachments(existingTree);
+    const existingMessages = get().messages;
+    if (existingMessages.length > 0) {
+      revokeTreeAttachments(existingMessages);
     }
-    const tree = migrateMessagesToTree(messages);
+    // Normalize to a linear tree so branch navigation works with simple lists.
+    const linearState = createLinearMessages(
+      messages.map((message) => ({
+        role: message.role,
+        blocks: message.blocks ?? [],
+        createdAt: message.createdAt,
+      }))
+    );
     set({
-      messageTree: tree,
-      messages: computeMessagesFromPath(tree),
+      messages: linearState.messages,
+      currentPath: linearState.currentPath,
+      latestRootId: linearState.latestRootId,
+      nextId: linearState.nextId,
       editingState: null,
     });
   },
-  initializeTree: (messages = [], tree) => {
-    const existingTree = get().messageTree;
-    if (Object.keys(existingTree.nodes).length > 0) {
-      revokeTreeAttachments(existingTree);
+  initializeTree: (messages = [], currentPath = []) => {
+    const existingMessages = get().messages;
+    if (existingMessages.length > 0) {
+      revokeTreeAttachments(existingMessages);
     }
-    const nextTree =
-      tree && Object.keys(tree.nodes ?? {}).length > 0
-        ? ensureTreePath(tree)
-        : migrateMessagesToTree(messages);
+
+    const resolvedCurrentPath =
+      Array.isArray(currentPath) && currentPath.every((id) => typeof id === "number")
+        ? currentPath
+        : [];
+    const fallbackRootId = messages.length > 0 ? messages[0].id : null;
+    const nextPath =
+      resolvedCurrentPath.length > 0
+        ? resolvedCurrentPath
+        : buildCurrentPath(messages, fallbackRootId);
+    const latestRootId = nextPath[0] ?? fallbackRootId;
+    const nextId =
+      messages.reduce((maxId, message) => Math.max(maxId, message.id), 0) + 1;
+
     set({
-      messageTree: nextTree,
-      messages: computeMessagesFromPath(nextTree),
+      messages,
+      currentPath: nextPath,
+      latestRootId,
+      nextId,
       editingState: null,
     });
   },
-  getMessagesFromPath: () => computeMessagesFromPath(get().messageTree),
+  getMessagesFromPath: () =>
+    computeMessagesFromPath(get().messages, get().currentPath),
   setConversationId: (id) => set({ conversationId: id }),
   setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
   setSystemInstruction: (instruction) =>
@@ -145,15 +175,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     if (client) {
       client.abort();
     }
-    revokeTreeAttachments(get().messageTree);
+    // Clean up any object URLs created for attachments.
+    revokeTreeAttachments(get().messages);
     revokeAttachments(get().pendingAttachments);
     const editingState = get().editingState;
     if (editingState) {
       revokeAttachments(editingState.editedAttachments);
     }
     set({
-      messages: [],
-      messageTree: createEmptyMessageTree(),
+      ...createEmptyMessageState(),
       editingState: null,
       input: "",
       pending: false,
@@ -198,14 +228,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       };
     }),
   startEditing: (messageId) => {
-    const tree = get().messageTree;
-    const target = tree.nodes[messageId];
+    const messages = get().messages;
+    const target = messages[messageId - 1];
     if (!target || target.role !== "user") {
       return;
     }
 
     const existingEditing = get().editingState;
     if (existingEditing?.messageId && existingEditing.messageId !== messageId) {
+      // Revoke previews that are not part of the original message blocks.
       const originalIds = collectAttachmentIds(existingEditing.originalBlocks);
       for (const attachment of existingEditing.editedAttachments) {
         if (!originalIds.has(attachment.id)) {
@@ -250,6 +281,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       const originalIds = collectAttachmentIds(state.editingState.originalBlocks);
       const nextIds = new Set(attachments.map((attachment) => attachment.id));
 
+      // Only revoke newly-added previews that are being removed.
       for (const attachment of state.editingState.editedAttachments) {
         if (!nextIds.has(attachment.id) && !originalIds.has(attachment.id)) {
           revokeBlobUrl(attachment.displayUrl);
@@ -275,7 +307,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
     set({ editingState: null });
   },
-  submitEdit: async (navigate) => {
+  submitEdit: async (depth, navigate) => {
     const editingState = get().editingState;
     if (!editingState) {
       return;
@@ -298,53 +330,46 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    const tree = get().messageTree;
-    const targetNode = tree.nodes[editingState.messageId];
-    if (!targetNode) {
+    const state = get();
+    const result = editMessage(
+      {
+        messages: state.messages,
+        currentPath: state.currentPath,
+        latestRootId: state.latestRootId,
+        nextId: state.nextId,
+      },
+      depth,
+      editingState.messageId,
+      buildUserBlocks(editingState.editedContent, attachments)
+    );
+
+    if (!result) {
       set({ editingState: null });
       return;
     }
 
-    const parentId = targetNode.parentId ?? null;
-    const newNode: MessageNode = {
-      id: generateMessageId(),
-      role: "user",
-      blocks: buildUserBlocks(editingState.editedContent, attachments),
-      parentId,
-      children: [],
-      createdAt: new Date().toISOString(),
-    };
-
-    let nextTree = insertNode(tree, newNode, parentId);
-    const currentPath = tree.currentPath;
-    const targetIndex = currentPath.indexOf(editingState.messageId);
-    if (targetIndex === -1) {
-      set({ editingState: null });
-      return;
-    }
-    const prefix = targetIndex > 0 ? currentPath.slice(0, targetIndex) : [];
-    nextTree = {
-      ...nextTree,
-      currentPath: [...prefix, newNode.id],
-    };
-
-    const nextMessages = computeMessagesFromPath(nextTree);
+    const nextMessages = result.messages;
+    const nextPath = result.currentPath;
+    const pathMessages = computeMessagesFromPath(nextMessages, nextPath);
 
     set({
-      messageTree: nextTree,
       messages: nextMessages,
+      currentPath: nextPath,
+      latestRootId: result.latestRootId,
+      nextId: result.nextId,
       editingState: null,
     });
 
+    // Restart the assistant stream from the edited message path.
     await startChatRequest(get, set, {
-      messages: nextMessages,
+      messages: pathMessages,
       navigate,
-      titleSource: { role: "user", blocks: newNode.blocks },
+      titleSource: { role: "user", blocks: result.addedMessage.blocks },
     });
   },
-  retryFromMessage: async (messageId, navigate) => {
-    const tree = get().messageTree;
-    const targetNode = tree.nodes[messageId];
+  retryFromMessage: async (messageId, depth, navigate) => {
+    const state = get();
+    const targetNode = state.messages[messageId - 1];
     if (!targetNode) {
       return;
     }
@@ -359,76 +384,69 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       get().stop();
     }
 
-    const currentPath = tree.currentPath;
-    const targetIndex = currentPath.indexOf(messageId);
-    if (targetIndex === -1) {
-      return;
-    }
-
-    // 用户消息重试：复制创建新的用户消息分支
     if (targetNode.role === "user") {
-      const parentId = targetNode.parentId ?? null;
-      const newNode: MessageNode = {
-        id: generateMessageId(),
-        role: "user",
-        blocks: cloneBlocks(targetNode.blocks ?? []),
-        parentId,
-        children: [],
-        createdAt: new Date().toISOString(),
-      };
+      const result = editMessage(
+        {
+          messages: state.messages,
+          currentPath: state.currentPath,
+          latestRootId: state.latestRootId,
+          nextId: state.nextId,
+        },
+        depth,
+        messageId,
+        cloneBlocks(targetNode.blocks ?? [])
+      );
 
-      let nextTree = insertNode(tree, newNode, parentId);
-      const prefix = targetIndex > 0 ? currentPath.slice(0, targetIndex) : [];
-      nextTree = {
-        ...nextTree,
-        currentPath: [...prefix, newNode.id],
-      };
+      if (!result) {
+        return;
+      }
 
-      const nextMessages = computeMessagesFromPath(nextTree);
+      const nextMessages = result.messages;
+      const nextPath = result.currentPath;
+      const pathMessages = computeMessagesFromPath(nextMessages, nextPath);
 
       set({
-        messageTree: nextTree,
         messages: nextMessages,
+        currentPath: nextPath,
+        latestRootId: result.latestRootId,
+        nextId: result.nextId,
         editingState: null,
       });
 
       await startChatRequest(get, set, {
-        messages: nextMessages,
+        messages: pathMessages,
         navigate,
-        titleSource: { role: "user", blocks: newNode.blocks },
+        titleSource: { role: "user", blocks: result.addedMessage.blocks },
       });
       return;
     }
 
-    // 助手消息重试：重新生成回复
-    const baseIndex = targetIndex - 1;
-    if (baseIndex < 0) {
+    // For assistant nodes, rewind to the parent user message and regenerate.
+    const nextPath = state.currentPath.slice(0, Math.max(depth - 1, 0));
+    if (nextPath.length === 0) {
       return;
     }
 
-    const nextPath = currentPath.slice(0, baseIndex + 1);
-    const nextTree: MessageTree = { ...tree, currentPath: nextPath };
-    const nextMessages = computeMessagesFromPath(nextTree);
+    const pathMessages = computeMessagesFromPath(state.messages, nextPath);
 
     set({
-      messageTree: nextTree,
-      messages: nextMessages,
+      currentPath: nextPath,
       editingState: null,
     });
 
     const titleSource =
-      [...nextMessages].reverse().find((message) => message.role === "user") ??
-      nextMessages[0];
+      [...pathMessages].reverse().find((message) => message.role === "user") ??
+      pathMessages[0];
 
     await startChatRequest(get, set, {
-      messages: nextMessages,
+      messages: pathMessages,
       navigate,
       titleSource,
     });
   },
   branchToNewConversation: async (messageId, navigate) => {
-    const tree = get().messageTree;
-    const currentPath = tree.currentPath;
+    const state = get();
+    const currentPath = state.currentPath;
     const targetIndex = currentPath.indexOf(messageId);
     if (targetIndex === -1) {
       return;
@@ -439,34 +457,37 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const pathIds = currentPath.slice(0, targetIndex + 1);
-    const branchedMessages = pathIds
-      .map((id) => tree.nodes[id])
-      .filter((node): node is MessageNode => !!node)
-      .map((node) => ({
-        role: node.role,
-        blocks: cloneBlocks(node.blocks ?? []),
-      }));
+    const pathMessages = pathIds
+      .map((id) => state.messages[id - 1])
+      .filter((message): message is Message => !!message);
 
-    if (branchedMessages.length === 0) {
+    if (pathMessages.length === 0) {
       return;
     }
+
+    // Copy the path into a new linear conversation to preserve history.
+    const linearState = createLinearMessages(
+      pathMessages.map((message) => ({
+        role: message.role,
+        blocks: cloneBlocks(message.blocks ?? []),
+        createdAt: message.createdAt,
+      }))
+    );
 
     const newConversationId = generateConversationId();
     const now = new Date().toISOString();
     const titleSource =
-      branchedMessages.find((message) => message.role === "user") ??
-      branchedMessages[0];
+      pathMessages.find((message) => message.role === "user") ??
+      pathMessages[0];
     const title = titleSource
       ? buildConversationTitle(titleSource)
       : "新会话";
 
-    const branchedTree = migrateMessagesToTree(branchedMessages);
-
     await localDB.save({
       id: newConversationId,
       title,
-      messageTree: branchedTree,
-      messages: cloneMessages(branchedMessages),
+      currentPath: linearState.currentPath,
+      messages: cloneMessages(linearState.messages),
       created_at: now,
       updated_at: now,
     });
@@ -482,21 +503,15 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     navigate(`/app/c/${newConversationId}`);
   },
-  getBranchInfo: (messageId) => getBranchInfo(get().messageTree, messageId),
-  navigateBranch: (messageId, direction) => {
+  getBranchInfo: (messageId) => getBranchInfo(get().messages, messageId),
+  navigateBranch: (messageId, depth, direction) => {
     if (get().pending) {
       return;
     }
 
-    const tree = get().messageTree;
-    const info = getBranchInfo(tree, messageId);
+    const state = get();
+    const info = getBranchInfo(state.messages, messageId);
     if (!info) {
-      return;
-    }
-
-    const currentPath = tree.currentPath;
-    const messageIndex = currentPath.indexOf(messageId);
-    if (messageIndex === -1) {
       return;
     }
 
@@ -507,68 +522,74 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
 
     const targetId = info.siblingIds[nextIndex];
-    const prefix = messageIndex > 0 ? currentPath.slice(0, messageIndex) : [];
-    const branchPath = followFirstChildPath(tree, targetId);
-
-    const nextTree: MessageTree = {
-      ...tree,
-      currentPath: [...prefix, ...branchPath],
-    };
+    const nextState = switchBranch(
+      {
+        messages: state.messages,
+        currentPath: state.currentPath,
+        latestRootId: state.latestRootId,
+        nextId: state.nextId,
+      },
+      depth,
+      targetId
+    );
 
     set({
-      messageTree: nextTree,
-      messages: computeMessagesFromPath(nextTree),
+      messages: nextState.messages,
+      currentPath: nextState.currentPath,
+      latestRootId: nextState.latestRootId,
+      nextId: nextState.nextId,
       editingState: null,
     });
   },
   appendToAssistant: (addition) =>
     set((state) => {
-      const tree = state.messageTree;
-      const currentPath = tree.currentPath;
-      const lastId = currentPath[currentPath.length - 1];
-      const lastNode = lastId ? tree.nodes[lastId] : null;
+      const currentPath = state.currentPath;
+      const lastId = currentPath[currentPath.length - 1] ?? null;
+      const lastMessage = lastId ? state.messages[lastId - 1] : null;
 
-      let nextTree = tree;
-      let nextPath = [...currentPath];
+      let nextMessages = state.messages;
+      let nextPath = state.currentPath;
+      let nextLatestRootId = state.latestRootId;
+      let nextId = state.nextId;
       let assistantId = lastId;
 
-      if (!lastNode || lastNode.role !== "assistant") {
-        const parentId = lastId ?? null;
-        const newNode: MessageNode = {
-          id: generateMessageId(),
-          role: "assistant",
-          blocks: [],
-          parentId,
-          children: [],
-          createdAt: new Date().toISOString(),
-        };
-        nextTree = insertNode(tree, newNode, parentId);
-        assistantId = newNode.id;
-        nextPath = [...nextPath, assistantId];
+      if (!lastMessage || lastMessage.role !== "assistant") {
+        // Ensure we have a target assistant message to append streaming blocks.
+        const result = addMessage(
+          {
+            messages: state.messages,
+            currentPath: state.currentPath,
+            latestRootId: state.latestRootId,
+            nextId: state.nextId,
+          },
+          "assistant",
+          []
+        );
+        nextMessages = result.messages;
+        nextPath = result.currentPath;
+        nextLatestRootId = result.latestRootId;
+        nextId = result.nextId;
+        assistantId = result.addedMessage.id;
       }
 
-      if (!assistantId || !nextTree.nodes[assistantId]) {
+      if (!assistantId || !nextMessages[assistantId - 1]) {
         return state;
       }
 
-      const targetNode = nextTree.nodes[assistantId];
-      const updatedNode: MessageNode = {
-        ...targetNode,
-        blocks: applyAssistantAddition(targetNode.blocks ?? [], addition),
+      const targetMessage = nextMessages[assistantId - 1];
+      const updatedMessage: Message = {
+        ...targetMessage,
+        blocks: applyAssistantAddition(targetMessage.blocks ?? [], addition),
       };
 
-      const finalTree: MessageTree = {
-        ...nextTree,
-        nodes: {
-          ...nextTree.nodes,
-          [assistantId]: updatedNode,
-        },
-        currentPath: nextPath,
-      };
+      const updatedMessages = [...nextMessages];
+      updatedMessages[assistantId - 1] = updatedMessage;
 
       return {
-        messageTree: finalTree,
-        messages: computeMessagesFromPath(finalTree),
+        messages: updatedMessages,
+        currentPath: nextPath,
+        latestRootId: nextLatestRootId,
+        nextId,
       };
     }),
   stop: () => {
@@ -600,36 +621,35 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
       return;
     }
 
-    const tree = get().messageTree;
-    const parentId = tree.currentPath[tree.currentPath.length - 1] ?? null;
-    const userNode: MessageNode = {
-      id: generateMessageId(),
-      role: "user",
-      blocks: buildUserBlocks(input, attachments),
-      parentId,
-      children: [],
-      createdAt: new Date().toISOString(),
-    };
+    const state = get();
+    const result = addMessage(
+      {
+        messages: state.messages,
+        currentPath: state.currentPath,
+        latestRootId: state.latestRootId,
+        nextId: state.nextId,
+      },
+      "user",
+      buildUserBlocks(input, attachments)
+    );
 
-    let nextTree = insertNode(tree, userNode, parentId);
-    nextTree = {
-      ...nextTree,
-      currentPath: [...tree.currentPath, userNode.id],
-    };
-
-    const nextMessages = computeMessagesFromPath(nextTree);
+    const nextMessages = result.messages;
+    const nextPath = result.currentPath;
+    const pathMessages = computeMessagesFromPath(nextMessages, nextPath);
 
     set({
-      messageTree: nextTree,
       messages: nextMessages,
+      currentPath: nextPath,
+      latestRootId: result.latestRootId,
+      nextId: result.nextId,
       input: "",
       pendingAttachments: [],
     });
 
     await startChatRequest(get, set, {
-      messages: nextMessages,
+      messages: pathMessages,
       navigate,
-      titleSource: { role: "user", blocks: userNode.blocks },
+      titleSource: { role: "user", blocks: result.addedMessage.blocks },
     });
   },
 }));

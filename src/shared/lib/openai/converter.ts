@@ -59,15 +59,11 @@ export function convertToOpenAIInput(history: SerializedMessage[]): OpenAIInputI
       return [];
     }
 
-    const content = contentParts.length === 1 && contentParts[0].type === "input_text"
-      ? contentParts[0].text
-      : contentParts;
-
     return [
       {
         type: "message" as const,
         role: msg.role,
-        content: content.length === 0 ? "" : content,
+        content: contentParts.length === 0 ? "" : contentParts,
       },
     ];
   });

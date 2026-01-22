@@ -4,9 +4,8 @@ import { localDB } from "@/src/shared/lib/indexed-db";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 import type {
-  ContentBlock,
   Message,
-  MessageTree,
+  MessageLike,
   SerializedMessage,
 } from "@/src/features/chat/types/chat";
 import { serializeMessagesForRequest } from "./serialization";
@@ -15,6 +14,7 @@ import {
   extractContentFromBlocks,
   type AssistantAddition,
 } from "./block-operations";
+import { computeMessagesFromPath } from "./message-tree";
 import { getModelConfig } from "./model-config";
 
 const generateLocalMessageId = () =>
@@ -81,8 +81,8 @@ const generateTitle = async (conversationId: string, messages: Message[]) => {
 };
 
 type StoreGetter = () => {
-  messageTree: MessageTree;
   messages: Message[];
+  currentPath: number[];
   conversationId: string | null;
   currentModel: string;
   searchEnabled: boolean;
@@ -93,8 +93,8 @@ type StoreGetter = () => {
 };
 
 type StoreState = {
-  messageTree: MessageTree;
   messages: Message[];
+  currentPath: number[];
   conversationId: string | null;
   pending: boolean;
   chatClient: ChatClient | null;
@@ -110,7 +110,7 @@ type StoreSetter = (
 type StartRequestOptions = {
   messages: Message[];
   navigate?: (path: string) => void;
-  titleSource?: Message;
+  titleSource?: MessageLike;
   preferLocalTitle?: boolean;
 };
 
@@ -151,17 +151,17 @@ export const startChatRequest = async (
       title?: string;
       created_at?: string;
       updated_at?: string;
-      messageTree?: MessageTree;
-      messages?: Message[];
-      titleSource?:
-        | Message
-        | { role: "user" | "assistant"; blocks: ContentBlock[] };
+      titleSource?: MessageLike;
     }
   ) => {
     const now = options?.updated_at ?? new Date().toISOString();
     const existing = await localDB.get(id);
-    const messageTree = options?.messageTree ?? get().messageTree;
-    const currentMessages = cloneMessages(options?.messages ?? get().messages);
+    const allMessages = cloneMessages(get().messages);
+    const currentPath =
+      get().currentPath.length > 0
+        ? get().currentPath
+        : existing?.currentPath ?? [];
+    const pathMessages = computeMessagesFromPath(get().messages, currentPath);
     const { pinnedConversations, normalConversations } =
       useConversationsStore.getState();
     const storedConversation = [
@@ -172,8 +172,8 @@ export const startChatRequest = async (
     const pinned_at = storedConversation?.pinned_at ?? existing?.pinned_at;
     const resolvedTitleSource =
       options?.titleSource ??
-      currentMessages.find((message) => message.role === "user") ??
-      currentMessages[0];
+      pathMessages.find((message) => message.role === "user") ??
+      pathMessages[0];
     const title =
       options?.title ??
       existing?.title ??
@@ -185,8 +185,8 @@ export const startChatRequest = async (
     await localDB.save({
       id,
       title,
-      messageTree,
-      messages: currentMessages,
+      currentPath,
+      messages: allMessages,
       created_at,
       updated_at: now,
       pinned,
@@ -382,7 +382,10 @@ export const startChatRequest = async (
         });
       }
 
-      const currentMessages = get().messages;
+      const currentMessages = computeMessagesFromPath(
+        get().messages,
+        get().currentPath
+      );
       if (
         currentConversationId &&
         isFirstRound(currentMessages)

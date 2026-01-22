@@ -19,7 +19,8 @@ import type { Attachment } from "@/src/features/chat/types/chat";
 import { setActiveInput } from "../../lib/active-input";
 
 type MessageEditorProps = {
-  messageId: string;
+  messageId: number;
+  depth: number;
 };
 
 const buildAttachmentsFromFiles = async (
@@ -68,7 +69,7 @@ const buildAttachmentsFromFiles = async (
   return attachments;
 };
 
-export function MessageEditor({ messageId }: MessageEditorProps) {
+export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   const router = useRouter();
   const editingState = useChatStore((state) => state.editingState);
   const updateEditContent = useChatStore((state) => state.updateEditContent);
@@ -180,7 +181,7 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (!sendDisabled) {
-        submitEdit((path) => router.push(path));
+        submitEdit(depth, (path) => router.push(path));
       }
     }
   };
@@ -311,7 +312,7 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
         </div>
         <Button
           type="button"
-          onClick={() => submitEdit((path) => router.push(path))}
+          onClick={() => submitEdit(depth, (path) => router.push(path))}
           disabled={sendDisabled}
           size="icon"
           aria-label="发送编辑"

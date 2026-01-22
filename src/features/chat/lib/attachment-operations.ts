@@ -1,4 +1,4 @@
-import type { Attachment, MessageTree } from "@/src/features/chat/types/chat";
+import type { Attachment, Message } from "@/src/features/chat/types/chat";
 import {
   MAX_ATTACHMENT_SIZE,
   createBlobUrl,
@@ -15,9 +15,9 @@ export const revokeAttachments = (attachments: Attachment[]) => {
   }
 };
 
-export const revokeTreeAttachments = (tree: MessageTree) => {
-  for (const node of Object.values(tree.nodes)) {
-    for (const block of node.blocks) {
+export const revokeTreeAttachments = (messages: Message[]) => {
+  for (const message of messages) {
+    for (const block of message.blocks) {
       if (block.type === "attachments") {
         revokeAttachments(block.attachments);
       }

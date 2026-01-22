@@ -5,12 +5,14 @@ import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./message/MessageItem";
 import { PendingIndicator } from "./message/PendingIndicator";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { computeMessagesFromPath } from "@/src/features/chat/lib/message-tree";
 import { Button } from "@/components/ui/button";
 
 export function MessageList() {
-  const messages = useChatStore((state) => state.messages);
+  const allMessages = useChatStore((state) => state.messages);
+  const currentPath = useChatStore((state) => state.currentPath);
+  const messages = computeMessagesFromPath(allMessages, currentPath);
   const pending = useChatStore((state) => state.pending);
-  const messageTree = useChatStore((state) => state.messageTree);
   const getBranchInfo = useChatStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -65,10 +67,9 @@ export function MessageList() {
           {messages.map((message, index) => {
             const isLastMessage = index === messages.length - 1;
             const isStreaming = isLastMessage && pending;
-            const messageId = messageTree.currentPath[index] ?? `${message.role}-${index}`;
-            const branchInfo = messageId
-              ? getBranchInfo(messageId)
-              : null;
+            const messageId = message.id;
+            const depth = index + 1;
+            const branchInfo = getBranchInfo(messageId);
 
             return (
               <MessageItem
@@ -76,6 +77,7 @@ export function MessageList() {
                 message={message}
                 messageId={messageId}
                 index={index}
+                depth={depth}
                 isStreaming={isStreaming}
                 branchInfo={branchInfo}
               />

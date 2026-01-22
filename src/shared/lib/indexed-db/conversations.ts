@@ -1,5 +1,11 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { Message, MessageTree } from "@/src/features/chat/types/chat";
+import type { Message } from "@/src/features/chat/types/chat";
+import {
+  buildCurrentPath,
+  createLinearMessages,
+  migrateFromOldTree,
+} from "@/src/features/chat/lib/message-tree";
+import type { LegacyMessageTree } from "@/src/features/chat/lib/message-tree";
 
 const DB_NAME = "aether_local";
 const DB_VERSION = 3;
@@ -8,8 +14,8 @@ const STORE_CONVERSATIONS = "conversations";
 export type LocalConversation = {
   id: string;
   title: string | null;
-  messageTree?: MessageTree;
-  messages?: Message[];
+  currentPath: number[];
+  messages: Message[];
   created_at: string;
   updated_at: string;
   pinned?: boolean;
@@ -68,6 +74,138 @@ const openDatabase = async (): Promise<IDBPDatabase<AetherDB>> => {
   return dbPromise;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const isLegacyTree = (value: unknown): value is LegacyMessageTree => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return isRecord(value.nodes) && Array.isArray(value.rootIds);
+};
+
+const isMessage = (value: unknown): value is Message => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return typeof value.id === "number" && typeof value.role === "string";
+};
+
+const isNumberArray = (value: unknown): value is number[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "number");
+
+const areNumberArraysEqual = (a: number[], b: number[]) =>
+  a.length === b.length && a.every((value, index) => value === b[index]);
+
+type LinearMessageInput = {
+  role: "user" | "assistant";
+  blocks: Message["blocks"];
+  createdAt?: string;
+};
+
+const toLinearMessageInput = (value: unknown): LinearMessageInput | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const role = value.role;
+  if (role !== "user" && role !== "assistant") {
+    return null;
+  }
+  const blocks = Array.isArray(value.blocks) ? (value.blocks as Message["blocks"]) : [];
+  const createdAt =
+    typeof value.createdAt === "string" ? value.createdAt : undefined;
+  return { role, blocks, createdAt };
+};
+
+const normalizeConversation = async (
+  db: IDBPDatabase<AetherDB>,
+  conversation: LocalConversation | undefined
+): Promise<LocalConversation | undefined> => {
+  if (!conversation) {
+    return undefined;
+  }
+
+  const legacyTree = (conversation as { messageTree?: unknown }).messageTree;
+  if (legacyTree && isLegacyTree(legacyTree)) {
+    const migrated = migrateFromOldTree(legacyTree);
+    const nextConversation: LocalConversation = {
+      id: conversation.id,
+      title: conversation.title ?? null,
+      currentPath: migrated.currentPath,
+      messages: migrated.messages,
+      created_at: conversation.created_at,
+      updated_at: conversation.updated_at,
+      pinned: conversation.pinned,
+      pinned_at: conversation.pinned_at,
+    };
+    await db.put(STORE_CONVERSATIONS, nextConversation);
+    return nextConversation;
+  }
+
+  const rawMessages = (conversation as { messages?: unknown }).messages;
+  if (Array.isArray(rawMessages) && rawMessages.length > 0) {
+    if (!rawMessages.every(isMessage)) {
+      const linearInputs = rawMessages
+        .map(toLinearMessageInput)
+        .filter((item): item is LinearMessageInput => !!item);
+      const linearState = createLinearMessages(linearInputs);
+      const nextConversation: LocalConversation = {
+        id: conversation.id,
+        title: conversation.title ?? null,
+        currentPath: linearState.currentPath,
+        messages: linearState.messages,
+        created_at: conversation.created_at,
+        updated_at: conversation.updated_at,
+        pinned: conversation.pinned,
+        pinned_at: conversation.pinned_at,
+      };
+      await db.put(STORE_CONVERSATIONS, nextConversation);
+      return nextConversation;
+    }
+  }
+
+  const messages = Array.isArray(rawMessages) && rawMessages.every(isMessage)
+    ? (rawMessages as Message[])
+    : [];
+  const rawCurrentPath = (conversation as { currentPath?: unknown }).currentPath;
+  const hasCurrentPath = isNumberArray(rawCurrentPath);
+  const storedCurrentPath = hasCurrentPath ? rawCurrentPath : [];
+  let currentPath = storedCurrentPath;
+
+  if (!hasCurrentPath) {
+    const rawLatestRootId = (conversation as { latestRootId?: unknown })
+      .latestRootId;
+    const latestRootId =
+      typeof rawLatestRootId === "number"
+        ? rawLatestRootId
+        : messages.length > 0
+        ? messages[0].id
+        : null;
+    currentPath = buildCurrentPath(messages, latestRootId);
+  }
+
+  if (
+    !hasCurrentPath ||
+    !areNumberArraysEqual(currentPath, storedCurrentPath) ||
+    messages !== conversation.messages
+  ) {
+    const nextConversation: LocalConversation = {
+      id: conversation.id,
+      title: conversation.title ?? null,
+      currentPath,
+      messages,
+      created_at: conversation.created_at,
+      updated_at: conversation.updated_at,
+      pinned: conversation.pinned,
+      pinned_at: conversation.pinned_at,
+    };
+    await db.put(STORE_CONVERSATIONS, nextConversation);
+    return nextConversation;
+  }
+
+  return conversation;
+};
+
 export const localDB = {
   async getAll(): Promise<LocalConversation[]> {
     if (!supportsIndexedDB) {
@@ -76,7 +214,13 @@ export const localDB = {
 
     const db = await openDatabase();
     const all = await db.getAll(STORE_CONVERSATIONS);
-    return all.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    const migrated = await Promise.all(
+      all.map((conversation) => normalizeConversation(db, conversation))
+    );
+    const resolved = migrated.filter(
+      (conversation): conversation is LocalConversation => !!conversation
+    );
+    return resolved.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   },
 
   async get(id: string): Promise<LocalConversation | undefined> {
@@ -85,7 +229,8 @@ export const localDB = {
     }
 
     const db = await openDatabase();
-    return db.get(STORE_CONVERSATIONS, id);
+    const conversation = await db.get(STORE_CONVERSATIONS, id);
+    return normalizeConversation(db, conversation);
   },
 
   async save(conversation: LocalConversation): Promise<void> {

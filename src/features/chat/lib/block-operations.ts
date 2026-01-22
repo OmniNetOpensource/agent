@@ -15,8 +15,13 @@ export type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdat
 
 export const cloneMessages = (messages: Message[]) =>
   messages.map((msg) => ({
+    id: msg.id,
     role: msg.role,
     blocks: cloneBlocks(msg.blocks ?? []),
+    prevSibling: msg.prevSibling,
+    nextSibling: msg.nextSibling,
+    latestChild: msg.latestChild,
+    createdAt: msg.createdAt,
   }));
 
 export const extractContentFromBlocks = (blocks: ContentBlock[]) =>

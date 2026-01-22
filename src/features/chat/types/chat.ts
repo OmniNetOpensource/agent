@@ -64,35 +64,29 @@ export type SerializedContentBlock =
 
 type MessageBase<Block> = { role: "user" | "assistant"; blocks: Block[] };
 
-export type Message = MessageBase<ContentBlock>;
+export type Message = MessageBase<ContentBlock> & {
+  id: number;
+  prevSibling: number | null;
+  nextSibling: number | null;
+  latestChild: number | null;
+  createdAt: string;
+};
 
 export type SerializedMessage = MessageBase<SerializedContentBlock>;
 
-export type MessageLike = Message | SerializedMessage;
-
-export type MessageNode = {
-  id: string;
-  role: "user" | "assistant";
-  blocks: ContentBlock[];
-  parentId: string | null;
-  children: string[];
-  createdAt: string;
-};
+export type MessageLike =
+  | Message
+  | SerializedMessage
+  | { role: "user" | "assistant"; blocks: ContentBlock[] };
 
 export type BranchInfo = {
   currentIndex: number;
   total: number;
-  siblingIds: string[];
-};
-
-export type MessageTree = {
-  nodes: Record<string, MessageNode>;
-  rootIds: string[];
-  currentPath: string[];
+  siblingIds: number[];
 };
 
 export type EditingState = {
-  messageId: string;
+  messageId: number;
   originalBlocks: ContentBlock[];
   editedContent: string;
   editedAttachments: Attachment[];

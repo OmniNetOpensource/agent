@@ -103,7 +103,7 @@ const ActionButton = ({
 );
 
 type BranchConversationButtonProps = {
-  messageId: string;
+  messageId: number;
   disabled?: boolean;
 };
 
@@ -171,8 +171,9 @@ const BranchConversationButton = ({
 
 type MessageItemProps = {
   message: Message;
-  messageId: string;
+  messageId: number;
   index: number;
+  depth: number;
   isStreaming: boolean;
   branchInfo: BranchInfo | null;
 };
@@ -181,6 +182,7 @@ export const MessageItem = memo(function MessageItem({
   message,
   messageId,
   index,
+  depth,
   isStreaming,
   branchInfo,
 }: MessageItemProps) {
@@ -250,7 +252,7 @@ export const MessageItem = memo(function MessageItem({
       {(isEditing || (isUser ? contentBlocks.length > 0 : true)) && (
         <>
           {isEditing ? (
-            <MessageEditor messageId={messageId} />
+            <MessageEditor messageId={messageId} depth={depth} />
           ) : isUser ? (
             <div
               className={cn(
@@ -343,7 +345,7 @@ export const MessageItem = memo(function MessageItem({
               />
               <ActionButton
                 onClick={() =>
-                  retryFromMessage(messageId, (path) => router.push(path))
+                  retryFromMessage(messageId, depth, (path) => router.push(path))
                 }
                 disabled={pending}
                 title="重试生成"
@@ -356,7 +358,7 @@ export const MessageItem = memo(function MessageItem({
           {!isUser && (
             <ActionButton
               onClick={() =>
-                retryFromMessage(messageId, (path) => router.push(path))
+                retryFromMessage(messageId, depth, (path) => router.push(path))
               }
               disabled={pending}
               title="重试生成"
@@ -381,7 +383,7 @@ export const MessageItem = memo(function MessageItem({
         >
           <BranchNavigator
             branchInfo={branchInfo}
-            onNavigate={(direction) => navigateBranch(messageId, direction)}
+            onNavigate={(direction) => navigateBranch(messageId, depth, direction)}
             disabled={pending}
           />
         </div>
