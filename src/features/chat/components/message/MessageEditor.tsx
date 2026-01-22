@@ -16,6 +16,7 @@ import {
   formatFileSize,
 } from "@/src/shared/utils/file";
 import type { Attachment } from "@/src/features/chat/types/chat";
+import { setActiveInput } from "../../lib/active-input";
 
 type MessageEditorProps = {
   messageId: string;
@@ -268,6 +269,13 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
         ref={textareaRef}
         value={editedContent}
         onChange={(event) => updateEditContent(event.target.value)}
+        onFocus={() => {
+          setActiveInput({
+            getValue: () => useChatStore.getState().editingState?.editedContent ?? '',
+            setValue: (v) => useChatStore.getState().updateEditContent(v),
+            focus: () => textareaRef.current?.focus(),
+          });
+        }}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         rows={1}

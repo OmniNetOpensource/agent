@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
+import { setActiveInput, setDefaultInput } from "../../lib/active-input";
 
 export function Composer() {
   const router = useRouter();
@@ -94,6 +95,14 @@ export function Composer() {
   useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
+
+  useEffect(() => {
+    setDefaultInput({
+      getValue: () => useChatStore.getState().input,
+      setValue: (v) => useChatStore.getState().setInput(v),
+      focus: () => textareaRef.current?.focus(),
+    });
+  }, []);
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const clipboardData = event.clipboardData;
@@ -218,6 +227,13 @@ export function Composer() {
             value={input}
             onChange={(event) => {
               setInput(event.target.value);
+            }}
+            onFocus={() => {
+              setActiveInput({
+                getValue: () => useChatStore.getState().input,
+                setValue: (v) => useChatStore.getState().setInput(v),
+                focus: () => textareaRef.current?.focus(),
+              });
             }}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
