@@ -2,7 +2,7 @@ type ProviderPreferences = {
   order: string[];
 };
 
-export type Backend = "openrouter" | "anthropic";
+export type Backend = "openrouter" | "anthropic" | "openai";
 
 export type ModelConfig = {
   id: string;
@@ -35,6 +35,16 @@ export const MODEL_CONFIGS: ModelConfig[] = [
   {
     id: "xiaomi/mimo-v2-flash:free",
     label: "mimo-v2-flash",
+  },
+  {
+    id: "gpt-5.2",
+    label: "gpt-5.2",
+    backend: "openai",
+  },
+  {
+    id: "gpt-5.2-codex",
+    label: "gpt-5.2-codex",
+    backend: "openai",
   },
 ];
 

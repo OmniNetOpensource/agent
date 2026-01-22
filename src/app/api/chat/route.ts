@@ -6,6 +6,13 @@ import {
   parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
 import { streamAnthropicCompletion } from "@/src/shared/lib/anthropic/server";
+import { streamOpenAIResponse } from "@/src/shared/lib/openai/server";
+import {
+  convertToOpenAIInput,
+  convertToolsToOpenAI,
+  type OpenAIInputItem,
+  type OpenAIFunctionCallOutput,
+} from "@/src/shared/lib/openai/converter";
 import {
   convertToAnthropicMessages,
   convertToolsToAnthropic,
@@ -378,6 +385,148 @@ export async function POST(req: Request) {
                 { role: "assistant", content: assistantContent },
                 { role: "user", content: toolResultContent as AnthropicMessage["content"] },
               ];
+
+              if (activeConversationId) {
+                sendToClient("conversation_updated", { conversationId: activeConversationId, updated_at: new Date().toISOString() });
+              }
+            }
+
+            if (iteration >= maxIterations && !streamClosed) {
+              sendToClient("error", { message: "[已达到最大工具调用次数限制]" });
+              closeStream();
+            }
+
+            if (activeConversationId && !streamClosed) {
+              sendToClient("conversation_updated", { conversationId: activeConversationId, updated_at: new Date().toISOString() });
+            }
+
+            closeStream();
+            return;
+          }
+
+          // OpenAI Responses API backend handling
+          if (backend === "openai") {
+            let openaiInput: OpenAIInputItem[] = convertToOpenAIInput(history);
+            let manualInput: OpenAIInputItem[] = openaiInput;
+            const openaiTools = tools.length > 0 ? convertToolsToOpenAI(tools) : undefined;
+            const systemPrompt = buildSystemPrompt(searchEnabled, systemInstruction);
+            let previousResponseId: string | null = null;
+            let usePreviousResponseId = true;
+
+            while (iteration < maxIterations) {
+              iteration++;
+              logger?.log("ITERATION", `Starting OpenAI iteration ${iteration}`);
+
+              const pendingFunctionCalls: Array<{ id: string; call_id: string; name: string; args: Record<string, unknown>; arguments: string }> = [];
+              let stopped = false;
+              let responseId: string | null = null;
+              let assistantText = "";
+              let retriedWithoutPrevious = false;
+
+              while (true) {
+                try {
+                  for await (const chunk of streamOpenAIResponse({
+                    model: requestedModel,
+                    input: openaiInput,
+                    tools: openaiTools,
+                    systemPrompt,
+                    previousResponseId: usePreviousResponseId ? previousResponseId : null,
+                  })) {
+                  if (chunk.type === "text") {
+                    assistantText += chunk.text;
+                    sendToClient("content", { content: chunk.text });
+                  } else if (chunk.type === "thinking") {
+                    appendThinking(chunk.text);
+                    sendToClient("thinking", { content: chunk.text });
+                  } else if (chunk.type === "response_id") {
+                    responseId = chunk.id;
+                  } else if (chunk.type === "function_call_done") {
+                      let args: Record<string, unknown> = {};
+                      try {
+                        args = JSON.parse(chunk.arguments || "{}");
+                      } catch {}
+                      pendingFunctionCalls.push({
+                        id: chunk.id,
+                        call_id: chunk.call_id,
+                        name: chunk.name,
+                        args,
+                        arguments: chunk.arguments || "",
+                      });
+                    } else if (chunk.type === "stop") {
+                      stopped = true;
+                    }
+                  }
+                  break;
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : "Failed to start OpenAI completion";
+                  if (!retriedWithoutPrevious && usePreviousResponseId && message.includes("Unsupported parameter: previous_response_id")) {
+                    usePreviousResponseId = false;
+                    previousResponseId = null;
+                    openaiInput = manualInput;
+                    retriedWithoutPrevious = true;
+                    pendingFunctionCalls.length = 0;
+                    stopped = false;
+                    responseId = null;
+                    assistantText = "";
+                    continue;
+                  }
+                  sendToClient("error", { message: `Error: ${message}` });
+                  closeStream();
+                  break;
+                }
+              }
+
+              if (stopped && pendingFunctionCalls.length === 0) {
+                closeStream();
+                break;
+              }
+
+              if (pendingFunctionCalls.length === 0) {
+                closeStream();
+                break;
+              }
+
+              if (usePreviousResponseId) {
+                if (!responseId) {
+                  sendToClient("error", { message: "OpenAI response id missing for tool follow-up" });
+                  closeStream();
+                  break;
+                }
+              }
+
+              // Execute function calls
+              const toolResults = await executeToolCalls(
+                pendingFunctionCalls.map((fc) => ({ id: fc.call_id, name: fc.name, args: fc.args }))
+              );
+
+              // Append function call outputs to input
+              const functionCallOutputs: OpenAIFunctionCallOutput[] = toolResults.map((tr) => ({
+                type: "function_call_output" as const,
+                call_id: tr.id,
+                output: tr.result,
+              }));
+              const functionCallItems: OpenAIInputItem[] = pendingFunctionCalls.map((fc) => ({
+                type: "function_call" as const,
+                id: fc.id,
+                call_id: fc.call_id,
+                name: fc.name,
+                arguments: fc.arguments,
+              }));
+
+              if (assistantText.trim().length > 0) {
+                manualInput = [
+                  ...manualInput,
+                  { type: "message", role: "assistant", content: assistantText },
+                ];
+              }
+              manualInput = [...manualInput, ...functionCallItems, ...functionCallOutputs];
+
+              if (usePreviousResponseId) {
+                previousResponseId = responseId;
+                openaiInput = functionCallOutputs;
+              } else {
+                openaiInput = manualInput;
+              }
 
               if (activeConversationId) {
                 sendToClient("conversation_updated", { conversationId: activeConversationId, updated_at: new Date().toISOString() });

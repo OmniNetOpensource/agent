@@ -102,7 +102,7 @@ export type ProviderPreferences = {
   order: string[];
 };
 
-export type Backend = "openrouter" | "anthropic";
+export type Backend = "openrouter" | "anthropic" | "openai";
 
 export type ChatRequest = {
   conversationHistory: SerializedMessage[];
