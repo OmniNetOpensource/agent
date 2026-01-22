@@ -91,7 +91,7 @@ export function MessageEditor({ messageId }: MessageEditorProps) {
     if (state && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [state?.messageId]);
+  }, [state]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
