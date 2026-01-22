@@ -9,47 +9,60 @@ export function SelectionQuotePopup() {
   const [selectedText, setSelectedText] = useState('');
 
   useEffect(() => {
-    const handleSelectionChange = () => {
-      const selection = window.getSelection();
-      const text = selection?.toString().trim() || '';
+    const handleMouseUp = () => {
+      // 延迟一帧确保 selection 已更新
+      requestAnimationFrame(() => {
+        const selection = window.getSelection();
+        const text = selection?.toString().trim() || '';
 
-      if (!text || text.length === 0) {
-        setPosition(null);
-        setSelectedText('');
-        return;
-      }
-
-      // 检查选中的内容是否在输入框内，如果是则不显示
-      const anchorNode = selection?.anchorNode;
-      if (anchorNode) {
-        const element = anchorNode.nodeType === Node.TEXT_NODE
-          ? anchorNode.parentElement
-          : anchorNode as Element;
-        if (element?.closest('textarea, input, [contenteditable="true"]')) {
+        if (!text || text.length === 0) {
           setPosition(null);
           setSelectedText('');
           return;
         }
-      }
 
-      try {
-        const range = selection?.getRangeAt(0);
-        if (range) {
-          const rect = range.getBoundingClientRect();
-          setPosition({
-            x: rect.left + rect.width / 2,
-            y: rect.top - 8,
-          });
-          setSelectedText(text);
+        // 检查选中内容是否在输入框内
+        const anchorNode = selection?.anchorNode;
+        if (anchorNode) {
+          const element = anchorNode.nodeType === Node.TEXT_NODE
+            ? anchorNode.parentElement
+            : anchorNode as Element;
+          if (element?.closest('textarea, input, [contenteditable="true"]')) {
+            setPosition(null);
+            setSelectedText('');
+            return;
+          }
         }
-      } catch {
-        setPosition(null);
-        setSelectedText('');
-      }
+
+        try {
+          const range = selection?.getRangeAt(0);
+          if (range) {
+            const rect = range.getBoundingClientRect();
+            setPosition({
+              x: rect.left + rect.width / 2,
+              y: rect.top - 8,
+            });
+            setSelectedText(text);
+          }
+        } catch {
+          setPosition(null);
+          setSelectedText('');
+        }
+      });
     };
 
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+    const handleMouseDown = () => {
+      setPosition(null);
+      setSelectedText('');
+    };
+
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousedown', handleMouseDown);
+    
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
   }, []);
 
   const handleClick = () => {

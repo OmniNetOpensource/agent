@@ -40,7 +40,7 @@ type ChatTool = {
 };
 
 export function convertToOpenAIInput(history: SerializedMessage[]): OpenAIInputItem[] {
-  return history.map((msg) => {
+  return history.flatMap((msg) => {
     const contentParts: OpenAIContentPart[] = [];
 
     for (const block of msg.blocks) {
@@ -55,15 +55,21 @@ export function convertToOpenAIInput(history: SerializedMessage[]): OpenAIInputI
       }
     }
 
+    if (msg.role === "assistant" && contentParts.length === 0) {
+      return [];
+    }
+
     const content = contentParts.length === 1 && contentParts[0].type === "input_text"
       ? contentParts[0].text
       : contentParts;
 
-    return {
-      type: "message" as const,
-      role: msg.role,
-      content: content.length === 0 ? "" : content,
-    };
+    return [
+      {
+        type: "message" as const,
+        role: msg.role,
+        content: content.length === 0 ? "" : content,
+      },
+    ];
   });
 }
 
