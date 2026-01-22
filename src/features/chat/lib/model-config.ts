@@ -2,13 +2,21 @@ type ProviderPreferences = {
   order: string[];
 };
 
-type ModelConfig = {
+export type Backend = "openrouter" | "anthropic";
+
+export type ModelConfig = {
   id: string;
   label: string;
   provider?: ProviderPreferences;
+  backend?: Backend;
 };
 
 export const MODEL_CONFIGS: ModelConfig[] = [
+  {
+    id: "claude-opus-4-5-20251101",
+    label: "claude-opus-4.5",
+    backend: "anthropic",
+  },
   {
     id: "google/gemini-3-flash-preview",
     label: "gemini-3-flash-preview",

@@ -102,6 +102,8 @@ export type ProviderPreferences = {
   order: string[];
 };
 
+export type Backend = "openrouter" | "anthropic";
+
 export type ChatRequest = {
   conversationHistory: SerializedMessage[];
   conversationId?: string | null;
@@ -109,4 +111,5 @@ export type ChatRequest = {
   provider?: ProviderPreferences;
   searchEnabled?: boolean;
   systemInstruction?: string;
+  backend?: Backend;
 };

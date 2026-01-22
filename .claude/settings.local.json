@@ -14,7 +14,9 @@
       "Bash(del \"d:\\develop\\projects\\agent\\src\\features\\sidebar\\components\\profile\\ProfileSection.tsx\")",
       "Bash(find:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm build)"
     ],
     "deny": [],
     "ask": []

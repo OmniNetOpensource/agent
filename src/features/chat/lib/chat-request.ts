@@ -412,6 +412,7 @@ export const startChatRequest = async (
     currentConversationId,
     searchEnabled,
     systemInstruction,
-    modelConfig?.provider
+    modelConfig?.provider,
+    modelConfig?.backend
   );
 };

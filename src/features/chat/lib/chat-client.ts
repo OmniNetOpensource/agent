@@ -1,6 +1,7 @@
 import {
   SerializedMessage,
   ProviderPreferences,
+  Backend,
 } from "@/src/features/chat/types/chat";
 import { StreamParser, StreamEvent } from "./stream-parser";
 
@@ -21,7 +22,8 @@ export class ChatClient {
     conversationId: string | null,
     searchEnabled?: boolean,
     systemInstruction?: string,
-    provider?: ProviderPreferences
+    provider?: ProviderPreferences,
+    backend?: Backend
   ) {
     this.abortController = new AbortController();
 
@@ -37,6 +39,7 @@ export class ChatClient {
           provider,
           searchEnabled,
           systemInstruction,
+          backend,
         }),
       });
 

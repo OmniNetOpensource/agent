@@ -5,6 +5,12 @@ import {
   streamChatCompletion,
   parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
+import { streamAnthropicCompletion } from "@/src/shared/lib/anthropic/server";
+import {
+  convertToAnthropicMessages,
+  convertToolsToAnthropic,
+  type AnthropicMessage,
+} from "@/src/shared/lib/anthropic/converter";
 import type {
   ResearchItem,
   SerializedMessage,
@@ -42,6 +48,7 @@ export async function POST(req: Request) {
       provider,
       searchEnabled,
       systemInstruction,
+      backend,
     } = (await req.json()) as ChatRequest;
 
     logger = createConversationLogger();
@@ -260,7 +267,136 @@ export async function POST(req: Request) {
           }
         };
 
+        const executeToolCalls = async (
+          toolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }>
+        ) => {
+          return Promise.all(
+            toolCalls.map(async (tc) => {
+              logger?.log("TOOLS", `Calling tool: ${tc.name}`, { toolName: tc.name, args: tc.args });
+              sendToClient("tool_call", { tool: tc.name, args: tc.args });
+              ensureToolItem(tc.name, tc.args);
+
+              const result = await callToolByName(tc.name, tc.args, (progress: ToolProgressUpdate) => {
+                sendToClient("tool_progress", { tool: tc.name, ...progress });
+                appendToolProgress(tc.name, {
+                  stage: progress.stage,
+                  message: String(progress.message ?? ""),
+                  receivedBytes: progress.receivedBytes,
+                  totalBytes: progress.totalBytes,
+                });
+              });
+
+              const normalizedResult = typeof result === "string" ? result : JSON.stringify(result);
+              sendToClient("tool_result", { tool: tc.name, result });
+              appendToolResult(tc.name, normalizedResult);
+
+              return { id: tc.id, name: tc.name, result: normalizedResult };
+            })
+          );
+        };
+
         try {
+          // Anthropic backend handling
+          if (backend === "anthropic") {
+            // const systemPrompt = buildSystemPrompt(searchEnabled, systemInstruction);
+            let anthropicMessages: AnthropicMessage[] = convertToAnthropicMessages(history);
+            const anthropicTools = tools.length > 0 ? convertToolsToAnthropic(tools) : undefined;
+
+            while (iteration < maxIterations) {
+              iteration++;
+              logger?.log("ITERATION", `Starting Anthropic iteration ${iteration}`);
+
+              let assistantText = "";
+              const pendingToolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }> = [];
+              let currentToolId = "";
+              let currentToolName = "";
+              let currentToolJson = "";
+              let stopReason = "";
+
+              try {
+                for await (const chunk of streamAnthropicCompletion({
+                  model: requestedModel,
+                  messages: anthropicMessages,
+                  // system: systemPrompt,
+                  tools: anthropicTools,
+                })) {
+                  if (chunk.type === "text") {
+                    assistantText += chunk.text;
+                    sendToClient("content", { content: chunk.text });
+                  } else if (chunk.type === "thinking") {
+                    appendThinking(chunk.thinking);
+                    sendToClient("thinking", { content: chunk.thinking });
+                  } else if (chunk.type === "tool_use_start") {
+                    currentToolId = chunk.id;
+                    currentToolName = chunk.name;
+                    currentToolJson = "";
+                  } else if (chunk.type === "tool_use_delta") {
+                    currentToolJson += chunk.partial_json;
+                  } else if (chunk.type === "stop") {
+                    stopReason = chunk.stop_reason;
+                    if (currentToolId && currentToolName) {
+                      let args: Record<string, unknown> = {};
+                      try {
+                        args = JSON.parse(currentToolJson || "{}");
+                      } catch {}
+                      pendingToolCalls.push({ id: currentToolId, name: currentToolName, args });
+                    }
+                  }
+                }
+              } catch (error) {
+                const message = error instanceof Error ? error.message : "Failed to start Anthropic completion";
+                sendToClient("error", { message: `错误：${message}` });
+                closeStream();
+                break;
+              }
+
+              if (stopReason === "end_turn" || pendingToolCalls.length === 0) {
+                closeStream();
+                break;
+              }
+
+              // Execute tool calls
+              const toolResults = await executeToolCalls(pendingToolCalls);
+
+              // Build next messages for Anthropic
+              const assistantContent: Array<{ type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }> = [];
+              if (assistantText) {
+                assistantContent.push({ type: "text", text: assistantText });
+              }
+              for (const tc of pendingToolCalls) {
+                assistantContent.push({ type: "tool_use", id: tc.id, name: tc.name, input: tc.args });
+              }
+
+              const toolResultContent: Array<{ type: "tool_result"; tool_use_id: string; content: string }> = toolResults.map((tr) => ({
+                type: "tool_result",
+                tool_use_id: tr.id,
+                content: tr.result,
+              }));
+
+              anthropicMessages = [
+                ...anthropicMessages,
+                { role: "assistant", content: assistantContent },
+                { role: "user", content: toolResultContent as AnthropicMessage["content"] },
+              ];
+
+              if (activeConversationId) {
+                sendToClient("conversation_updated", { conversationId: activeConversationId, updated_at: new Date().toISOString() });
+              }
+            }
+
+            if (iteration >= maxIterations && !streamClosed) {
+              sendToClient("error", { message: "[已达到最大工具调用次数限制]" });
+              closeStream();
+            }
+
+            if (activeConversationId && !streamClosed) {
+              sendToClient("conversation_updated", { conversationId: activeConversationId, updated_at: new Date().toISOString() });
+            }
+
+            closeStream();
+            return;
+          }
+
           // Tool calling rules (OpenRouter/OpenAI-compatible):
           // - Assistant must return tool_calls, then we append role=tool results with matching tool_call_id,
           //   and resend the full history including that assistant message.
