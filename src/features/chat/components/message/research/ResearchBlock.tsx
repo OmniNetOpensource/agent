@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
 import { FetchUrl } from "./tools/FetchUrl";
 import { BraveSearch } from "./tools/BraveSearch";
+import { RenderHtml } from "./tools/RenderHtml";
 import { ThinkingItem } from "./tools/ThinkingItem";
 import {
   Collapsible,
@@ -41,6 +42,8 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         return <FetchUrl tool={item.data} />;
       case "brave_search":
         return <BraveSearch tool={item.data} />;
+      case "render_html":
+        return <RenderHtml tool={item.data} />;
       default:
         if (process.env.NODE_ENV === "development") {
           console.error(
@@ -84,6 +87,11 @@ const getLatestStatus = (items: ResearchItemData[]): string => {
       } catch {
         return `Fetching URL`;
       }
+    }
+
+    if (toolName === "render_html") {
+      const title = args.title as string | undefined;
+      return title ? `Creating "${title}"` : "Creating preview";
     }
 
     return `Running ${toolName}`;

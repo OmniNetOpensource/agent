@@ -18,7 +18,19 @@
       "Bash(pnpm lint)",
       "Bash(pnpm build)",
       "mcp__acp__Edit",
-      "mcp__acp__Bash"
+      "mcp__acp__Bash",
+      "Bash(ls:*)",
+      "Bash(git log:*)",
+      "WebFetch(domain:apidog.com)",
+      "WebFetch(domain:nexusrouter.com)",
+      "WebFetch(domain:evolink.ai)",
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(npx tsc:*)",
+      "Bash(npx tsc --noEmit src/shared/lib/providers/*.ts src/shared/lib/providers/**/*.ts src/app/api/chat/route.ts)",
+      "Bash(node:*)",
+      "Bash(git stash:*)",
+      "Bash(pnpm check:*)",
+      "Bash(gh pr list:*)"
     ],
     "deny": [],
     "ask": []

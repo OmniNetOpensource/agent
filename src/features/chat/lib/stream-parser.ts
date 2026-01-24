@@ -1,7 +1,7 @@
 export type StreamEvent =
   | { type: "content"; content: string }
   | { type: "thinking"; content: string }
-  | { type: "tool_call"; tool: string; args: Record<string, unknown> }
+  | { type: "tool_call"; tool: string; args: Record<string, unknown>; callId?: string }
   | {
       type: "tool_progress";
       tool: string;
@@ -9,8 +9,10 @@ export type StreamEvent =
       message: string;
       receivedBytes?: number;
       totalBytes?: number;
+      callId?: string;
     }
-  | { type: "tool_result"; tool: string; result: string | object }
+  | { type: "tool_result"; tool: string; result: string | object; callId?: string }
+  | { type: "generated_image"; id: string; url: string; revisedPrompt?: string }
   | { type: "error"; message: string }
   | {
       type: "conversation_created";

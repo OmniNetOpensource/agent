@@ -5,7 +5,7 @@ import { useIsMobile } from "@/src/shared/mobile/MobileContext";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
-import { BranchInfo, Message } from "@/src/features/chat/types/chat";
+import { BranchInfo, Message, GeneratedImage } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "./research/ResearchBlock";
@@ -31,6 +31,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
+// Calculate approximate size of base64 data URL
+const getBase64Size = (dataUrl: string): number => {
+  const base64 = dataUrl.split(",")[1];
+  if (!base64) return 0;
+  return Math.round((base64.length * 3) / 4);
+};
 
 type CopyButtonProps = {
   blocks: Message["blocks"];
@@ -104,7 +111,7 @@ const ActionButton = ({
 );
 
 type BranchConversationButtonProps = {
-  messageId: string;
+  messageId: number;
   disabled?: boolean;
 };
 
@@ -172,8 +179,9 @@ const BranchConversationButton = ({
 
 type MessageItemProps = {
   message: Message;
-  messageId: string;
+  messageId: number;
   index: number;
+  depth: number;
   isStreaming: boolean;
   branchInfo: BranchInfo | null;
 };
@@ -182,6 +190,7 @@ export const MessageItem = memo(function MessageItem({
   message,
   messageId,
   index,
+  depth,
   isStreaming,
   branchInfo,
 }: MessageItemProps) {
@@ -252,12 +261,12 @@ export const MessageItem = memo(function MessageItem({
       {(isEditing || (isUser ? contentBlocks.length > 0 : true)) && (
         <>
           {isEditing ? (
-            <MessageEditor messageId={messageId} />
+            <MessageEditor messageId={messageId} depth={depth} />
           ) : isUser ? (
             <div
               className={cn(
                 "space-y-2 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3",
-                "bg-muted text-foreground w-fit",
+                "bg-muted text-foreground w-fit max-w-[60%]",
               )}
             >
               {contentBlocks.map((block, blockIndex) => {
@@ -309,6 +318,22 @@ export const MessageItem = memo(function MessageItem({
                   );
                 }
 
+                if (block.type === "generated_images") {
+                  return (
+                    <div key={blockKey} className="flex flex-wrap gap-3 my-2">
+                      {block.images.map((image: GeneratedImage) => (
+                        <ImagePreview
+                          key={image.id}
+                          url={image.url}
+                          name={image.revisedPrompt || "Generated image"}
+                          size={getBase64Size(image.url)}
+                          className="h-64 w-64"
+                        />
+                      ))}
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={blockKey}
@@ -348,7 +373,7 @@ export const MessageItem = memo(function MessageItem({
               />
               <ActionButton
                 onClick={() =>
-                  retryFromMessage(messageId, (path) => router.push(path))
+                  retryFromMessage(messageId, depth, (path: string) => router.push(path))
                 }
                 disabled={pending}
                 title="重试生成"
@@ -361,7 +386,7 @@ export const MessageItem = memo(function MessageItem({
           {!isUser && (
             <ActionButton
               onClick={() =>
-                retryFromMessage(messageId, (path) => router.push(path))
+                retryFromMessage(messageId, depth, (path: string) => router.push(path))
               }
               disabled={pending}
               title="重试生成"
@@ -389,7 +414,7 @@ export const MessageItem = memo(function MessageItem({
         >
           <BranchNavigator
             branchInfo={branchInfo}
-            onNavigate={(direction) => navigateBranch(messageId, direction)}
+            onNavigate={(direction) => navigateBranch(messageId, depth, direction)}
             disabled={pending}
           />
         </div>

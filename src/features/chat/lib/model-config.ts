@@ -4,11 +4,16 @@ type ProviderPreferences = {
 
 export type Backend = "openrouter" | "anthropic" | "openai";
 
+export type ModelCapabilities = {
+  imageGeneration?: boolean;
+};
+
 export type ModelConfig = {
   id: string;
   label: string;
   provider?: ProviderPreferences;
   backend?: Backend;
+  capabilities?: ModelCapabilities;
 };
 
 export const MODEL_CONFIGS: ModelConfig[] = [
@@ -53,14 +58,17 @@ export const MODEL_CONFIGS: ModelConfig[] = [
   {
     id: "openai/gpt-5-image",
     label: "gpt-5-image",
+    capabilities: { imageGeneration: true },
   },
   {
     id: "google/gemini-3-pro-image-preview",
     label: "gemini-3-pro-image-preview",
+    capabilities: { imageGeneration: true },
   },
   {
     id: "black-forest-labs/flux.2-max",
     label: "flux.2-max",
+    capabilities: { imageGeneration: true },
   },
 ];
 
@@ -70,4 +78,9 @@ const modelConfigMap = new Map<string, ModelConfig>(
 
 export function getModelConfig(modelId: string): ModelConfig | undefined {
   return modelConfigMap.get(modelId);
+}
+
+export function supportsImageGeneration(modelId: string): boolean {
+  const config = modelConfigMap.get(modelId);
+  return config?.capabilities?.imageGeneration === true;
 }

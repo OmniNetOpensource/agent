@@ -1,6 +1,7 @@
 import type {
   Attachment,
   ContentBlock,
+  GeneratedImage,
   Message,
   ResearchItem,
   ToolProgress,
@@ -11,7 +12,12 @@ type ToolLifecycleUpdate =
   | ({ kind: "tool_progress"; tool: string } & ToolProgress)
   | { kind: "tool_result"; tool: string; result: string };
 
-export type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate;
+type GeneratedImagesBlock = {
+  type: "generated_images";
+  images: GeneratedImage[];
+};
+
+export type AssistantAddition = ContentBlock | ResearchItem | ToolLifecycleUpdate | GeneratedImagesBlock;
 
 export const cloneMessages = (messages: Message[]) =>
   messages.map((msg) => ({
@@ -219,6 +225,20 @@ export const applyAssistantAddition = (
 
     if (addition.type === "error") {
       nextBlocks.push({ type: "error", message: addition.message });
+      return nextBlocks;
+    }
+
+    if (addition.type === "generated_images") {
+      const lastBlock = nextBlocks[nextBlocks.length - 1];
+      if (lastBlock?.type === "generated_images") {
+        // Merge into existing generated_images block
+        nextBlocks[nextBlocks.length - 1] = {
+          ...lastBlock,
+          images: [...lastBlock.images, ...addition.images],
+        };
+      } else {
+        nextBlocks.push({ type: "generated_images", images: [...addition.images] });
+      }
       return nextBlocks;
     }
 

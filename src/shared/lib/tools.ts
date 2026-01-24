@@ -1,5 +1,6 @@
 import { braveSearchTool } from "./tools/brave-search";
 import { fetchUrlTool } from "./tools/fetch";
+import { renderHtmlTool } from "./tools/render-html";
 import {
   type ChatTool,
   type ToolDefinition,
@@ -11,13 +12,18 @@ import {
 const allTools: Record<ToolName, ToolDefinition> = {
   fetch_url: fetchUrlTool,
   brave_search: braveSearchTool,
+  render_html: renderHtmlTool,
 };
 
 // Only include brave_search if API key is available
+// render_html is always enabled
 const hasApiKey = Boolean(process.env.BRAVE_API_KEY);
 const toolMap = hasApiKey
   ? allTools
-  : ({ fetch_url: fetchUrlTool } as Record<ToolName, ToolDefinition>);
+  : ({
+      fetch_url: fetchUrlTool,
+      render_html: renderHtmlTool,
+    } as Record<ToolName, ToolDefinition>);
 
 const toolEntries = Object.entries(toolMap);
 

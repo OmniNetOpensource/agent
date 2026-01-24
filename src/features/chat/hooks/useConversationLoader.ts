@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import {
   buildCurrentPath,
@@ -162,6 +163,7 @@ export function useConversationLoader(conversationId: string | undefined) {
           return;
         }
 
+        usePreviewStore.getState().reset();
         setConversationId(conversationId);
         initializeTree(mappedMessages, currentPath);
       } catch (error) {

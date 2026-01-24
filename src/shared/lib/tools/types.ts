@@ -1,4 +1,4 @@
-export type ToolName = "fetch_url" | "brave_search";
+export type ToolName = "fetch_url" | "brave_search" | "render_html";
 
 export type ChatTool = {
   type: "function";

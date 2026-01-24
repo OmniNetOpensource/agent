@@ -176,7 +176,7 @@ export function ComposerToolbar() {
             align="start"
             className="w-48 max-w-[calc(100vw-2rem)] p-1.5"
           >
-            <div className="flex flex-col gap-1 px-1 py-1">
+            <div className="flex flex-col gap-1 px-1 py-1 max-h-[300px] overflow-y-auto">
               {MODEL_CONFIGS.map((model) => (
                 <button
                   key={model.id}

@@ -28,6 +28,9 @@ type StreamChunk = {
       reasoning_details?: ReasoningDetail[];
       tool_calls?: StreamToolCall[];
     };
+    message?: {
+      images?: Array<{ image_url: { url: string } }>;
+    };
     finishReason?: string | null;
   }>;
 };
@@ -41,6 +44,7 @@ export async function streamChatCompletion(params: {
   messages: ChatMessage[];
   tools?: unknown[];
   provider?: ProviderPreferences;
+  modalities?: ("text" | "image")[];
 }): Promise<ReadableStream<Uint8Array>> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -90,6 +94,10 @@ export async function streamChatCompletion(params: {
 
   if (params.provider) {
     requestBody.provider = params.provider;
+  }
+
+  if (params.modalities?.length) {
+    requestBody.modalities = params.modalities;
   }
 
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {

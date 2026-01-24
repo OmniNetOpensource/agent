@@ -133,12 +133,13 @@ const formatBraveSearchResponse = (
         url: string;
         description: string;
       } => Boolean(result && result.url)
-    );
+    )
+    .slice(0, 10);
 
   const payload: BraveSearchPayload = {
     query,
     results,
-    rawResults,
+    rawResults: rawResults.slice(0, 10),
   };
 
   return JSON.stringify(payload);
@@ -159,7 +160,7 @@ const performBraveSearch = async (
   try {
     const params = new URLSearchParams({
       q: query,
-      count: "20",
+      count: "10",
     });
 
     if (freshness) {

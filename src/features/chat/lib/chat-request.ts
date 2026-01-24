@@ -16,11 +16,18 @@ import {
 } from "./block-operations";
 import { computeMessagesFromPath } from "./message-tree";
 import { getModelConfig } from "./model-config";
+import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
+import type { HtmlPreview } from "@/src/shared/lib/indexed-db/conversations";
 
 const generateLocalMessageId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `msg_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const generatePreviewId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `preview_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 const DEFAULT_CONVERSATION_TITLE = "New Chat";
 
@@ -194,6 +201,13 @@ export const startChatRequest = async (
     });
   };
 
+  // Track pending render_html tool call args for saving preview
+  const pendingRenderHtmlArgsById = new Map<
+    string,
+    { html: string; title: string }
+  >();
+  const pendingRenderHtmlQueue: Array<{ html: string; title: string }> = [];
+
   const chatClient = new ChatClient({
     onEvent: (data) => {
       if (get().activeRequestId !== requestId) {
@@ -285,14 +299,31 @@ export const startChatRequest = async (
         });
       } else if (data.type === "tool_call") {
         const tool = typeof data.tool === "string" ? data.tool : "未知工具";
+        const args = (data.args && typeof data.args === "object"
+          ? data.args
+          : {}) as Record<string, unknown>;
+
+        // Capture render_html args for later use when result comes
+        if (tool === "render_html") {
+          const html = typeof args.html === "string" ? args.html : "";
+          const title = typeof args.title === "string" ? args.title : "Untitled Preview";
+          const callId =
+            typeof data.callId === "string" ? data.callId : undefined;
+          if (html) {
+            if (callId) {
+              pendingRenderHtmlArgsById.set(callId, { html, title });
+            } else {
+              pendingRenderHtmlQueue.push({ html, title });
+            }
+          }
+        }
+
         get().appendToAssistant({
           kind: "tool",
           data: {
             call: {
               tool,
-              args: (data.args && typeof data.args === "object"
-                ? data.args
-                : {}) as Record<string, unknown>,
+              args,
             },
             progress: [],
           },
@@ -331,9 +362,47 @@ export const startChatRequest = async (
             resultText = String(data.result ?? "");
           }
         }
+
+        const toolName = typeof data.tool === "string" ? data.tool : "未知工具";
+        const callId =
+          typeof data.callId === "string" ? data.callId : undefined;
+
+        // Handle render_html tool result - save to IndexedDB using captured args
+        if (toolName === "render_html" && currentConversationId) {
+          let pendingArgs = callId
+            ? pendingRenderHtmlArgsById.get(callId)
+            : pendingRenderHtmlQueue.shift();
+          if (callId) {
+            pendingRenderHtmlArgsById.delete(callId);
+          }
+          if (!pendingArgs && pendingRenderHtmlQueue.length > 0) {
+            pendingArgs = pendingRenderHtmlQueue.shift();
+          }
+          try {
+            const parsed = JSON.parse(resultText) as { success?: boolean };
+            if (parsed.success && pendingArgs) {
+              const preview: HtmlPreview = {
+                id: generatePreviewId(),
+                conversationId: currentConversationId,
+                html: pendingArgs.html,
+                title: pendingArgs.title,
+                createdAt: new Date().toISOString(),
+              };
+
+              void localDB.saveHtmlPreview(preview);
+              usePreviewStore.getState().setHasPreview(true);
+
+              // Automatically open the preview panel
+              usePreviewStore.getState().openPreview(preview);
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+
         get().appendToAssistant({
           kind: "tool_result",
-          tool: typeof data.tool === "string" ? data.tool : "未知工具",
+          tool: toolName,
           result: resultText,
         });
       } else if (data.type === "error") {
@@ -345,6 +414,17 @@ export const startChatRequest = async (
           type: "error",
           message,
         });
+      } else if (data.type === "generated_image") {
+        const id = typeof data.id === "string" ? data.id : `img_${Date.now()}`;
+        const url = typeof data.url === "string" ? data.url : "";
+        const revisedPrompt =
+          typeof data.revisedPrompt === "string" ? data.revisedPrompt : undefined;
+        if (url) {
+          get().appendToAssistant({
+            type: "generated_images",
+            images: [{ id, url, revisedPrompt }],
+          });
+        }
       } else if (data.type === "content") {
         const addition =
           typeof data.content === "string"
