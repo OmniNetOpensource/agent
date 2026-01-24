@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState, type ReactNode } from "react";
+import { useIsMobile } from "@/src/shared/mobile/MobileContext";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
@@ -103,7 +104,7 @@ const ActionButton = ({
 );
 
 type BranchConversationButtonProps = {
-  messageId: number;
+  messageId: string;
   disabled?: boolean;
 };
 
@@ -171,9 +172,8 @@ const BranchConversationButton = ({
 
 type MessageItemProps = {
   message: Message;
-  messageId: number;
+  messageId: string;
   index: number;
-  depth: number;
   isStreaming: boolean;
   branchInfo: BranchInfo | null;
 };
@@ -182,7 +182,6 @@ export const MessageItem = memo(function MessageItem({
   message,
   messageId,
   index,
-  depth,
   isStreaming,
   branchInfo,
 }: MessageItemProps) {
@@ -192,6 +191,7 @@ export const MessageItem = memo(function MessageItem({
   const startEditing = useChatStore((state) => state.startEditing);
   const retryFromMessage = useChatStore((state) => state.retryFromMessage);
   const navigateBranch = useChatStore((state) => state.navigateBranch);
+  const isMobile = useIsMobile();
   const isUser = message.role === "user";
   const isEditing = editingState?.messageId === messageId;
   const attachmentBlocks = message.blocks.filter(
@@ -252,7 +252,7 @@ export const MessageItem = memo(function MessageItem({
       {(isEditing || (isUser ? contentBlocks.length > 0 : true)) && (
         <>
           {isEditing ? (
-            <MessageEditor messageId={messageId} depth={depth} />
+            <MessageEditor messageId={messageId} />
           ) : isUser ? (
             <div
               className={cn(
@@ -330,8 +330,11 @@ export const MessageItem = memo(function MessageItem({
       {shouldShowToolbar && (
         <div
           className={cn(
-            "flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            "flex items-center gap-1.5 transition-opacity duration-150",
             isUser ? "justify-end" : "justify-start",
+            isMobile
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
           )}
         >
           {isUser && (
@@ -345,7 +348,7 @@ export const MessageItem = memo(function MessageItem({
               />
               <ActionButton
                 onClick={() =>
-                  retryFromMessage(messageId, depth, (path) => router.push(path))
+                  retryFromMessage(messageId, (path) => router.push(path))
                 }
                 disabled={pending}
                 title="重试生成"
@@ -358,7 +361,7 @@ export const MessageItem = memo(function MessageItem({
           {!isUser && (
             <ActionButton
               onClick={() =>
-                retryFromMessage(messageId, depth, (path) => router.push(path))
+                retryFromMessage(messageId, (path) => router.push(path))
               }
               disabled={pending}
               title="重试生成"
@@ -377,13 +380,16 @@ export const MessageItem = memo(function MessageItem({
       {branchInfo && !isEditing && (
         <div
           className={cn(
-            "flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            "flex items-center gap-1.5 transition-opacity duration-150",
             isUser ? "justify-end" : "justify-start",
+            isMobile
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
           )}
         >
           <BranchNavigator
             branchInfo={branchInfo}
-            onNavigate={(direction) => navigateBranch(messageId, depth, direction)}
+            onNavigate={(direction) => navigateBranch(messageId, direction)}
             disabled={pending}
           />
         </div>

@@ -46,6 +46,22 @@ export const MODEL_CONFIGS: ModelConfig[] = [
     label: "gpt-5.2-codex",
     backend: "openai",
   },
+  {
+    id: "bytedance-seed/seedream-4.5",
+    label: "seedream-4.5",
+  },
+  {
+    id: "openai/gpt-5-image",
+    label: "gpt-5-image",
+  },
+  {
+    id: "google/gemini-3-pro-image-preview",
+    label: "gemini-3-pro-image-preview",
+  },
+  {
+    id: "black-forest-labs/flux.2-max",
+    label: "flux.2-max",
+  },
 ];
 
 const modelConfigMap = new Map<string, ModelConfig>(
