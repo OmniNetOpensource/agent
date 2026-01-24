@@ -31,6 +31,7 @@ export abstract class BaseProvider implements IProvider {
 
   supportsModel(_model: string): boolean {
     // Default: support all models
+    void _model;
     return true;
   }
 

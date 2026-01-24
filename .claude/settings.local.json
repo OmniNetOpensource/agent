@@ -30,7 +30,8 @@
       "Bash(node:*)",
       "Bash(git stash:*)",
       "Bash(pnpm check:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []
