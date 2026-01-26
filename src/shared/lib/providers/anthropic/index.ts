@@ -6,6 +6,7 @@ import {
   convertToolsToAnthropic,
   type AnthropicMessage,
 } from "@/src/shared/lib/anthropic/converter";
+import { buildSystemPrompt } from "@/src/app/api/chat/utils";
 
 export class AnthropicProvider extends BaseProvider {
   readonly name = "anthropic" as const;
@@ -13,7 +14,11 @@ export class AnthropicProvider extends BaseProvider {
   private anthropicMessages: AnthropicMessage[] = [];
 
   protected onInitialize(): void {
-    this.anthropicMessages = convertToAnthropicMessages(this.context.conversationHistory);
+    const systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
+    this.anthropicMessages = [
+      { role: "user", content: systemPrompt },
+      ...convertToAnthropicMessages(this.context.conversationHistory),
+    ];
   }
 
   async *runIteration(): AsyncGenerator<StreamEvent, IterationResult, undefined> {
