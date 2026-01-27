@@ -116,22 +116,6 @@ export async function POST(req: Request) {
           tool.function.name === resolvedSearchTool
       );
 
-    if (resolvedSearchTool !== "none" && !searchToolAvailable) {
-      logger?.log("TOOLS", "Selected search tool not available", {
-        selectedSearchTool: resolvedSearchTool,
-      });
-    }
-
-    logger?.log(
-      "TOOLS",
-      `Tools loaded: ${tools.length}`,
-      tools.map(
-        (tool) =>
-          (tool as { type: "function"; function: { name: string } }).function
-            .name
-      )
-    );
-
     let activeConversationId = conversationId ?? null;
     let conversationCreatedEvent: {
       type: "conversation_created";
@@ -155,14 +139,7 @@ export async function POST(req: Request) {
         created_at: now,
         updated_at: now,
       };
-      logger?.log(
-        "LOCAL",
-        "Created local conversation",
-        conversationCreatedEvent
-      );
     }
-
-    logger?.log("MODEL", "Using model", { model: requestedModel });
 
     // Get provider instance
     const provider = getProvider(backend ?? "openrouter");
@@ -207,7 +184,6 @@ export async function POST(req: Request) {
         try {
           while (iteration < maxIterations) {
             iteration++;
-            logger?.log("ITERATION", `Starting iteration ${iteration}`);
 
             const generator = provider.runIteration();
             let result: { shouldContinue: boolean; pendingToolCalls: Array<{ id: string; name: string; args: Record<string, unknown> }>; assistantText: string };
@@ -236,7 +212,6 @@ export async function POST(req: Request) {
             }
 
             // Execute tool calls
-            logger?.log("TOOLS", `Executing ${result!.pendingToolCalls.length} tool calls`);
             const toolResults = await executeTools(result!.pendingToolCalls, {
               logger,
               onEvent: handleEvent,
@@ -247,7 +222,6 @@ export async function POST(req: Request) {
           }
 
           if (iteration >= maxIterations && !eventSender.isClosed()) {
-            logger?.log("ITERATION", "Max iterations reached", { maxIterations, iteration });
             eventSender.send({ type: "error", message: "[已达到最大工具调用次数限制]" });
           }
 
@@ -262,19 +236,11 @@ export async function POST(req: Request) {
 
           eventSender.close();
         } catch (error) {
-          logger?.log("ERROR", "Stream processing error", {
-            error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-          });
           if (!eventSender.isClosed()) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             try {
               eventSender.send({ type: "error", message: `错误：${errorMessage}` });
             } catch (enqueueError) {
-              logger?.log("ERROR", "Failed to enqueue error message", {
-                error: enqueueError instanceof Error
-                  ? { message: enqueueError.message, stack: enqueueError.stack }
-                  : enqueueError,
-              });
             }
             eventSender.close();
           }
@@ -290,11 +256,6 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    if (logger) {
-      logger.log("ERROR", "Top-level error", {
-        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-      });
-    }
     return NextResponse.json(
       { reply: "Unable to process request" },
       { status: 500 }

@@ -41,11 +41,6 @@ export class OpenRouterProvider implements IProvider {
 
     const isImageModel = supportsImageGeneration(this.config.model);
 
-    this.context.logger?.log("ITERATION", "Starting OpenRouter iteration", {
-      messageCount: this.currentMessages.length,
-      isImageModel,
-    });
-
     let stream: ReadableStream<Uint8Array>;
     try {
       const requestPayload = {
@@ -55,26 +50,9 @@ export class OpenRouterProvider implements IProvider {
         provider: this.config.provider,
         modalities: isImageModel ? ["text", "image"] as ("text" | "image")[] : undefined,
       };
-      // Create log payload, removing tool message content
-      const logPayload = {
-        ...requestPayload,
-        messages: requestPayload.messages.map((msg) => {
-          if (msg.role === "tool") {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { content: _content, ...rest } = msg;
-            return rest;
-          }
-          return msg;
-        }),
-      };
-      this.context.logger?.log("OPENROUTER", "Sending chat completion request", logPayload);
       stream = await streamChatCompletion(requestPayload);
-      this.context.logger?.log("OPENROUTER", "Chat completion stream started");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to start chat completion";
-      this.context.logger?.log("OPENROUTER", "Stream error", {
-        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-      });
       yield { type: "error", message: `错误：${message}` };
       return { shouldContinue: false, pendingToolCalls: [], assistantText: "" };
     }
@@ -118,7 +96,6 @@ export class OpenRouterProvider implements IProvider {
     };
 
     for await (const chunk of parseSSEStream(stream)) {
-      this.context.logger?.log("OPENROUTER", "Received chunk", chunk);
       const delta = chunk?.choices?.[0]?.delta;
       const message = chunk?.choices?.[0]?.message;
       const finishReason = chunk?.choices?.[0]?.finishReason as string | undefined;
@@ -176,28 +153,20 @@ export class OpenRouterProvider implements IProvider {
       }
 
       if (finishReason === "stop") {
-        this.context.logger?.log("OPENROUTER", "Stream finished with stop");
         finishedWithStop = true;
         break;
       }
 
       if (finishReason === "tool_calls" && toolCalls.length > 0) {
-        this.context.logger?.log("OPENROUTER", `Stream finished with tool_calls: ${toolCalls.length}`, {
-          toolCalls: toolCalls.map((tc) => ({ name: tc.function.name, id: tc.id })),
-        });
         break;
       }
     }
 
     if (finishedWithStop) {
-      this.context.logger?.log("OPENROUTER", "Conversation completed", {
-        messageLength: assistantMessage.length,
-      });
       return { shouldContinue: false, pendingToolCalls: [], assistantText: assistantMessage };
     }
 
     if (toolCalls.length === 0) {
-      this.context.logger?.log("OPENROUTER", "No tool calls, ending conversation");
       return { shouldContinue: false, pendingToolCalls: [], assistantText: assistantMessage };
     }
 

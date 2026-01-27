@@ -53,8 +53,6 @@ export class OpenAIProvider implements IProvider {
       throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
     }
 
-    this.context.logger?.log("ITERATION", "Starting OpenAI iteration");
-
     const openaiTools = this.config.tools.length > 0 ? convertToolsToOpenAI(this.config.tools) : undefined;
 
     const pendingFunctionCalls: Array<{

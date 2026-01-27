@@ -40,8 +40,6 @@ export class AnthropicProvider implements IProvider {
       throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
     }
 
-    this.context.logger?.log("ITERATION", "Starting Anthropic iteration");
-
     const anthropicTools = this.config.tools.length > 0 ? convertToolsToAnthropic(this.config.tools) : undefined;
 
     let assistantText = "";
