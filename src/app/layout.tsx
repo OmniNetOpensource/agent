@@ -46,6 +46,9 @@ export default async function RootLayout({
       suppressHydrationWarning={true}
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
         <Script id="theme-init" strategy="beforeInteractive">{`
 (function () {
   try {
