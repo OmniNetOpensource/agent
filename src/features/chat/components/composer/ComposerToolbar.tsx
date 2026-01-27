@@ -126,9 +126,9 @@ export function ComposerToolbar() {
               size="sm"
               className={cn(
                 "group h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
-                "data-[state=open]:bg-accent data-[state=open]:text-foreground",
+                "data-[state=open]:bg-(--surface-hover) data-[state=open]:text-foreground",
                 isSearchActive
-                  ? "text-blue-600 dark:text-blue-400"
+                  ? "text-[var(--interactive-primary)]"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -154,7 +154,7 @@ export function ComposerToolbar() {
               >
                 <span>{option.label}</span>
                 {option.value === selectedSearchTool ? (
-                  <Check className="h-3.5 w-3.5 text-primary" />
+                  <Check className="h-3.5 w-3.5 text-[var(--interactive-primary)]" />
                 ) : null}
               </DropdownMenuItem>
             ))}
@@ -199,7 +199,7 @@ export function ComposerToolbar() {
               variant="ghost"
               className={cn(
                 "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground",
-                modelSelectorOpen && "bg-accent text-foreground"
+                modelSelectorOpen && "bg-(--surface-hover) text-foreground"
               )}
             >
               <span className="max-w-[80px] truncate">{currentModelLabel}</span>
@@ -228,13 +228,13 @@ export function ComposerToolbar() {
                     setModelSelectorOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer hover:bg-accent",
+                    "flex w-full items-center justify-between gap-2 px-3 py-3.5 rounded-lg text-xs sm:text-sm text-left transition-all duration-200 cursor-pointer hover:bg-(--surface-hover)",
                     currentModel === model.id && "font-semibold"
                   )}
                 >
                   <span>{model.label}</span>
                   {currentModel === model.id && (
-                    <Check className="w-3.5 h-3.5 text-primary" />
+                    <Check className="w-3.5 h-3.5 text-[var(--interactive-primary)]" />
                   )}
                 </button>
               ))}

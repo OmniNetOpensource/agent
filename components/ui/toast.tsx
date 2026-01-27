@@ -13,10 +13,10 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        info: "bg-background border-border text-foreground",
-        success: "bg-background border-border text-foreground",
-        warning: "bg-background border-border text-foreground",
-        error: "bg-background border-border text-foreground",
+        info: "bg-(--surface-primary) border-(--border-primary) text-foreground",
+        success: "bg-(--surface-primary) border-(--border-primary) text-foreground",
+        warning: "bg-(--surface-primary) border-(--border-primary) text-foreground",
+        error: "bg-(--surface-primary) border-(--border-primary) text-foreground",
       },
     },
     defaultVariants: {
@@ -28,10 +28,10 @@ const toastVariants = cva(
 const iconVariants = cva("shrink-0", {
   variants: {
     variant: {
-      info: "text-[color:var(--color-info)]",
-      success: "text-[color:var(--color-success)]",
-      warning: "text-[color:var(--color-warning)]",
-      error: "text-[color:var(--color-destructive)]",
+      info: "text-[color:var(--status-info)]",
+      success: "text-[color:var(--status-success)]",
+      warning: "text-[color:var(--status-warning)]",
+      error: "text-[color:var(--status-destructive)]",
     },
   },
   defaultVariants: {
@@ -76,7 +76,7 @@ export function Toast({ toast, onClose }: ToastProps) {
       <div className="flex-1 text-sm leading-relaxed">{toast.message}</div>
       <button
         onClick={onClose}
-        className="shrink-0 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        className="shrink-0 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-(--interactive-primary) focus:ring-offset-2"
         aria-label="Close"
       >
         <XIcon className="size-4" />
@@ -84,4 +84,3 @@ export function Toast({ toast, onClose }: ToastProps) {
     </motion.div>
   );
 }
-

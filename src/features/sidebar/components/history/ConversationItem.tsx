@@ -80,8 +80,8 @@ export function ConversationItem({
 
   return (
     <div
-      className={`group relative flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-0 text-left transition-all hover:border-(--border-subtle) hover:bg-(--surface-hover) ${
-        isActive ? "border-(--border-subtle) bg-(--surface-card)" : ""
+      className={`group relative flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-0 text-left transition-all hover:border-(--border-primary) hover:bg-(--surface-hover) ${
+        isActive ? "border-(--border-primary) bg-(--surface-muted)" : ""
       }`}
     >
       <Link

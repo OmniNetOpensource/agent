@@ -11,10 +11,11 @@ import {
 } from "@/src/shared/lib/conversation-logger";
 import {
   getProvider,
-  StreamController,
+  createEventSender,
   ResearchTracker,
-  ToolExecutor,
+  executeTools,
 } from "@/src/shared/lib/providers";
+import type { StreamEvent } from "@/src/shared/lib/providers";
 
 const generateConversationId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -188,19 +189,16 @@ export async function POST(req: Request) {
 
     const stream = new ReadableStream({
       async start(controller) {
-        const streamController = new StreamController({ controller, logger });
+        const eventSender = createEventSender(controller, logger);
         const researchTracker = new ResearchTracker();
-        const toolExecutor = new ToolExecutor({
-          logger,
-          onEvent: (event) => {
-            streamController.send(event);
-            researchTracker.handle(event);
-          },
-        });
+        const handleEvent = (event: StreamEvent) => {
+          eventSender.send(event);
+          researchTracker.handle(event);
+        };
 
         // Send conversation created event if new
         if (conversationCreatedEvent) {
-          streamController.send(conversationCreatedEvent);
+          eventSender.send(conversationCreatedEvent);
         }
 
         const maxIterations = 20;
@@ -221,8 +219,7 @@ export async function POST(req: Request) {
                 result = value;
                 break;
               }
-              streamController.send(value);
-              researchTracker.handle(value);
+              handleEvent(value);
             }
 
             if (!result!.shouldContinue) {
@@ -231,7 +228,7 @@ export async function POST(req: Request) {
 
             // Send conversation updated event
             if (activeConversationId) {
-              streamController.send({
+              eventSender.send({
                 type: "conversation_updated",
                 conversationId: activeConversationId,
                 updated_at: new Date().toISOString(),
@@ -240,35 +237,38 @@ export async function POST(req: Request) {
 
             // Execute tool calls
             logger?.log("TOOLS", `Executing ${result!.pendingToolCalls.length} tool calls`);
-            const toolResults = await toolExecutor.execute(result!.pendingToolCalls);
+            const toolResults = await executeTools(result!.pendingToolCalls, {
+              logger,
+              onEvent: handleEvent,
+            });
 
             // Append tool results for next iteration
             provider.appendToolResults(toolResults);
           }
 
-          if (iteration >= maxIterations && !streamController.isClosed()) {
+          if (iteration >= maxIterations && !eventSender.isClosed()) {
             logger?.log("ITERATION", "Max iterations reached", { maxIterations, iteration });
-            streamController.send({ type: "error", message: "[已达到最大工具调用次数限制]" });
+            eventSender.send({ type: "error", message: "[已达到最大工具调用次数限制]" });
           }
 
           // Send final conversation updated event
-          if (activeConversationId && !streamController.isClosed()) {
-            streamController.send({
+          if (activeConversationId && !eventSender.isClosed()) {
+            eventSender.send({
               type: "conversation_updated",
               conversationId: activeConversationId,
               updated_at: new Date().toISOString(),
             });
           }
 
-          streamController.close();
+          eventSender.close();
         } catch (error) {
           logger?.log("ERROR", "Stream processing error", {
             error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
           });
-          if (!streamController.isClosed()) {
+          if (!eventSender.isClosed()) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             try {
-              streamController.send({ type: "error", message: `错误：${errorMessage}` });
+              eventSender.send({ type: "error", message: `错误：${errorMessage}` });
             } catch (enqueueError) {
               logger?.log("ERROR", "Failed to enqueue error message", {
                 error: enqueueError instanceof Error
@@ -276,7 +276,7 @@ export async function POST(req: Request) {
                   : enqueueError,
               });
             }
-            streamController.close();
+            eventSender.close();
           }
         }
       },

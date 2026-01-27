@@ -22,12 +22,12 @@ export function PreviewPanel() {
   };
 
   const panelClasses = isMaximized
-    ? "fixed inset-0 z-50 bg-background flex flex-col"
-    : "w-[500px] flex flex-col border border-(--border-subtle) rounded-xl bg-(--surface-base)";
+    ? "fixed inset-0 z-50 bg-(--surface-primary) flex flex-col"
+    : "w-[500px] flex flex-col border border-(--border-primary) rounded-xl bg-(--surface-primary)";
 
   return (
     <div className={panelClasses}>
-      <div className="flex items-center h-12 px-3 border-b border-(--border-subtle) rounded-t-xl">
+      <div className="flex items-center h-12 px-3 border-b border-(--border-primary) rounded-t-xl">
         <span className="flex-1 text-sm font-medium truncate text-(--text-primary)">
           {currentPreview.title}
         </span>

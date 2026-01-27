@@ -15,7 +15,7 @@ type ProfileMenuProps = {
 };
 
 const menuItemClass =
-  "flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none hover:bg-accent hover:text-accent-foreground [&_svg]:size-4";
+  "flex w-full cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none hover:bg-(--surface-hover) hover:text-foreground [&_svg]:size-4";
 
 export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -39,7 +39,7 @@ export function ProfileMenu({ isCollapsed = false }: ProfileMenuProps) {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex cursor-pointer items-center gap-3 text-sm transition-all duration-500 hover:bg-accent hover:text-accent-foreground"
+                className="flex cursor-pointer items-center gap-3 text-sm transition-all duration-500 hover:bg-(--surface-hover) hover:text-foreground"
                 style={{
                   width: isCollapsed ? 40 : "100%",
                   height: isCollapsed ? 40 : "auto",

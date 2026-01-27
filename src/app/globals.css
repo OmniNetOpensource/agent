@@ -4,39 +4,44 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Base HSL values for easier manipulation */
-  --base-white: 0 0% 100%;
-  --base-black: 240 10% 3.9%;
-
   /* Light Theme - Nord Snow Storm */
-  --surface-base: #ECEFF4; /* nord6 */
-  --surface-muted: #E5E9F0; /* nord5 */
-  --surface-hover: #D8DEE9; /* nord4 */
-  --surface-card: #ECEFF4; /* nord6 */
-  --surface-alt: #E5E9F0; /* nord5 */
-  --surface-user: #D8DEE9; /* nord4 */
-  --surface-overlay: rgba(236, 239, 244, 0.85);
+  /* Surfaces - Main backgrounds and elevated surfaces */
+  --surface-primary: #faf9f5;
+  --surface-secondary: #f9f7f3;
+  --surface-muted: #ffffff;
+  --surface-hover: #f5f4ed;
 
-  --border-subtle: rgba(46, 52, 64, 0.1);
-  --border-strong: rgba(46, 52, 64, 0.2);
-  --border-hover: rgba(46, 52, 64, 0.3);
+  --border-primary: #50504f;
 
-  --text-primary: #2E3440; /* nord0 */
-  --text-secondary: #4C566A; /* nord3 */
-  --text-tertiary: #7B88A1;
-  --text-code: #2E3440;
+  /* Text - Hierarchy of text colors */
+  --text-primary: #141413; /* nord0 - Main text and code */
+  --text-secondary: #4C566A; /* nord3 - Secondary text */
+  --text-tertiary: #7B88A1; /* Tertiary text, placeholders */
 
-  --color-primary: #88C0D0; /* nord8 */
-  --color-primary-hover: #81A1C1; /* nord9 */
-  --color-secondary: #2E3440; /* nord0 */
-  --color-tertiary: #8FBCBB; /* nord7 */
-  --color-accent: #5E81AC; /* nord10 */
+  /* Interactive - Buttons, links, toggles */
+  --interactive-primary: #88C0D0; /* nord8 - Primary actions, links */
+  --interactive-primary-hover: #81A1C1; /* nord9 - Primary hover state */
 
-  --button-primary-bg: #88C0D0;
-  --button-primary-text: #2E3440;
-  --button-primary-hover: #81A1C1;
+  /* Content - Decorative accents */
+  --content-accent: #88C0D0;
+  --content-accent-muted: rgba(136, 192, 208, 0.6);
 
+  /* Feedback - Loading, cursor */
+  --feedback-loading: #81A1C1;
+  --feedback-cursor: #88C0D0;
+
+  /* Inline Code */
   --code-inline-bg: #D8DEE9;
+
+  /* Status Colors - Semantic feedback */
+  --status-destructive: #BF616A;
+  --status-destructive-foreground: #ffffff;
+  --status-info: #81A1C1;
+  --status-info-foreground: #ffffff;
+  --status-success: #A3BE8C;
+  --status-success-foreground: #ffffff;
+  --status-warning: #D08770;
+  --status-warning-foreground: #ffffff;
 
   /* Z-index Scale - Semantic Layering System */
   --z-base: 0;
@@ -44,203 +49,91 @@
   --z-sticky: 10;
   --z-card-inner: 10;
   --z-composer: 20;
+  --z-mobile-overlay: 25;
+  --z-mobile-sidebar: 26;
   --z-draggable: 40;
   --z-modal-backdrop: 50;
   --z-modal-content: 51;
-  --z-mobile-overlay: 25;
-  --z-mobile-sidebar: 26;
-
-  /* Tailwind mappings */
-  --color-background: var(--surface-base);
-  --color-foreground: var(--text-primary);
-
-  /* Component mappings */
-  --color-muted: var(--surface-muted);
-  --color-muted-foreground: var(--text-tertiary);
-
-  --color-popover: var(--surface-card);
-  --color-popover-foreground: var(--text-primary);
-
-  --color-card: var(--surface-card);
-  --color-card-foreground: var(--text-primary);
-
-  --color-border: var(--border-subtle);
-  --color-input: var(--border-subtle);
-
-  --color-primary: var(--color-primary);
-  --color-primary-foreground: var(--button-primary-text);
-
-  --color-secondary: var(--surface-muted);
-  --color-secondary-foreground: var(--text-primary);
-
-  --color-accent: var(--surface-hover);
-  --color-accent-foreground: var(--text-primary);
-
-  --color-destructive: #BF616A;
-  --color-destructive-foreground: #ffffff;
-
-  --color-info: #81A1C1;
-  --color-info-foreground: #ffffff;
-
-  --color-success: #A3BE8C;
-  --color-success-foreground: #ffffff;
-
-  --color-warning: #D08770;
-  --color-warning-foreground: #ffffff;
-
-  --color-ring: var(--border-hover);
+  --z-toast: 100;
 
   color-scheme: light;
 
   --radius: 0.625rem;
-
-  --background: oklch(0.95 0.01 240);
-
-  --foreground: oklch(0.25 0.02 240);
-
-  --card: oklch(0.95 0.01 240);
-
-  --card-foreground: oklch(0.25 0.02 240);
-
-  --popover: oklch(0.95 0.01 240);
-
-  --popover-foreground: oklch(0.25 0.02 240);
-
-  --primary: oklch(0.77 0.08 210);
-
-  --primary-foreground: oklch(0.25 0.02 240);
-
-  --secondary: oklch(0.92 0.01 240);
-
-  --secondary-foreground: oklch(0.25 0.02 240);
-
-  --muted: oklch(0.92 0.01 240);
-
-  --muted-foreground: oklch(0.55 0.02 240);
-
-  --accent: oklch(0.92 0.01 240);
-
-  --accent-foreground: oklch(0.25 0.02 240);
-
-  --destructive: oklch(0.6 0.15 20);
-
-  --border: oklch(0.88 0.01 240);
-
-  --input: oklch(0.88 0.01 240);
-
-  --ring: oklch(0.77 0.08 210);
-
-  --sidebar: oklch(0.92 0.01 240);
-
-  --sidebar-foreground: oklch(0.25 0.02 240);
-
-  --sidebar-primary: oklch(0.77 0.08 210);
-
-  --sidebar-primary-foreground: oklch(0.25 0.02 240);
-
-  --sidebar-accent: oklch(0.88 0.01 240);
-
-  --sidebar-accent-foreground: oklch(0.25 0.02 240);
-
-  --sidebar-border: oklch(0.88 0.01 240);
-
-  --sidebar-ring: oklch(0.77 0.08 210);
 }
 
 html.dark {
   /* Dark Theme - Nord Polar Night */
-  --surface-base: #2E3440; /* nord0 */
-  --surface-muted: #3B4252; /* nord1 */
-  --surface-hover: #434C5E; /* nord2 */
-  --surface-card: #3B4252; /* nord1 */
-  --surface-alt: #3B4252; /* nord1 */
-  --surface-user: #434C5E; /* nord2 */
-  --surface-overlay: rgba(46, 52, 64, 0.85);
+  /* Surfaces - Main backgrounds and elevated surfaces */
+  --surface-primary: #262624; /* nord0 - Main app background */
+  --surface-secondary: #252523;
+  --surface-muted: #30302e; /* nord1 - Subtle backgrounds, cards */
+  --surface-hover: #1f1e1d; /* nord2 - Hover states, user messages */
 
-  --border-subtle: rgba(216, 222, 233, 0.1);
-  --border-strong: rgba(216, 222, 233, 0.15);
-  --border-hover: rgba(216, 222, 233, 0.25);
+  --border-primary: #b7b6b5;
 
-  --text-primary: #ECEFF4; /* nord6 */
-  --text-secondary: #D8DEE9; /* nord4 */
-  --text-tertiary: #7B88A1;
-  --text-code: #ECEFF4;
+  /* Text - Hierarchy of text colors */
+  --text-primary: #eeede9; /* nord6 - Main text and code */
+  --text-secondary: #D8DEE9; /* nord4 - Secondary text */
+  --text-tertiary: #7B88A1; /* Tertiary text, placeholders */
 
-  --color-primary: #88C0D0; /* nord8 */
-  --color-primary-hover: #8FBCBB; /* nord7 */
-  --color-secondary: #ECEFF4; /* nord6 */
-  --color-tertiary: #8FBCBB; /* nord7 */
-  --color-accent: #81A1C1; /* nord9 */
+  /* Interactive - Buttons, links, toggles */
+  --interactive-primary: #88C0D0; /* nord8 - Primary actions, links */
+  --interactive-primary-hover: #8FBCBB; /* nord7 - Primary hover state */
 
-  --color-brand: #B48EAD; /* nord15 */
-  --color-brand-foreground: #ffffff;
 
-  --color-success: #A3BE8C; /* nord14 */
-  --color-success-foreground: #022c22;
+  /* Content - Decorative accents */
+  --content-accent: #88C0D0;
+  --content-accent-muted: rgba(136, 192, 208, 0.6);
 
-  --color-warning: #EBCB8B; /* nord13 - 深色用更亮的黄 */
-  --color-warning-foreground: #451a03;
+  /* Feedback - Loading, cursor */
+  --feedback-loading: #81A1C1;
+  --feedback-cursor: #88C0D0;
 
-  --color-info: #88C0D0; /* nord8 */
-  --color-info-foreground: #1e3a8a;
-
-  --button-primary-bg: #88C0D0;
-  --button-primary-text: #2E3440;
-  --button-primary-hover: #8FBCBB;
-
+  /* Inline Code */
   --code-inline-bg: #434C5E; /* nord2 */
 
-  --color-background: var(--surface-base);
-  --color-foreground: var(--text-primary);
+  /* Status Colors - Semantic feedback */
+  --status-destructive: #BF616A;
+  --status-destructive-foreground: #ffffff;
+  --status-success: #A3BE8C; /* nord14 */
+  --status-success-foreground: #022c22;
+  --status-warning: #EBCB8B; /* nord13 - Brighter yellow for dark mode */
+  --status-warning-foreground: #451a03;
+  --status-info: #88C0D0; /* nord8 */
+  --status-info-foreground: #1e3a8a;
 
   color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--surface-base);
+  /* Core Tailwind mappings */
+  --color-background: var(--surface-primary);
   --color-foreground: var(--text-primary);
-  --font-nunito: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-geist-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-sans: var(--font-nunito);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--surface-muted);
+  --color-muted-foreground: var(--text-tertiary);
+  --color-card: var(--surface-muted);
+  --color-border: var(--border-primary);
+  --color-ring: var(--interactive-primary);
 
-  /* Custom Easings */
+  /* Status mappings */
+  --color-destructive: var(--status-destructive);
+  --color-destructive-foreground: var(--status-destructive-foreground);
+  --color-success: var(--status-success);
+  --color-success-foreground: var(--status-success-foreground);
+  --color-warning: var(--status-warning);
+  --color-warning-foreground: var(--status-warning-foreground);
+  --color-info: var(--status-info);
+  --color-info-foreground: var(--status-info-foreground);
+
+  /* Fonts */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Transitions */
   --transition-smooth: cubic-bezier(0.32, 0.72, 0, 1);
-  --transition-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1); /* bouncy */
-  --transition-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
 
-  /* Z-index values - Enable z-[value] classes */
-  --z-sidebar: 10;
-  --z-sticky: 10;
-  --z-card-inner: 10;
-  --z-composer: 20;
-  --z-draggable: 40;
-  --z-modal-backdrop: 50;
-  --z-modal-content: 51;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
+  /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -248,12 +141,12 @@ html.dark {
 }
 
 html {
-  background: var(--surface-base);
+  background: var(--surface-primary);
   scroll-behavior: smooth;
 }
 
 body {
-  background: var(--surface-base);
+  background: var(--surface-primary);
   color: var(--text-primary);
   font-family: var(--font-nunito);
   margin: 0;
@@ -265,14 +158,14 @@ body {
 
 /* Glass Utility */
 .glass {
-  background: var(--surface-card);
+  background: var(--surface-muted);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-primary);
 }
 
 .glass-strong {
-  background: var(--surface-overlay);
+  background: var(--surface-secondary);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -328,7 +221,7 @@ textarea,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-hover);
+  background: var(--border-primary);
   border-radius: 99px;
   transition: background 0.2s ease;
 }
@@ -339,7 +232,7 @@ textarea,
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-hover) transparent;
+  scrollbar-color: var(--border-primary) transparent;
 }
 
 .horizontal-scroll {
@@ -445,35 +338,6 @@ textarea,
   animation: none;
   mix-blend-mode: normal;
   pointer-events: none;
-}
-
-.dark {
-  --background: oklch(0.25 0.02 240);
-  --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.30 0.02 240);
-  --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.30 0.02 240);
-  --popover-foreground: oklch(0.95 0.01 240);
-  --primary: oklch(0.77 0.08 210);
-  --primary-foreground: oklch(0.25 0.02 240);
-  --secondary: oklch(0.35 0.02 240);
-  --secondary-foreground: oklch(0.95 0.01 240);
-  --muted: oklch(0.35 0.02 240);
-  --muted-foreground: oklch(0.70 0.02 240);
-  --accent: oklch(0.35 0.02 240);
-  --accent-foreground: oklch(0.95 0.01 240);
-  --destructive: oklch(0.65 0.15 20);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.77 0.08 210);
-  --sidebar: oklch(0.30 0.02 240);
-  --sidebar-foreground: oklch(0.95 0.01 240);
-  --sidebar-primary: oklch(0.77 0.08 210);
-  --sidebar-primary-foreground: oklch(0.95 0.01 240);
-  --sidebar-accent: oklch(0.35 0.02 240);
-  --sidebar-accent-foreground: oklch(0.95 0.01 240);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.77 0.08 210);
 }
 
 @layer base {

@@ -57,7 +57,7 @@ export default function CodeBlock({
           className="h-7 gap-1 px-2 text-[11px] bg-muted/80 backdrop-blur-sm"
         >
           {isCopied ? (
-            <Check className="h-3.5 w-3.5 text-green-500" />
+            <Check className="h-3.5 w-3.5 text-[var(--status-success)]" />
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}

@@ -3,26 +3,23 @@ import type { ConversationLogger } from "@/src/shared/lib/conversation-logger";
 
 const encoder = new TextEncoder();
 
-export type StreamControllerOptions = {
-  controller: ReadableStreamDefaultController<Uint8Array>;
-  logger: ConversationLogger | null;
+export type EventSender = {
+  send: (event: StreamEvent) => void;
+  close: () => void;
+  isClosed: () => boolean;
 };
 
-export class StreamController {
-  private controller: ReadableStreamDefaultController<Uint8Array>;
-  private logger: ConversationLogger | null;
-  private closed = false;
+export function createEventSender(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  logger: ConversationLogger | null
+): EventSender {
+  let closed = false;
 
-  constructor(options: StreamControllerOptions) {
-    this.controller = options.controller;
-    this.logger = options.logger;
-  }
-
-  send(event: StreamEvent): void {
-    if (this.closed) return;
+  const send = (event: StreamEvent) => {
+    if (closed) return;
 
     const line = `data: ${JSON.stringify(event)}\n\n`;
-    this.controller.enqueue(encoder.encode(line));
+    controller.enqueue(encoder.encode(line));
 
     // Create log event data, removing result field for tool_result events
     const logEventData =
@@ -33,17 +30,19 @@ export class StreamController {
             return rest;
           })()
         : event;
-    this.logger?.log("FRONTEND", `Sent SSE event: ${event.type}`, logEventData);
-  }
+    logger?.log("FRONTEND", `Sent SSE event: ${event.type}`, logEventData);
+  };
 
-  close(): void {
-    if (!this.closed) {
-      this.controller.close();
-      this.closed = true;
+  const close = () => {
+    if (!closed) {
+      controller.close();
+      closed = true;
     }
-  }
+  };
 
-  isClosed(): boolean {
-    return this.closed;
-  }
+  return {
+    send,
+    close,
+    isClosed: () => closed,
+  };
 }

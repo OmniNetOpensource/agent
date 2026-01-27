@@ -1,5 +1,12 @@
-import { BaseProvider } from "../base-provider";
-import type { StreamEvent, IterationResult, ToolCallResult, PendingToolCall } from "../types";
+import type {
+  IProvider,
+  ProviderConfig,
+  ProviderContext,
+  StreamEvent,
+  IterationResult,
+  ToolCallResult,
+  PendingToolCall,
+} from "../types";
 import { streamOpenAIResponse } from "@/src/shared/lib/openai/server";
 import {
   convertToOpenAIInput,
@@ -9,9 +16,12 @@ import {
 } from "@/src/shared/lib/openai/converter";
 import { buildSystemPrompt } from "@/src/app/api/chat/utils";
 
-export class OpenAIProvider extends BaseProvider {
+export class OpenAIProvider implements IProvider {
   readonly name = "openai" as const;
 
+  private config!: ProviderConfig;
+  private context!: ProviderContext;
+  private initialized = false;
   private openaiInput: OpenAIInputItem[] = [];
   private manualInput: OpenAIInputItem[] = [];
   private previousResponseId: string | null = null;
@@ -28,14 +38,20 @@ export class OpenAIProvider extends BaseProvider {
     arguments: string;
   }> = [];
 
-  protected onInitialize(): void {
+  initialize(config: ProviderConfig, context: ProviderContext): void {
+    this.config = config;
+    this.context = context;
+    this.initialized = true;
+
     this.openaiInput = convertToOpenAIInput(this.context.conversationHistory);
     this.manualInput = this.openaiInput;
     this.systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
   }
 
   async *runIteration(): AsyncGenerator<StreamEvent, IterationResult, undefined> {
-    this.ensureInitialized();
+    if (!this.initialized) {
+      throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
+    }
 
     this.context.logger?.log("ITERATION", "Starting OpenAI iteration");
 
@@ -139,7 +155,9 @@ export class OpenAIProvider extends BaseProvider {
   private lastResponseId: string | null = null;
 
   appendToolResults(results: ToolCallResult[]): void {
-    this.ensureInitialized();
+    if (!this.initialized) {
+      throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
+    }
 
     // Build function call outputs
     const functionCallOutputs: OpenAIFunctionCallOutput[] = results.map((tr) => ({

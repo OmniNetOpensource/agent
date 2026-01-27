@@ -1,5 +1,12 @@
-import { BaseProvider } from "../base-provider";
-import type { StreamEvent, IterationResult, ToolCallResult, PendingToolCall } from "../types";
+import type {
+  IProvider,
+  ProviderConfig,
+  ProviderContext,
+  StreamEvent,
+  IterationResult,
+  ToolCallResult,
+  PendingToolCall,
+} from "../types";
 import { streamAnthropicCompletion } from "@/src/shared/lib/anthropic/server";
 import {
   convertToAnthropicMessages,
@@ -8,12 +15,19 @@ import {
 } from "@/src/shared/lib/anthropic/converter";
 import { buildSystemPrompt } from "@/src/app/api/chat/utils";
 
-export class AnthropicProvider extends BaseProvider {
+export class AnthropicProvider implements IProvider {
   readonly name = "anthropic" as const;
 
+  private config!: ProviderConfig;
+  private context!: ProviderContext;
+  private initialized = false;
   private anthropicMessages: AnthropicMessage[] = [];
 
-  protected onInitialize(): void {
+  initialize(config: ProviderConfig, context: ProviderContext): void {
+    this.config = config;
+    this.context = context;
+    this.initialized = true;
+
     const systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
     this.anthropicMessages = [
       { role: "user", content: systemPrompt },
@@ -22,7 +36,9 @@ export class AnthropicProvider extends BaseProvider {
   }
 
   async *runIteration(): AsyncGenerator<StreamEvent, IterationResult, undefined> {
-    this.ensureInitialized();
+    if (!this.initialized) {
+      throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
+    }
 
     this.context.logger?.log("ITERATION", "Starting Anthropic iteration");
 
@@ -84,7 +100,9 @@ export class AnthropicProvider extends BaseProvider {
   private lastPendingToolCalls: PendingToolCall[] = [];
 
   appendToolResults(results: ToolCallResult[]): void {
-    this.ensureInitialized();
+    if (!this.initialized) {
+      throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
+    }
 
     // Build assistant content
     const assistantContent: Array<

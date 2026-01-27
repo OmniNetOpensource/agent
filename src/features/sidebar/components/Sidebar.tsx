@@ -26,7 +26,7 @@ function MobileSidebarToggle({
       type="button"
       onClick={isOpen ? undefined : handleClick}
       aria-label={isOpen ? "关闭侧边栏" : "打开侧边栏"}
-      className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground ${
+      className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground ${
         isOpen ? "pointer-events-none" : ""
       }`}
     >
@@ -76,7 +76,7 @@ function MobileSidebarWrapper({
         />
       )}
       <aside
-        className={`absolute left-0 top-0 h-full bg-background mobile-sidebar-drawer z-(--z-mobile-sidebar) overflow-hidden ${
+        className={`absolute left-0 top-0 h-full bg-(--surface-primary) mobile-sidebar-drawer z-(--z-mobile-sidebar) overflow-hidden ${
           isOpen ? "w-[80vw] max-w-xs transition-[width] duration-300" : "w-0"
         }`}
       >
@@ -102,14 +102,14 @@ export default function Sidebar() {
           isOpen={isMobileOpen}
           onClose={() => setIsMobileOpen(false)}
         >
-          <div className="flex h-full flex-col bg-background">
+          <div className="flex h-full flex-col bg-(--surface-primary)">
             <div className="flex items-center justify-between px-3 h-14 shrink-0">
               <div className="h-10 w-10" aria-hidden="true" />
               <button
                 type="button"
                 onClick={() => setIsMobileOpen(false)}
                 aria-label="关闭侧边栏"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -134,7 +134,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`relative flex h-full flex-col overflow-hidden bg-background transition-[width] duration-300 ${
+      className={`relative flex h-full flex-col overflow-hidden bg-(--surface-primary) transition-[width] duration-300 ${
         isOpen ? "w-52 shrink-0" : "w-0"
       }`}
     >

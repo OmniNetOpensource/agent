@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider 架构流程图</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2d3748;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+
+    .flow-section {
+      margin-bottom: 50px;
+    }
+
+    .section-title {
+      font-size: 1.8em;
+      color: #2d3748;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .flow-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px 0;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .flow-box h3 {
+      font-size: 1.3em;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-box .icon {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    .flow-box ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .flow-box li {
+      padding: 8px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .flow-box li:before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    .arrow {
+      text-align: center;
+      font-size: 2em;
+      color: #667eea;
+      margin: 20px 0;
+    }
+
+    .code-box {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+
+    .code-box .keyword {
+      color: #f687b3;
+    }
+
+    .code-box .string {
+      color: #68d391;
+    }
+
+    .code-box .comment {
+      color: #a0aec0;
+      font-style: italic;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .card h4 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 1.2em;
+    }
+
+    .card p {
+      color: #4a5568;
+      line-height: 1.6;
+    }
+
+    .highlight {
+      background: #fef5e7;
+      border-left: 4px solid #f39c12;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .highlight strong {
+      color: #e67e22;
+    }
+
+    .sequence {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sequence-step {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .sequence-step .number {
+      background: #667eea;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .sequence-step .content {
+      flex: 1;
+    }
+
+    .sequence-step .content h5 {
+      color: #2d3748;
+      margin-bottom: 5px;
+    }
+
+    .sequence-step .content p {
+      color: #718096;
+      font-size: 0.9em;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏗️ Provider 架构流程图</h1>
+    <p class="subtitle">详细解析 Aether 的多 Provider 抽象层设计</p>
+
+    <!-- 概述 -->
+    <div class="flow-section">
+      <h2 class="section-title">📋 架构概述</h2>
+      <div class="highlight">
+        <strong>核心思想：</strong>Provider 层是一个抽象层，用于统一不同 AI 服务商（OpenRouter、Anthropic、OpenAI）的接口。
+        通过这个抽象层，上层代码（API Route）无需关心具体使用哪个服务商，只需要调用统一的接口即可。
+      </div>
+    </div>
+
+    <!-- 主流程 -->
+    <div class="flow-section">
+      <h2 class="section-title">🔄 完整请求流程</h2>
+
+      <div class="sequence">
+        <div class="sequence-step">
+          <div class="number">1</div>
+          <div class="content">
+            <h5>前端发起请求</h5>
+            <p>用户在聊天界面发送消息，前端调用 <code>POST /api/chat</code></p>
+          </div>
+        </div>
+
+        <div class="sequence-step">
+          <div class="number">2</div>
+          <div class="content">
+            <h5>API Route 接收请求</h5>
+            <p>解析请求参数：conversationHistory, model, backend, tools, systemInstruction</p>
+          </div>
+        </div>
+
+        <div class="sequence-step">
+          <div class="number">3</div>
+          <div class="content">
+            <h5>获取 Provider 实例</h5>
+            <p><code>getProvider(backend)</code> 根据 backend 参数返回对应的 Provider（openrouter/anthropic/openai）</p>
+          </div>
+        </div>
+
+        <div class="sequence-step">
+          <div class="number">4</div>
+          <div class="content">
+            <h5>初始化 Provider</h5>
+            <p><code>provider.initialize(config, context)</code> 传入模型配置、工具列表、对话历史等</p>
+          </div>
+        </div>
+
+        <div class="sequence-step">
+          <div class="number">5</div>
+          <div class="content">
+            <h5>创建辅助工具</h5>
+            <p>StreamController（SSE 流控制）、ResearchTracker（工具调用追踪）、ToolExecutor（工具执行器）</p>
+          </div>
+        </div>
+
+        <div class="sequence-step">
+          <div class="number">6</div>
+          <div class="content">
+            <h5>进入迭代循环（最多 20 次）</h5>
+            <p>每次迭代：调用 provider.runIteration() → 执行工具 → provider.appendToolResults()</p>
+          </div>
+        </div>
+
+        <div class="sequence-step">
+          <div class="number">7</div>
+          <div class="content">
+            <h5>流式返回结果</h5>
+            <p>通过 SSE 实时推送 content、thinking、tool_call、tool_result 等事件到前端</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Provider 接口 -->
+    <div class="flow-section">
+      <h2 class="section-title">🔌 IProvider 接口定义</h2>
+      <div class="code-box">
+<span class="keyword">interface</span> IProvider {
+  <span class="keyword">readonly</span> name: Backend;  <span class="comment">// "openrouter" | "anthropic" | "openai"</span>
+
+  <span class="comment">// 初始化：传入配置和上下文</span>
+  initialize(config: ProviderConfig, context: ProviderContext): <span class="keyword">void</span>;
+
+  <span class="comment">// 运行一次迭代：返回异步生成器，yield 流事件，return 迭代结果</span>
+  runIteration(): AsyncGenerator&lt;StreamEvent, IterationResult, <span class="keyword">undefined</span>&gt;;
+
+  <span class="comment">// 追加工具执行结果，用于下一次迭代</span>
+  appendToolResults(results: ToolCallResult[]): <span class="keyword">void</span>;
+
+  <span class="comment">// 检查是否支持某个模型</span>
+  supportsModel(model: <span class="keyword">string</span>): <span class="keyword">boolean</span>;
+}
+      </div>
+    </div>
+
+    <!-- 核心类型 -->
+    <div class="flow-section">
+      <h2 class="section-title">📦 核心数据类型</h2>
+      <div class="grid">
+        <div class="card">
+          <h4>ProviderConfig</h4>
+          <p><strong>配置信息：</strong></p>
+          <ul>
+            <li>model: 模型名称</li>
+            <li>tools: 可用工具列表</li>
+            <li>searchEnabled: 是否启用搜索</li>
+            <li>systemInstruction: 系统提示词</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>ProviderContext</h4>
+          <p><strong>执行上下文：</strong></p>
+          <ul>
+            <li>conversationHistory: 对话历史</li>
+            <li>conversationId: 会话 ID</li>
+            <li>logger: 日志记录器</li>
+            <li>onProgress: 进度回调</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>StreamEvent</h4>
+          <p><strong>流事件类型：</strong></p>
+          <ul>
+            <li>content: 文本内容</li>
+            <li>thinking: 思考过程</li>
+            <li>tool_call: 工具调用</li>
+            <li>tool_result: 工具结果</li>
+            <li>error: 错误信息</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>IterationResult</h4>
+          <p><strong>迭代结果：</strong></p>
+          <ul>
+            <li>shouldContinue: 是否继续迭代</li>
+            <li>pendingToolCalls: 待执行的工具</li>
+            <li>assistantText: 助手回复文本</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Provider 实现 -->
+    <div class="flow-section">
+      <h2 class="section-title">🎯 Provider 实现细节</h2>
+
+      <div class="flow-box">
+        <h3><span class="icon">1</span> BaseProvider（抽象基类）</h3>
+        <ul>
+          <li>存储 config 和 context</li>
+          <li>提供 initialize() 方法，调用子类的 onInitialize() 钩子</li>
+          <li>提供 ensureInitialized() 检查是否已初始化</li>
+          <li>子类必须实现 runIteration() 和 appendToolResults()</li>
+        </ul>
+      </div>
+
+      <div class="arrow">⬇️</div>
+
+      <div class="flow-box">
+        <h3><span class="icon">2</span> AnthropicProvider（具体实现）</h3>
+        <ul>
+          <li><strong>onInitialize():</strong> 构建系统提示词，转换消息格式为 Anthropic 格式</li>
+          <li><strong>runIteration():</strong> 调用 streamAnthropicCompletion()，解析流式响应</li>
+          <li><strong>处理流事件:</strong> text → content, thinking → thinking, tool_use → tool_call</li>
+          <li><strong>返回结果:</strong> 如果有工具调用，返回 shouldContinue=true；否则 false</li>
+          <li><strong>appendToolResults():</strong> 将工具结果追加到消息历史，格式化为 Anthropic 的 tool_result</li>
+        </ul>
+      </div>
+
+      <div class="arrow">⬇️</div>
+
+      <div class="flow-box">
+        <h3><span class="icon">3</span> OpenRouterProvider / OpenAIProvider</h3>
+        <ul>
+          <li>类似的实现模式，但适配各自的 API 格式</li>
+          <li>OpenRouter 支持多种模型，OpenAI 使用标准 OpenAI API</li>
+          <li>消息格式转换、工具调用格式都有所不同</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 迭代循环 -->
+    <div class="flow-section">
+      <h2 class="section-title">🔁 迭代循环详解</h2>
+      <div class="code-box">
+<span class="keyword">const</span> maxIterations = <span class="string">20</span>;
+<span class="keyword">let</span> iteration = <span class="string">0</span>;
+
+<span class="keyword">while</span> (iteration &lt; maxIterations) {
+  iteration++;
+
+  <span class="comment">// 1. 运行一次迭代，获取流式事件</span>
+  <span class="keyword">const</span> generator = provider.runIteration();
+  <span class="keyword">let</span> result;
+
+  <span class="keyword">while</span> (<span class="keyword">true</span>) {
+    <span class="keyword">const</span> { done, value } = <span class="keyword">await</span> generator.next();
+    <span class="keyword">if</span> (done) {
+      result = value;  <span class="comment">// IterationResult</span>
+      <span class="keyword">break</span>;
+    }
+    streamController.send(value);  <span class="comment">// 发送 StreamEvent 到前端</span>
+    researchTracker.handle(value);  <span class="comment">// 追踪工具调用</span>
+  }
+
+  <span class="comment">// 2. 检查是否需要继续</span>
+  <span class="keyword">if</span> (!result.shouldContinue) {
+    <span class="keyword">break</span>;  <span class="comment">// 没有工具调用，结束循环</span>
+  }
+
+  <span class="comment">// 3. 执行工具调用</span>
+  <span class="keyword">const</span> toolResults = <span class="keyword">await</span> toolExecutor.execute(result.pendingToolCalls);
+
+  <span class="comment">// 4. 将工具结果追加到 Provider，准备下一次迭代</span>
+  provider.appendToolResults(toolResults);
+}
+      </div>
+
+      <div class="highlight">
+        <strong>为什么需要迭代？</strong>
+        <p>因为 AI 模型可能需要多次调用工具才能完成任务。例如：</p>
+        <ul>
+          <li>第 1 次迭代：模型决定搜索 "Next.js 最新版本"</li>
+          <li>第 2 次迭代：根据搜索结果，模型决定访问官网获取详细信息</li>
+          <li>第 3 次迭代：模型整合信息，给出最终回答</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 辅助工具 -->
+    <div class="flow-section">
+      <h2 class="section-title">🛠️ 辅助工具类</h2>
+      <div class="grid">
+        <div class="card">
+          <h4>StreamController</h4>
+          <p>负责将 StreamEvent 转换为 SSE 格式并发送到前端</p>
+          <div class="code-box" style="margin-top: 10px;">
+streamController.send({
+  type: <span class="string">"content"</span>,
+  content: <span class="string">"Hello"</span>
+});
+<span class="comment">// 输出: data: {"type":"content","content":"Hello"}\n\n</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>ResearchTracker</h4>
+          <p>追踪工具调用状态，用于前端显示工具执行进度</p>
+          <div class="code-box" style="margin-top: 10px;">
+researchTracker.handle({
+  type: <span class="string">"tool_call"</span>,
+  tool: <span class="string">"brave_search"</span>,
+  args: { query: <span class="string">"..."</span> }
+});
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>ToolExecutor</h4>
+          <p>执行工具调用，返回结果。支持 brave_search、fetch_url、render_html 等</p>
+          <div class="code-box" style="margin-top: 10px;">
+<span class="keyword">const</span> results = <span class="keyword">await</span> toolExecutor.execute([
+  { id: <span class="string">"1"</span>, name: <span class="string">"fetch_url"</span>, args: {...} }
+]);
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 优势 -->
+    <div class="flow-section">
+      <h2 class="section-title">✨ 抽象层的优势</h2>
+      <div class="grid">
+        <div class="card">
+          <h4>🔄 统一接口</h4>
+          <p>API Route 只需要调用 provider.runIteration()，无需关心底层是 Anthropic 还是 OpenAI</p>
+        </div>
+
+        <div class="card">
+          <h4>🧩 易于扩展</h4>
+          <p>添加新的 AI 服务商只需实现 IProvider 接口，无需修改上层代码</p>
+        </div>
+
+        <div class="card">
+          <h4>🎯 职责分离</h4>
+          <p>Provider 负责与 AI 服务商通信，ToolExecutor 负责工具执行，StreamController 负责流控制</p>
+        </div>
+
+        <div class="card">
+          <h4>🧪 易于测试</h4>
+          <p>可以轻松 mock Provider 进行单元测试，不依赖真实的 AI 服务</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文件位置 -->
+    <div class="flow-section">
+      <h2 class="section-title">📁 关键文件位置</h2>
+      <div class="code-box">
+<span class="comment">// Provider 接口和类型定义</span>
+src/shared/lib/providers/types.ts
+
+<span class="comment">// Provider 工厂函数</span>
+src/shared/lib/providers/index.ts
+
+<span class="comment">// 抽象基类</span>
+src/shared/lib/providers/base-provider.ts
+
+<span class="comment">// 具体实现</span>
+src/shared/lib/providers/anthropic/index.ts
+src/shared/lib/providers/openrouter/index.ts
+src/shared/lib/providers/openai/index.ts
+
+<span class="comment">// 辅助工具</span>
+src/shared/lib/providers/stream-controller.ts
+src/shared/lib/providers/research-tracker.ts
+src/shared/lib/providers/tool-executor.ts
+
+<span class="comment">// API Route（使用 Provider）</span>
+src/app/api/chat/route.ts
+      </div>
+    </div>
+
+    <!-- 总结 -->
+    <div class="flow-section">
+      <h2 class="section-title">🎓 总结</h2>
+      <div class="highlight">
+        <p><strong>Provider 层的本质：</strong></p>
+        <p>它是一个<strong>适配器模式</strong>的实现，将不同 AI 服务商的 API 统一成相同的接口。</p>
+        <p>通过 <code>initialize()</code> → <code>runIteration()</code> → <code>appendToolResults()</code> 的循环，实现了工具调用的完整流程。</p>
+        <p>上层代码（API Route）只需要关心"发起请求 → 处理流事件 → 执行工具 → 返回结果"，而不需要关心底层使用的是哪个 AI 服务。</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

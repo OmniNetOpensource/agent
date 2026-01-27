@@ -73,7 +73,4 @@ export interface IProvider {
 
   // Append tool results for the next iteration
   appendToolResults(results: ToolCallResult[]): void;
-
-  // Check if this provider supports the given model
-  supportsModel(model: string): boolean;
 }

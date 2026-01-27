@@ -157,7 +157,7 @@ export const ResearchBlock = memo(function ResearchBlock({
       className="my-2"
     >
       <CollapsibleTrigger
-        className="w-full px-1.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30"
+        className="w-full px-1.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--interactive-primary)/30"
       >
         {isActive ? (
           <ShimmerText>{getLatestStatus(items)}</ShimmerText>

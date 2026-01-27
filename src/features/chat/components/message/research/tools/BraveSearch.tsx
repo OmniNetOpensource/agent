@@ -127,7 +127,7 @@ function SearchResultCard({
       rel="noreferrer noopener"
       className={cn(
         "group relative flex w-full flex-col gap-1.5 rounded-md p-2",
-        "bg-card border border-transparent hover:border-(--border-subtle) hover:bg-(--surface-hover) transition-all duration-200"
+        "bg-card border border-transparent hover:border-(--border-primary) hover:bg-(--surface-hover) transition-all duration-200"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >

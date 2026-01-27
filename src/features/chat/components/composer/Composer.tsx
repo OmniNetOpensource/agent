@@ -163,7 +163,7 @@ export function Composer() {
       onSubmit={handleSubmit}
       className={formClassName}
     >
-      <div className="relative flex w-full flex-col gap-1 rounded-2xl border bg-card p-2 shadow-lg transition-all focus-within:border-ring focus-within:shadow-xl">
+      <div className="relative flex w-full flex-col gap-1 rounded-2xl border bg-card p-2 shadow-lg transition-all focus-within:border-(--interactive-primary) focus-within:shadow-xl">
         {hasAttachments && (
           <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0">
             {pendingAttachments.map((attachment) =>
@@ -188,7 +188,7 @@ export function Composer() {
               ) : (
                 <div
                   key={attachment.id}
-                  className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-lg border bg-background p-2 pr-3 shadow-sm"
+                  className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-lg border bg-(--surface-primary) p-2 pr-3 shadow-sm"
                 >
                   <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">

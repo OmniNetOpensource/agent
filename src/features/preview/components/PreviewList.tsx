@@ -49,8 +49,8 @@ export function PreviewList() {
   }
 
   return (
-    <div className="w-64 flex flex-col border border-(--border-subtle) rounded-xl bg-(--surface-base)">
-      <div className="flex items-center h-12 px-4 border-b border-(--border-subtle) rounded-t-xl">
+    <div className="w-64 flex flex-col border border-(--border-primary) rounded-xl bg-(--surface-primary)">
+      <div className="flex items-center h-12 px-4 border-b border-(--border-primary) rounded-t-xl">
         <span className="flex-1 text-sm font-medium text-(--text-primary)">
           HTML Previews
         </span>

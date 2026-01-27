@@ -41,7 +41,7 @@ export function ConversationList() {
     hasLoadedLocal
   ) {
     return (
-      <div className="rounded-xl border border-dashed border-(--border-subtle) bg-(--surface-base)/50 p-4 text-center text-xs text-(--text-tertiary)">
+      <div className="rounded-xl border border-dashed border-(--border-primary) bg-(--surface-primary)/50 p-4 text-center text-xs text-(--text-tertiary)">
         暂无会话，发送第一条消息后会自动出现在这里。
       </div>
     );
@@ -69,7 +69,7 @@ export function ConversationList() {
         </>
       ) : null}
       {hasPinned && hasRegular ? (
-        <div className="my-2 h-px w-full bg-(--border-subtle)" />
+        <div className="my-2 h-px w-full bg-(--border-primary)" />
       ) : null}
       {hasRegular ? (
         <>

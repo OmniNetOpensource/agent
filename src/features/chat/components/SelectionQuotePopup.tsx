@@ -79,7 +79,7 @@ export function SelectionQuotePopup() {
   return (
     <button
       onClick={handleClick}
-      className="fixed z-50 flex items-center gap-1 px-2 py-1 text-xs bg-primary text-primary-foreground rounded shadow-lg hover:bg-primary/90 transition-colors -translate-x-1/2 -translate-y-full"
+      className="fixed z-50 flex items-center gap-1 px-2 py-1 text-xs bg-[var(--interactive-primary)] text-[var(--text-primary)] rounded shadow-lg hover:bg-[var(--interactive-primary-hover)] transition-colors -translate-x-1/2 -translate-y-full"
       style={{ left: position.x, top: position.y }}
     >
       <Quote className="w-3 h-3" />

@@ -35,14 +35,14 @@ export function FetchUrl({ tool }: FetchUrlProps) {
           </>
         ) : isError ? (
           <>
-            <X className="h-3 w-3 text-(--color-destructive)" />
+            <X className="h-3 w-3 text-(--status-destructive)" />
             <span>
               Fetch failed <span>{hostname}</span>
             </span>
           </>
         ) : (
           <>
-            <Check className="h-3 w-3 text-(--color-success)" />
+            <Check className="h-3 w-3 text-(--status-success)" />
             <span>
               Fetch success <span>{hostname}</span>
             </span>

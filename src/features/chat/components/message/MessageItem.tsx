@@ -240,7 +240,7 @@ export const MessageItem = memo(function MessageItem({
                   key={attachment.id}
                   className="flex w-[220px] shrink-0 items-center gap-3 rounded-lg border bg-card px-3 py-2"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-background text-muted-foreground">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-(--surface-primary) text-muted-foreground">
                     <Paperclip className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -341,7 +341,7 @@ export const MessageItem = memo(function MessageItem({
                   >
                     <Markdown content={block.content} />
                     {isStreaming && blockIndex === contentBlocks.length - 1 && (
-                      <span className="ml-1 inline-flex h-5 w-0.5 animate-pulse bg-accent align-middle" />
+                      <span className="ml-1 inline-flex h-5 w-0.5 animate-pulse bg-(--feedback-cursor) align-middle" />
                     )}
                   </div>
                 );

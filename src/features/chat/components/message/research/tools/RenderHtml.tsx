@@ -43,19 +43,19 @@ export function RenderHtml({ tool }: RenderHtmlProps) {
           </>
         ) : isError ? (
           <>
-            <X className="h-3 w-3 text-(--color-destructive)" />
+            <X className="h-3 w-3 text-(--status-destructive)" />
             <span>Failed to create preview</span>
           </>
         ) : isSuccess ? (
           <>
-            <Check className="h-3 w-3 text-(--color-success)" />
+            <Check className="h-3 w-3 text-(--status-success)" />
             <span>
               Preview created: <span>{title}</span>
             </span>
           </>
         ) : (
           <>
-            <Check className="h-3 w-3 text-(--color-success)" />
+            <Check className="h-3 w-3 text-(--status-success)" />
             <span>Preview created</span>
           </>
         )}

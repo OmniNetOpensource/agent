@@ -229,7 +229,7 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
             ) : (
               <div
                 key={attachment.id}
-                className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-lg border bg-background p-2 pr-3"
+                className="flex min-w-[200px] max-w-60 items-center gap-3 rounded-lg border bg-(--surface-primary) p-2 pr-3"
               >
                 <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
                   <div className="flex h-full w-full items-center justify-center text-muted-foreground">

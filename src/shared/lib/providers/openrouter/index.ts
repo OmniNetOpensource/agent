@@ -1,5 +1,12 @@
-import { BaseProvider } from "../base-provider";
-import type { StreamEvent, IterationResult, ToolCallResult, PendingToolCall } from "../types";
+import type {
+  IProvider,
+  ProviderConfig,
+  ProviderContext,
+  StreamEvent,
+  IterationResult,
+  ToolCallResult,
+  PendingToolCall,
+} from "../types";
 import {
   streamChatCompletion,
   parseSSEStream,
@@ -7,12 +14,19 @@ import {
 import { buildSystemPrompt, toChatMessages, type ChatMessage, type ReasoningDetail, type StreamToolCall } from "@/src/app/api/chat/utils";
 import { supportsImageGeneration } from "@/src/features/chat/lib/model-config";
 
-export class OpenRouterProvider extends BaseProvider {
+export class OpenRouterProvider implements IProvider {
   readonly name = "openrouter" as const;
 
+  private config!: ProviderConfig;
+  private context!: ProviderContext;
+  private initialized = false;
   private currentMessages: ChatMessage[] = [];
 
-  protected onInitialize(): void {
+  initialize(config: ProviderConfig, context: ProviderContext): void {
+    this.config = config;
+    this.context = context;
+    this.initialized = true;
+
     const systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
     this.currentMessages = [
       { role: "system", content: systemPrompt },
@@ -21,7 +35,9 @@ export class OpenRouterProvider extends BaseProvider {
   }
 
   async *runIteration(): AsyncGenerator<StreamEvent, IterationResult, undefined> {
-    this.ensureInitialized();
+    if (!this.initialized) {
+      throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
+    }
 
     const isImageModel = supportsImageGeneration(this.config.model);
 
@@ -212,7 +228,9 @@ export class OpenRouterProvider extends BaseProvider {
   }
 
   appendToolResults(results: ToolCallResult[]): void {
-    this.ensureInitialized();
+    if (!this.initialized) {
+      throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
+    }
     for (const result of results) {
       this.currentMessages.push({
         role: "tool",

@@ -143,7 +143,7 @@ export function SystemPromptPopover() {
             className={cn(
               "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
               hasInstruction
-                ? "text-blue-600 dark:text-blue-400"
+                ? "text-[var(--interactive-primary)]"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -165,7 +165,7 @@ export function SystemPromptPopover() {
                   value={selectedPrompt?.id ?? ""}
                   onChange={handlePromptSelect}
                   className={cn(
-                    "border-input bg-card text-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 flex h-8 w-full appearance-none rounded-md border px-2 pr-7 text-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px]",
+                    "border-(--border-primary) bg-card text-foreground focus-visible:border-(--interactive-primary) focus-visible:ring-(--interactive-primary)/50 dark:bg-(--surface-muted)/30 flex h-8 w-full appearance-none rounded-md border px-2 pr-7 text-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px]",
                     "disabled:cursor-not-allowed disabled:opacity-50"
                   )}
                 >
