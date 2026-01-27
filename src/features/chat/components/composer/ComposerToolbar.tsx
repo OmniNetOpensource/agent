@@ -14,13 +14,36 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
 import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
 import { SystemPromptPopover } from "./SystemPromptPopover";
+import type { SelectedSearchTool } from "@/src/features/chat/types/chat";
 
 const MODEL_STORAGE_KEY = "selected-model";
-const SEARCH_ENABLED_STORAGE_KEY = "search-enabled";
+
+const SEARCH_TOOL_LABELS: Record<SelectedSearchTool, string> = {
+  none: "No search",
+  brave_search: "Brave Search",
+  serp_search: "SERP Search",
+  tavily_search: "Tavily Search",
+};
+
+const SEARCH_TOOL_OPTIONS: Array<{
+  value: SelectedSearchTool;
+  label: string;
+}> = [
+  { value: "none", label: "No search" },
+  { value: "brave_search", label: "Brave Search" },
+  { value: "serp_search", label: "SERP Search" },
+  { value: "tavily_search", label: "Tavily Search" },
+];
 
 export function ComposerToolbar() {
   // Store state
@@ -28,19 +51,33 @@ export function ComposerToolbar() {
   const setCurrentModel = useChatStore((state) => state.setCurrentModel);
   const uploading = useChatStore((state) => state.uploading);
   const addAttachments = useChatStore((state) => state.addAttachments);
-  const searchEnabled = useChatStore((state) => state.searchEnabled);
-  const setSearchEnabled = useChatStore((state) => state.setSearchEnabled);
+  const selectedSearchTool = useChatStore(
+    (state) => state.selectedSearchTool
+  );
+  const setSelectedSearchTool = useChatStore(
+    (state) => state.setSelectedSearchTool
+  );
 
   // Local state
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const hasInitializedSearchEnabled = useRef(false);
 
   const currentModelLabel =
     MODEL_CONFIGS.find((m) => m.id === currentModel)?.label ?? "";
+  // Prevent hydration mismatch by using consistent default until mounted
+  const selectedSearchLabel = mounted
+    ? SEARCH_TOOL_LABELS[selectedSearchTool]
+    : SEARCH_TOOL_LABELS["none"];
+  const isSearchActive = mounted && selectedSearchTool !== "none";
+
+  // Handle client-side hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Initialize model from localStorage
-  // 合并 model/searchEnabled 初始化 effect
+  // 合并 model 初始化 effect
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -62,24 +99,7 @@ export function ComposerToolbar() {
       setCurrentModel(defaultModel);
     }
 
-    // --- 搜索功能初始化 ---
-    if (!hasInitializedSearchEnabled.current) {
-      hasInitializedSearchEnabled.current = true;
-      const stored = window.localStorage.getItem(SEARCH_ENABLED_STORAGE_KEY);
-      if (stored !== null) {
-        setSearchEnabled(stored === "true");
-      }
-    }
-  }, [setCurrentModel, setSearchEnabled]);
-
-  // Handlers
-  const handleSearchToggle = () => {
-    const newValue = !searchEnabled;
-    setSearchEnabled(newValue);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(SEARCH_ENABLED_STORAGE_KEY, String(newValue));
-    }
-  };
+  }, [setCurrentModel]);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     if (uploading) return;
@@ -97,29 +117,49 @@ export function ComposerToolbar() {
     <div className="flex items-center justify-between px-1">
       {/* Left group: Search & Attachments */}
       <div className="flex items-center gap-1">
-        {/* Search toggle */}
-        <span title="开启后，模型会自主决定是否搜索">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleSearchToggle}
-            className={cn(
-              "group h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
-              searchEnabled
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Globe
+        {/* Search tool selector */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               className={cn(
-                "h-3.5 w-3.5 transition-transform",
-                searchEnabled ? "scale-110" : "group-hover:scale-110"
+                "group h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
+                "data-[state=open]:bg-accent data-[state=open]:text-foreground",
+                isSearchActive
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-muted-foreground hover:text-foreground"
               )}
-            />
-            <span>联网</span>
-          </Button>
-        </span>
+            >
+              <Globe
+                className={cn(
+                  "h-3.5 w-3.5 transition-transform",
+                  isSearchActive ? "scale-110" : "group-hover:scale-110"
+                )}
+              />
+              <span className="max-w-[96px] truncate">{selectedSearchLabel}</span>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[11rem]">
+            {SEARCH_TOOL_OPTIONS.map((option) => (
+              <DropdownMenuItem
+                key={option.value}
+                onSelect={() => setSelectedSearchTool(option.value)}
+                className={cn(
+                  "flex items-center justify-between",
+                  option.value === selectedSearchTool && "font-semibold"
+                )}
+              >
+                <span>{option.label}</span>
+                {option.value === selectedSearchTool ? (
+                  <Check className="h-3.5 w-3.5 text-primary" />
+                ) : null}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* File picker */}
         <span title={uploading ? "正在上传附件..." : "添加附件"}>

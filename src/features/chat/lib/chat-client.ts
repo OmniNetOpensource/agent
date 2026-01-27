@@ -2,6 +2,7 @@ import {
   SerializedMessage,
   ProviderPreferences,
   Backend,
+  SelectedSearchTool,
 } from "@/src/features/chat/types/chat";
 import { StreamParser, StreamEvent } from "./stream-parser";
 
@@ -20,7 +21,7 @@ export class ChatClient {
     messages: SerializedMessage[],
     model: string,
     conversationId: string | null,
-    searchEnabled?: boolean,
+    selectedSearchTool?: SelectedSearchTool,
     systemInstruction?: string,
     provider?: ProviderPreferences,
     backend?: Backend
@@ -37,7 +38,7 @@ export class ChatClient {
           conversationId: conversationId ?? null,
           model,
           provider,
-          searchEnabled,
+          selectedSearchTool,
           systemInstruction,
           backend,
         }),

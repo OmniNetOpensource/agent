@@ -7,6 +7,7 @@ import type {
   Message,
   MessageLike,
   SerializedMessage,
+  SelectedSearchTool,
 } from "@/src/features/chat/types/chat";
 import { serializeMessagesForRequest } from "./serialization";
 import {
@@ -92,7 +93,7 @@ type StoreGetter = () => {
   currentPath: number[];
   conversationId: string | null;
   currentModel: string;
-  searchEnabled: boolean;
+  selectedSearchTool: SelectedSearchTool;
   systemInstruction: string;
   pending: boolean;
   activeRequestId: string | null;
@@ -137,7 +138,7 @@ export const startChatRequest = async (
     return;
   }
 
-  const searchEnabled = get().searchEnabled;
+  const selectedSearchTool = get().selectedSearchTool;
   const systemInstruction = get().systemInstruction;
   let currentConversationId = get().conversationId;
 
@@ -493,7 +494,7 @@ export const startChatRequest = async (
     serializedMessages,
     selectedModel,
     currentConversationId,
-    searchEnabled,
+    selectedSearchTool,
     systemInstruction,
     modelConfig?.provider,
     modelConfig?.backend

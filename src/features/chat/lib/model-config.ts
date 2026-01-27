@@ -19,56 +19,15 @@ export type ModelConfig = {
 export const MODEL_CONFIGS: ModelConfig[] = [
   {
     id: "claude-opus-4-5-20251101",
-    label: "claude-opus-4.5",
+    label: "think",
     backend: "anthropic",
   },
   {
-    id: "google/gemini-3-flash-preview",
-    label: "gemini-3-flash-preview",
-  },
-  {
-    id: "anthropic/claude-haiku-4.5",
-    label: "claude-haiku-4.5",
-  },
-  {
     id: "openai/gpt-oss-120b",
-    label: "gpt-oss-120b",
+    label: "flash",
     provider: {
       order: ["Cerebras"],
     },
-  },
-  {
-    id: "xiaomi/mimo-v2-flash:free",
-    label: "mimo-v2-flash",
-  },
-  {
-    id: "gpt-5.2",
-    label: "gpt-5.2",
-    backend: "openai",
-  },
-  {
-    id: "gpt-5.2-codex",
-    label: "gpt-5.2-codex",
-    backend: "openai",
-  },
-  {
-    id: "bytedance-seed/seedream-4.5",
-    label: "seedream-4.5",
-  },
-  {
-    id: "openai/gpt-5-image",
-    label: "gpt-5-image",
-    capabilities: { imageGeneration: true },
-  },
-  {
-    id: "google/gemini-3-pro-image-preview",
-    label: "gemini-3-pro-image-preview",
-    capabilities: { imageGeneration: true },
-  },
-  {
-    id: "black-forest-labs/flux.2-max",
-    label: "flux.2-max",
-    capabilities: { imageGeneration: true },
   },
 ];
 

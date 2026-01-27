@@ -3,7 +3,7 @@
 import { memo, useState } from "react";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
 import { FetchUrl } from "./tools/FetchUrl";
-import { BraveSearch } from "./tools/BraveSearch";
+import { UnifiedSearch } from "./tools/UnifiedSearch";
 import { RenderHtml } from "./tools/RenderHtml";
 import { ThinkingItem } from "./tools/ThinkingItem";
 import {
@@ -41,7 +41,9 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
       case "fetch_url":
         return <FetchUrl tool={item.data} />;
       case "brave_search":
-        return <BraveSearch tool={item.data} />;
+      case "serp_search":
+      case "tavily_search":
+        return <UnifiedSearch tool={item.data} />;
       case "render_html":
         return <RenderHtml tool={item.data} />;
       default:
@@ -74,7 +76,11 @@ const getLatestStatus = (items: ResearchItemData[]): string => {
     const toolName = lastItem.data.call.tool;
     const args = lastItem.data.call.args;
 
-    if (toolName === "brave_search") {
+    if (
+      toolName === "brave_search" ||
+      toolName === "serp_search" ||
+      toolName === "tavily_search"
+    ) {
       const query = args.query as string;
       return `Searching "${query}"`;
     }

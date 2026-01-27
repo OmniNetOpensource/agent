@@ -1,6 +1,8 @@
 import { braveSearchTool } from "./tools/brave-search";
 import { fetchUrlTool } from "./tools/fetch";
 import { renderHtmlTool } from "./tools/render-html";
+import { serpSearchTool } from "./tools/serp-search";
+import { tavilySearchTool } from "./tools/tavily-search";
 import {
   type ChatTool,
   type ToolDefinition,
@@ -9,30 +11,45 @@ import {
   type ToolName,
 } from "./tools/types";
 
-const allTools: Record<ToolName, ToolDefinition> = {
+const hasBraveKey = Boolean(process.env.BRAVE_API_KEY);
+const hasSerpKey = Boolean(process.env.SERP_API_KEY);
+const hasTavilyKey = Boolean(process.env.TAVILY_API_KEY);
+
+const toolMap: Partial<Record<ToolName, ToolDefinition>> = {
   fetch_url: fetchUrlTool,
-  brave_search: braveSearchTool,
   render_html: renderHtmlTool,
 };
 
-// Only include brave_search if API key is available
-// render_html is always enabled
-const hasApiKey = Boolean(process.env.BRAVE_API_KEY);
-const toolMap = hasApiKey
-  ? allTools
-  : ({
-      fetch_url: fetchUrlTool,
-      render_html: renderHtmlTool,
-    } as Record<ToolName, ToolDefinition>);
+if (hasBraveKey) {
+  toolMap.brave_search = braveSearchTool;
+}
 
-const toolEntries = Object.entries(toolMap);
+if (hasSerpKey) {
+  toolMap.serp_search = serpSearchTool;
+}
+
+if (hasTavilyKey) {
+  toolMap.tavily_search = tavilySearchTool;
+}
+
+const toolEntries = Object.entries(toolMap) as Array<
+  [ToolName, ToolDefinition]
+>;
 
 toolEntries.forEach(([name]) => {
   console.error("[Tools] Enabled tool:", name);
 });
 
-if (!hasApiKey) {
+if (!hasBraveKey) {
   console.error("[Tools] Skipping tool: brave_search (missing BRAVE_API_KEY)");
+}
+
+if (!hasSerpKey) {
+  console.error("[Tools] Skipping tool: serp_search (missing SERP_API_KEY)");
+}
+
+if (!hasTavilyKey) {
+  console.error("[Tools] Skipping tool: tavily_search (missing TAVILY_API_KEY)");
 }
 
 export const toolSpecs: ChatTool[] = toolEntries.map(([, tool]) => tool.spec);
@@ -68,4 +85,3 @@ export const callToolByName = async (
     }`;
   }
 };
-

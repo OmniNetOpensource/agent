@@ -3,6 +3,7 @@ import {
   EditingState,
   Message,
   BranchInfo,
+  SelectedSearchTool,
 } from "@/src/features/chat/types/chat";
 import { revokeBlobUrl } from "@/src/shared/utils/file";
 import { create } from "zustand";
@@ -51,7 +52,7 @@ type ChatState = {
   pendingAttachments: Attachment[];
   uploading: boolean;
   conversationId: string | null;
-  searchEnabled: boolean;
+  selectedSearchTool: SelectedSearchTool;
   systemInstruction: string;
   activeRequestId: string | null;
 };
@@ -92,7 +93,7 @@ type ChatActions = {
   getMessagesFromPath: () => Message[];
   stop: () => void;
   setCurrentModel: (model: string) => void;
-  setSearchEnabled: (enabled: boolean) => void;
+  setSelectedSearchTool: (tool: SelectedSearchTool) => void;
   setSystemInstruction: (instruction: string) => void;
 };
 
@@ -101,6 +102,27 @@ const generateConversationId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `conv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const SEARCH_TOOL_STORAGE_KEY = "selected-search-tool";
+
+const isValidSearchTool = (value: string): value is SelectedSearchTool =>
+  value === "none" ||
+  value === "brave_search" ||
+  value === "serp_search" ||
+  value === "tavily_search";
+
+const getInitialSearchTool = (): SelectedSearchTool => {
+  if (typeof window === "undefined") {
+    return "none";
+  }
+
+  const stored = window.localStorage.getItem(SEARCH_TOOL_STORAGE_KEY);
+  if (stored && isValidSearchTool(stored)) {
+    return stored;
+  }
+
+  return "none";
+};
 
 export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   ...createEmptyMessageState(),
@@ -112,7 +134,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   pendingAttachments: [],
   uploading: false,
   conversationId: null,
-  searchEnabled: true,
+  selectedSearchTool: getInitialSearchTool(),
   systemInstruction: "",
   activeRequestId: null,
   setInput: (value) => set({ input: value }),
@@ -167,7 +189,12 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
   getMessagesFromPath: () =>
     computeMessagesFromPath(get().messages, get().currentPath),
   setConversationId: (id) => set({ conversationId: id }),
-  setSearchEnabled: (enabled) => set({ searchEnabled: enabled }),
+  setSelectedSearchTool: (tool) => {
+    set({ selectedSearchTool: tool });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(SEARCH_TOOL_STORAGE_KEY, tool);
+    }
+  },
   setSystemInstruction: (instruction) =>
     set({ systemInstruction: instruction }),
   clear: () => {

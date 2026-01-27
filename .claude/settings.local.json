@@ -31,7 +31,9 @@
       "Bash(git stash:*)",
       "Bash(pnpm check:*)",
       "Bash(gh pr list:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "WebFetch(domain:www.assistant-ui.com)",
+      "WebFetch(domain:www.typewolf.com)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { toolSpecs } from "@/src/shared/lib/tools";
 import { isSupportedChatModel } from "@/src/shared/lib/openrouter/server";
-import type { ChatRequest } from "@/src/features/chat/types/chat";
+import type {
+  ChatRequest,
+  SelectedSearchTool,
+} from "@/src/features/chat/types/chat";
 import {
   ConversationLogger,
   createConversationLogger,
@@ -27,17 +30,34 @@ export async function POST(req: Request) {
       conversationId,
       model,
       provider: providerPreferences,
+      selectedSearchTool,
       searchEnabled,
       systemInstruction,
       backend,
-    } = (await req.json()) as ChatRequest;
+    } = (await req.json()) as ChatRequest & { searchEnabled?: boolean };
+
+    const isValidSearchTool = (
+      value: unknown
+    ): value is SelectedSearchTool =>
+      value === "none" ||
+      value === "brave_search" ||
+      value === "serp_search" ||
+      value === "tavily_search";
+
+    const resolvedSearchTool: SelectedSearchTool = isValidSearchTool(
+      selectedSearchTool
+    )
+      ? selectedSearchTool
+      : searchEnabled === true
+        ? "brave_search"
+        : "none";
 
     logger = createConversationLogger();
 
     logger?.log("FRONTEND", "Received chat request", {
       conversationId,
       model,
-      searchEnabled,
+      selectedSearchTool: resolvedSearchTool,
       hasSystemInstruction: !!systemInstruction,
       messageCount: conversationHistory.length,
     });
@@ -76,13 +96,30 @@ export async function POST(req: Request) {
 
     const requestedModel = model;
 
-    // Disable search tools if user explicitly disabled search (keep render_html enabled)
-    const tools =
-      searchEnabled === false
-        ? toolSpecs.filter(
-            (tool) => tool.type === "function" && tool.function.name === "render_html"
-          )
-        : toolSpecs;
+    const allowedToolNames = new Set<string>(["fetch_url", "render_html"]);
+    if (resolvedSearchTool !== "none") {
+      allowedToolNames.add(resolvedSearchTool);
+    }
+
+    const tools = toolSpecs.filter(
+      (tool) =>
+        tool.type === "function" &&
+        allowedToolNames.has(tool.function.name)
+    );
+
+    const searchToolAvailable =
+      resolvedSearchTool !== "none" &&
+      tools.some(
+        (tool) =>
+          tool.type === "function" &&
+          tool.function.name === resolvedSearchTool
+      );
+
+    if (resolvedSearchTool !== "none" && !searchToolAvailable) {
+      logger?.log("TOOLS", "Selected search tool not available", {
+        selectedSearchTool: resolvedSearchTool,
+      });
+    }
 
     logger?.log(
       "TOOLS",
@@ -134,7 +171,7 @@ export async function POST(req: Request) {
       {
         model: requestedModel,
         tools,
-        searchEnabled: searchEnabled !== false,
+        searchEnabled: searchToolAvailable,
         systemInstruction,
         provider: providerPreferences,
       },

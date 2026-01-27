@@ -6,7 +6,6 @@ import {
 
 type BraveSearchArgs = {
   query: string;
-  freshness?: "pd" | "pw" | "pm" | "py";
 };
 
 type BraveWebResult = {
@@ -31,28 +30,15 @@ const parseBraveSearchArgs = (args: unknown): BraveSearchArgs => {
     throw new Error("brave_search requires an object with a query");
   }
 
-  const { query, freshness } = args as {
+  const { query } = args as {
     query?: unknown;
-    freshness?: unknown;
   };
 
   if (typeof query !== "string" || query.trim().length === 0) {
     throw new Error("brave_search requires a non-empty query string");
   }
 
-  if (
-    freshness !== undefined &&
-    freshness !== "pd" &&
-    freshness !== "pw" &&
-    freshness !== "pm" &&
-    freshness !== "py"
-  ) {
-    throw new Error(
-      "freshness must be one of: pd (past day), pw (past week), pm (past month), py (past year)"
-    );
-  }
-
-  return { query, freshness };
+  return { query };
 };
 
 const BRAVE_SEARCH_INTERVAL_MS = 2_000;
@@ -147,25 +133,15 @@ const formatBraveSearchResponse = (
 
 const performBraveSearch = async (
   query: string,
-  freshness: BraveSearchArgs["freshness"],
   apiKey: string
 ): Promise<string> => {
-  console.error(
-    "[Tools:brave_search] Searching:",
-    query,
-    "| freshness:",
-    freshness || "none"
-  );
+  console.error("[Tools:brave_search] Searching:", query);
 
   try {
     const params = new URLSearchParams({
       q: query,
       count: "10",
     });
-
-    if (freshness) {
-      params.append("freshness", freshness);
-    }
 
     const response = await fetch(
       `https://api.search.brave.com/res/v1/web/search?${params}`,
@@ -207,7 +183,7 @@ const performBraveSearch = async (
 };
 
 const braveSearch: ToolHandler = async (args) => {
-  const { query, freshness } = parseBraveSearchArgs(args);
+  const { query } = parseBraveSearchArgs(args);
   const apiKey = process.env.BRAVE_API_KEY;
 
   if (!apiKey) {
@@ -216,7 +192,7 @@ const braveSearch: ToolHandler = async (args) => {
   }
 
   return enqueueBraveSearchCall(() =>
-    performBraveSearch(query, freshness, apiKey)
+    performBraveSearch(query, apiKey)
   );
 };
 
@@ -232,12 +208,6 @@ const braveSearchSpec: ChatTool = {
         query: {
           type: "string",
           description: "The search query (maximum 10 keywords)",
-        },
-        freshness: {
-          type: "string",
-          description:
-            "Time filter: pd=past day, pw=past week, pm=past month, py=past year",
-          enum: ["pd", "pw", "pm", "py"],
         },
       },
       required: ["query"],

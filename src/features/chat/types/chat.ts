@@ -106,12 +106,18 @@ export type ProviderPreferences = {
 
 export type Backend = "openrouter" | "anthropic" | "openai";
 
+export type SelectedSearchTool =
+  | "none"
+  | "brave_search"
+  | "serp_search"
+  | "tavily_search";
+
 export type ChatRequest = {
   conversationHistory: SerializedMessage[];
   conversationId?: string | null;
   model?: string;
   provider?: ProviderPreferences;
-  searchEnabled?: boolean;
+  selectedSearchTool?: SelectedSearchTool;
   systemInstruction?: string;
   backend?: Backend;
 };
