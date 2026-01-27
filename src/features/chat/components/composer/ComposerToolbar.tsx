@@ -60,21 +60,12 @@ export function ComposerToolbar() {
 
   // Local state
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentModelLabel =
     MODEL_CONFIGS.find((m) => m.id === currentModel)?.label ?? "";
-  // Prevent hydration mismatch by using consistent default until mounted
-  const selectedSearchLabel = mounted
-    ? SEARCH_TOOL_LABELS[selectedSearchTool]
-    : SEARCH_TOOL_LABELS["none"];
-  const isSearchActive = mounted && selectedSearchTool !== "none";
-
-  // Handle client-side hydration
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const selectedSearchLabel = SEARCH_TOOL_LABELS[selectedSearchTool];
+  const isSearchActive = selectedSearchTool !== "none";
 
   // Initialize model from localStorage
   // 合并 model 初始化 effect
