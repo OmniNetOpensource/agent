@@ -18,7 +18,7 @@ import {
   switchBranch,
   type AssistantAddition,
 } from "@/src/features/chat/lib/tree";
-import { cleanupTreeAttachments } from "@/src/features/chat/lib/attachments/cleanup";
+import { cleanupTreeAttachments } from "@/src/features/chat/lib/attachments";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";

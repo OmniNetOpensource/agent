@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Attachment } from "@/src/features/chat/types/chat";
 import { buildAttachmentsFromFiles } from "@/src/features/chat/lib/attachments";
-import { cleanupPendingAttachments } from "@/src/features/chat/lib/attachments/cleanup";
+import { cleanupPendingAttachments } from "@/src/features/chat/lib/attachments";
 import { revokeBlobUrl } from "@/src/shared/utils/file";
 
 type ComposerState = {

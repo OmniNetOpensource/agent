@@ -12,7 +12,7 @@ import {
   extractContentFromBlocks,
 } from "@/src/features/chat/lib/tree";
 import { startChatRequest } from "@/src/features/chat/lib/network";
-import { cleanupEditingAttachments } from "@/src/features/chat/lib/attachments/cleanup";
+import { cleanupEditingAttachments } from "@/src/features/chat/lib/attachments";
 import { useMessageTreeStore } from "./useMessageTreeStore";
 import { getChatRequestHandlers, useChatRequestStore } from "./useChatRequestStore";
 
