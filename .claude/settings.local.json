@@ -33,7 +33,8 @@
       "Bash(gh pr list:*)",
       "Bash(git config:*)",
       "WebFetch(domain:www.assistant-ui.com)",
-      "WebFetch(domain:www.typewolf.com)"
+      "WebFetch(domain:www.typewolf.com)",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []

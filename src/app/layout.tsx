@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileProvider } from "@/src/shared/mobile/MobileContext";
@@ -83,6 +84,7 @@ export default async function RootLayout({
             <ToastContainer />
           </TooltipProvider>
         </MobileProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
