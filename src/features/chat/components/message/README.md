@@ -8,5 +8,5 @@
 - 处理分支导航与待发送状态显示。
 
 ## 内容
-- 子目录：research
-- 文件：BranchNavigator.tsx、MessageEditor.tsx、MessageItem.tsx、PendingIndicator.tsx
+- 子目录：display、editing、research
+- 文件：index.ts

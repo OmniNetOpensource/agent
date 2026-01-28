@@ -7,37 +7,34 @@ import {
 } from "@/src/features/chat/types/chat";
 import { revokeBlobUrl } from "@/src/shared/utils/file";
 import { create } from "zustand";
-import { ChatClient } from "@/src/features/chat/lib/chat-client";
+import { ChatClient, startChatRequest } from "@/src/features/chat/lib/network";
 import { toast } from "@/src/shared/toast";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 import {
   addMessage,
+  applyAssistantAddition,
   buildCurrentPath,
+  buildUserBlocks,
+  cloneBlocks,
+  cloneMessages,
+  collectAttachmentIds,
   computeMessagesFromPath,
   createEmptyMessageState,
   createLinearMessages,
   editMessage,
+  extractAttachmentsFromBlocks,
+  extractContentFromBlocks,
   getBranchInfo,
   switchBranch,
-  cloneBlocks,
-} from "@/src/features/chat/lib/message-tree";
-import {
-  cloneMessages,
-  extractContentFromBlocks,
-  extractAttachmentsFromBlocks,
-  collectAttachmentIds,
-  buildUserBlocks,
-  applyAssistantAddition,
   type AssistantAddition,
-} from "@/src/features/chat/lib/block-operations";
+} from "@/src/features/chat/lib/tree";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import {
   revokeAttachments,
   revokeTreeAttachments,
   buildAttachmentsFromFiles,
-} from "@/src/features/chat/lib/attachment-operations";
-import { startChatRequest } from "@/src/features/chat/lib/chat-request";
+} from "@/src/features/chat/lib/attachments";
 
 type ChatState = {
   messages: Message[];

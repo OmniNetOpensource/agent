@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import { MODEL_CONFIGS } from "@/src/features/chat/lib/model-config";
+import { MODEL_CONFIGS } from "@/src/features/chat/lib/config";
 import { SystemPromptPopover } from "./SystemPromptPopover";
 import type { SelectedSearchTool } from "@/src/features/chat/types/chat";
 

@@ -16,7 +16,7 @@ import {
   formatFileSize,
 } from "@/src/shared/utils/file";
 import type { Attachment } from "@/src/features/chat/types/chat";
-import { setActiveInput } from "../../lib/active-input";
+import { setActiveInput } from "@/src/features/chat/lib/input";
 
 type MessageEditorProps = {
   messageId: number;

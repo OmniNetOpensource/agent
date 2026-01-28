@@ -54,9 +54,11 @@ export function SystemPromptPopover() {
 
   const hasInstruction = systemInstruction.trim().length > 0;
   const instructionValue = selectedPrompt?.content ?? "";
+  const isBuiltInPrompt = selectedPrompt?.isBuiltIn ?? false;
   const canCreatePrompt = createPromptValue.trim().length > 0;
   const canEditPrompt = Boolean(
     selectedPrompt &&
+      !isBuiltInPrompt &&
       editPromptTitle.trim().length > 0 &&
       (editPromptTitle.trim() !== selectedPrompt.name ||
         editPromptValue !== selectedPrompt.content)
@@ -192,7 +194,7 @@ export function SystemPromptPopover() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={!selectedPrompt}
+                disabled={!selectedPrompt || isBuiltInPrompt}
                 onClick={handleEditPrompt}
                 className="h-8 gap-1.5 px-2 text-xs"
               >
@@ -203,7 +205,7 @@ export function SystemPromptPopover() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={!selectedPrompt}
+                disabled={!selectedPrompt || isBuiltInPrompt}
                 onClick={() => setDeleteDialogOpen(true)}
                 className="h-8 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
               >

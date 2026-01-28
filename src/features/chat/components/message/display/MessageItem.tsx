@@ -8,7 +8,7 @@ import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import { BranchInfo, Message, GeneratedImage } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
-import { ResearchBlock } from "./research/ResearchBlock";
+import { ResearchBlock } from "../research/ResearchBlock";
 import {
   Copy,
   Check,
@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import { MessageEditor } from "./MessageEditor";
-import { BranchNavigator } from "./BranchNavigator";
+import { MessageEditor } from "../editing/MessageEditor";
+import { BranchNavigator } from "../editing/BranchNavigator";
 import {
   Dialog,
   DialogContent,

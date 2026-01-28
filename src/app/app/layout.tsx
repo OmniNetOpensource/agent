@@ -1,5 +1,5 @@
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
-import { SelectionQuotePopup } from "@/src/features/chat/components/SelectionQuotePopup";
+import { SelectionQuotePopup } from "@/src/features/chat/components/selection/SelectionQuotePopup";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { PreviewList } from "@/src/features/preview/components/PreviewList";
 import { ChatRoom } from "./components/ChatRoom";

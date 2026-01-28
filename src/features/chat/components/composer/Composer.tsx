@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
-import { setActiveInput, setDefaultInput } from "../../lib/active-input";
+import { setActiveInput, setDefaultInput } from "@/src/features/chat/lib/input";
 
 export function Composer() {
   const router = useRouter();

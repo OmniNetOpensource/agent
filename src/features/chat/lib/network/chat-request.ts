@@ -1,4 +1,4 @@
-import { ChatClient } from "@/src/features/chat/lib/chat-client";
+import { ChatClient } from "./chat-client";
 import { toast } from "@/src/shared/toast";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
@@ -14,9 +14,9 @@ import {
   cloneMessages,
   extractContentFromBlocks,
   type AssistantAddition,
-} from "./block-operations";
-import { computeMessagesFromPath } from "./message-tree";
-import { getModelConfig } from "./model-config";
+} from "../tree/block-operations";
+import { computeMessagesFromPath } from "../tree/message-tree";
+import { getModelConfig } from "../config/model-config";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import type { HtmlPreview } from "@/src/shared/lib/indexed-db/conversations";
 

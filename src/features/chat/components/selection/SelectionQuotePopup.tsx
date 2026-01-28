@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Quote } from 'lucide-react';
-import { insertQuote } from '../lib/active-input';
+import { insertQuote } from '@/src/features/chat/lib/input';
 
 export function SelectionQuotePopup() {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);

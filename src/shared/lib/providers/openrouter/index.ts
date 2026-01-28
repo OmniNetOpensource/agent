@@ -12,7 +12,7 @@ import {
   parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
 import { buildSystemPrompt, toChatMessages, type ChatMessage, type ReasoningDetail, type StreamToolCall } from "@/src/app/api/chat/utils";
-import { supportsImageGeneration } from "@/src/features/chat/lib/model-config";
+import { supportsImageGeneration } from "@/src/features/chat/lib/config";
 
 export class OpenRouterProvider implements IProvider {
   readonly name = "openrouter" as const;

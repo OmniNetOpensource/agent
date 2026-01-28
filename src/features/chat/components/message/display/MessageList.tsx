@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
-import { MessageItem } from "./message/MessageItem";
-import { PendingIndicator } from "./message/PendingIndicator";
+import { MessageItem } from "./MessageItem";
+import { PendingIndicator } from "./PendingIndicator";
 import { useChatStore } from "@/src/features/chat/store/useChatStore";
-import { computeMessagesFromPath } from "@/src/features/chat/lib/message-tree";
+import { computeMessagesFromPath } from "@/src/features/chat/lib/tree";
 import { Button } from "@/components/ui/button";
 
 export function MessageList() {

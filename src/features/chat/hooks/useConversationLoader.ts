@@ -6,7 +6,7 @@ import { localDB } from "@/src/shared/lib/indexed-db";
 import {
   buildCurrentPath,
   createLinearMessages,
-} from "@/src/features/chat/lib/message-tree";
+} from "@/src/features/chat/lib/tree";
 import type {
   Attachment,
   LegacyAttachment,
