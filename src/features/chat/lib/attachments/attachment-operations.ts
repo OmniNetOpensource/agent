@@ -1,4 +1,4 @@
-import type { Attachment, Message } from "@/src/features/chat/types/chat";
+import type { Attachment, EditingState, Message } from "@/src/features/chat/types/chat";
 import {
   MAX_ATTACHMENT_SIZE,
   createBlobUrl,
@@ -6,6 +6,7 @@ import {
   revokeBlobUrl,
 } from "@/src/shared/utils/file";
 import { toast } from "@/src/shared/toast";
+import { collectAttachmentIds } from "@/src/features/chat/lib/tree";
 
 export const revokeAttachments = (attachments: Attachment[]) => {
   for (const attachment of attachments) {
@@ -69,4 +70,31 @@ export const buildAttachmentsFromFiles = async (
   }
 
   return attachments;
+};
+
+export const cleanupTreeAttachments = (messages: Message[]) => {
+  if (!messages.length) {
+    return;
+  }
+  revokeTreeAttachments(messages);
+};
+
+export const cleanupPendingAttachments = (attachments: Attachment[]) => {
+  if (!attachments.length) {
+    return;
+  }
+  revokeAttachments(attachments);
+};
+
+export const cleanupEditingAttachments = (editingState: EditingState | null) => {
+  if (!editingState) {
+    return;
+  }
+
+  const originalIds = collectAttachmentIds(editingState.originalBlocks);
+  for (const attachment of editingState.editedAttachments) {
+    if (!originalIds.has(attachment.id) && attachment.displayUrl) {
+      revokeBlobUrl(attachment.displayUrl);
+    }
+  }
 };

@@ -12,28 +12,28 @@ import { ArrowUp, Paperclip, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import {
-  useChatStore,
   useIsNewChat,
-} from "@/src/features/chat/store/useChatStore";
+  useComposerStore,
+  useChatRequestStore,
+} from "@/src/features/chat/store";
 import { ComposerToolbar } from "./ComposerToolbar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
-import { setActiveInput, setDefaultInput } from "@/src/features/chat/lib/input";
 
 export function Composer() {
   const router = useRouter();
-  const input = useChatStore((state) => state.input);
-  const pending = useChatStore((state) => state.pending);
-  const pendingAttachments = useChatStore((state) => state.pendingAttachments);
-  const uploading = useChatStore((state) => state.uploading);
-  const currentModel = useChatStore((state) => state.currentModel);
-  const setInput = useChatStore((state) => state.setInput);
-  const addAttachments = useChatStore((state) => state.addAttachments);
-  const removeAttachment = useChatStore((state) => state.removeAttachment);
-  const sendMessage = useChatStore((state) => state.sendMessage);
-  const stop = useChatStore((state) => state.stop);
+  const input = useComposerStore((state) => state.input);
+  const pending = useChatRequestStore((state) => state.pending);
+  const pendingAttachments = useComposerStore((state) => state.pendingAttachments);
+  const uploading = useComposerStore((state) => state.uploading);
+  const currentModel = useChatRequestStore((state) => state.currentModel);
+  const setInput = useComposerStore((state) => state.setInput);
+  const addAttachments = useComposerStore((state) => state.addAttachments);
+  const removeAttachment = useComposerStore((state) => state.removeAttachment);
+  const sendMessage = useChatRequestStore((state) => state.sendMessage);
+  const stop = useChatRequestStore((state) => state.stop);
 
   const submitMessage = async () => {
     const trimmed = input.trim();
@@ -95,14 +95,6 @@ export function Composer() {
   useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
-
-  useEffect(() => {
-    setDefaultInput({
-      getValue: () => useChatStore.getState().input,
-      setValue: (v) => useChatStore.getState().setInput(v),
-      focus: () => textareaRef.current?.focus(),
-    });
-  }, []);
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const clipboardData = event.clipboardData;
@@ -227,13 +219,6 @@ export function Composer() {
             value={input}
             onChange={(event) => {
               setInput(event.target.value);
-            }}
-            onFocus={() => {
-              setActiveInput({
-                getValue: () => useChatStore.getState().input,
-                setValue: (v) => useChatStore.getState().setInput(v),
-                focus: () => textareaRef.current?.focus(),
-              });
             }}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}

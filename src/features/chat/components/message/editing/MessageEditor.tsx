@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  useChatRequestStore,
+  useComposerStore,
+  useEditingStore,
+} from "@/src/features/chat/store";
 import {
   MAX_ATTACHMENT_SIZE,
   createBlobUrl,
@@ -16,7 +20,6 @@ import {
   formatFileSize,
 } from "@/src/shared/utils/file";
 import type { Attachment } from "@/src/features/chat/types/chat";
-import { setActiveInput } from "@/src/features/chat/lib/input";
 
 type MessageEditorProps = {
   messageId: number;
@@ -71,16 +74,16 @@ const buildAttachmentsFromFiles = async (
 
 export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   const router = useRouter();
-  const editingState = useChatStore((state) => state.editingState);
-  const updateEditContent = useChatStore((state) => state.updateEditContent);
-  const updateEditAttachments = useChatStore(
+  const editingState = useEditingStore((state) => state.editingState);
+  const updateEditContent = useEditingStore((state) => state.updateEditContent);
+  const updateEditAttachments = useEditingStore(
     (state) => state.updateEditAttachments
   );
-  const cancelEditing = useChatStore((state) => state.cancelEditing);
-  const submitEdit = useChatStore((state) => state.submitEdit);
-  const uploading = useChatStore((state) => state.uploading);
-  const pending = useChatStore((state) => state.pending);
-  const currentModel = useChatStore((state) => state.currentModel);
+  const cancelEditing = useEditingStore((state) => state.cancelEditing);
+  const submitEdit = useEditingStore((state) => state.submitEdit);
+  const uploading = useComposerStore((state) => state.uploading);
+  const pending = useChatRequestStore((state) => state.pending);
+  const currentModel = useEditingStore((state) => state.currentModel);
 
   const state =
     editingState?.messageId === messageId ? editingState : null;
@@ -270,13 +273,6 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
         ref={textareaRef}
         value={editedContent}
         onChange={(event) => updateEditContent(event.target.value)}
-        onFocus={() => {
-          setActiveInput({
-            getValue: () => useChatStore.getState().editingState?.editedContent ?? '',
-            setValue: (v) => useChatStore.getState().updateEditContent(v),
-            focus: () => textareaRef.current?.focus(),
-          });
-        }}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         rows={1}

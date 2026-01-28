@@ -25,12 +25,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useSystemPrompts } from "@/src/features/chat/hooks/useSystemPrompts";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useChatRequestStore } from "@/src/features/chat/store";
 import { SystemPromptModal } from "./SystemPromptModal";
 
 export function SystemPromptPopover() {
-  const systemInstruction = useChatStore((state) => state.systemInstruction);
-  const setSystemInstruction = useChatStore(
+  const setSystemInstruction = useChatRequestStore(
     (state) => state.setSystemInstruction
   );
 
@@ -52,7 +51,6 @@ export function SystemPromptPopover() {
   const [editPromptTitle, setEditPromptTitle] = useState("");
   const [editPromptValue, setEditPromptValue] = useState("");
 
-  const hasInstruction = systemInstruction.trim().length > 0;
   const instructionValue = selectedPrompt?.content ?? "";
   const isBuiltInPrompt = selectedPrompt?.isBuiltIn ?? false;
   const canCreatePrompt = createPromptValue.trim().length > 0;
@@ -63,6 +61,8 @@ export function SystemPromptPopover() {
       (editPromptTitle.trim() !== selectedPrompt.name ||
         editPromptValue !== selectedPrompt.content)
   );
+  const settingsButtonClass =
+    "text-[var(--interactive-primary)] hover:!text-[var(--interactive-primary-hover)]";
 
   useEffect(() => {
     const nextContent = selectedPrompt?.content ?? "";
@@ -144,9 +144,7 @@ export function SystemPromptPopover() {
             size="sm"
             className={cn(
               "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
-              hasInstruction
-                ? "text-[var(--interactive-primary)]"
-                : "text-muted-foreground hover:text-foreground"
+              settingsButtonClass
             )}
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -185,7 +183,7 @@ export function SystemPromptPopover() {
                 variant="ghost"
                 size="sm"
                 onClick={handleCreatePrompt}
-                className="h-8 gap-1.5 px-2 text-xs"
+                className={cn("h-8 gap-1.5 px-2 text-xs", settingsButtonClass)}
               >
                 <Plus className="h-3.5 w-3.5" />
                 新建
@@ -196,7 +194,10 @@ export function SystemPromptPopover() {
                 size="sm"
                 disabled={!selectedPrompt || isBuiltInPrompt}
                 onClick={handleEditPrompt}
-                className="h-8 gap-1.5 px-2 text-xs"
+                className={cn(
+                  "h-8 gap-1.5 px-2 text-xs disabled:text-muted-foreground",
+                  settingsButtonClass
+                )}
               >
                 <PencilLine className="h-3.5 w-3.5" />
                 编辑
@@ -207,7 +208,10 @@ export function SystemPromptPopover() {
                 size="sm"
                 disabled={!selectedPrompt || isBuiltInPrompt}
                 onClick={() => setDeleteDialogOpen(true)}
-                className="h-8 gap-1.5 px-2 text-xs text-destructive hover:text-destructive"
+                className={cn(
+                  "h-8 gap-1.5 px-2 text-xs disabled:text-muted-foreground",
+                  settingsButtonClass
+                )}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 删除
@@ -265,6 +269,7 @@ export function SystemPromptPopover() {
               type="button"
               variant="ghost"
               onClick={() => setDeleteDialogOpen(false)}
+              className={settingsButtonClass}
             >
               取消
             </Button>

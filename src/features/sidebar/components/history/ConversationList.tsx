@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useMessageTreeStore } from "@/src/features/chat/store";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { ConversationItem } from "./ConversationItem";
 
@@ -20,7 +20,9 @@ export function ConversationList() {
     (state) => state.loadLocalConversations
   );
   const hasLoadedLocal = useConversationsStore((state) => state.hasLoadedLocal);
-  const activeConversationId = useChatStore((state) => state.conversationId);
+  const activeConversationId = useMessageTreeStore(
+    (state) => state.conversationId
+  );
 
   useEffect(() => {
     void loadLocalConversations();

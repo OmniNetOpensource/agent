@@ -73,6 +73,7 @@ export function SystemPromptModal({
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
+            className="text-[var(--interactive-primary)] hover:!text-[var(--interactive-primary-hover)]"
           >
             取消
           </Button>

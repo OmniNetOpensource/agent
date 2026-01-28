@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useChatRequestStore } from "@/src/features/chat/store";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 
 type ConversationItemProps = {
@@ -25,8 +25,8 @@ export function ConversationItem({
   const title = conversation.title || "未命名会话";
   const isPinned = Boolean(conversation.pinned);
 
-  const pending = useChatStore((state) => state.pending);
-  const stop = useChatStore((state) => state.stop);
+  const pending = useChatRequestStore((state) => state.pending);
+  const stop = useChatRequestStore((state) => state.stop);
   const router = useRouter();
   const pinConversation = useConversationsStore(
     (state) => state.pinConversation

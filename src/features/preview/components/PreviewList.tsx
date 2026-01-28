@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X, FileCode } from "lucide-react";
 import { usePreviewStore } from "../store/usePreviewStore";
 import { localDB, type HtmlPreview } from "@/src/shared/lib/indexed-db";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useMessageTreeStore } from "@/src/features/chat/store";
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -14,7 +14,7 @@ function formatDate(dateString: string) {
 export function PreviewList() {
   const { isListOpen, closeList, openPreview, setHasPreview } =
     usePreviewStore();
-  const conversationId = useChatStore((state) => state.conversationId);
+  const conversationId = useMessageTreeStore((state) => state.conversationId);
   const [previews, setPreviews] = useState<HtmlPreview[]>([]);
   const [loading, setLoading] = useState(false);
 

@@ -88,6 +88,7 @@ const generateTitle = async (conversationId: string, messages: Message[]) => {
   }
 };
 
+// Aggregated store getter (message tree + request state).
 type StoreGetter = () => {
   messages: Message[];
   currentPath: number[];
@@ -109,6 +110,7 @@ type StoreState = {
   activeRequestId: string | null;
 };
 
+// Setter updates request state (pending/client/requestId) and conversation id.
 type StoreSetter = (
   partial:
     | Partial<StoreState>

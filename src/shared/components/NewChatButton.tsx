@@ -2,7 +2,7 @@
 
 import Link, { LinkProps } from "next/link";
 import React from "react";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useChatRequestStore } from "@/src/features/chat/store";
 
 interface NewChatButtonProps
   extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps>,
@@ -17,7 +17,7 @@ export function NewChatButton({
   href = "/app",
   ...props
 }: NewChatButtonProps) {
-  const pending = useChatStore((state) => state.pending);
+  const pending = useChatRequestStore((state) => state.pending);
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const isModifiedClick =

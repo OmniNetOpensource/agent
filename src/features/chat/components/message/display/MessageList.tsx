@@ -4,16 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  useChatRequestStore,
+  useMessageTreeStore,
+} from "@/src/features/chat/store";
 import { computeMessagesFromPath } from "@/src/features/chat/lib/tree";
 import { Button } from "@/components/ui/button";
 
 export function MessageList() {
-  const allMessages = useChatStore((state) => state.messages);
-  const currentPath = useChatStore((state) => state.currentPath);
+  const allMessages = useMessageTreeStore((state) => state.messages);
+  const currentPath = useMessageTreeStore((state) => state.currentPath);
   const messages = computeMessagesFromPath(allMessages, currentPath);
-  const pending = useChatStore((state) => state.pending);
-  const getBranchInfo = useChatStore((state) => state.getBranchInfo);
+  const pending = useChatRequestStore((state) => state.pending);
+  const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);

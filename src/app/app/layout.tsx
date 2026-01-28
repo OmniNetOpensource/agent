@@ -1,5 +1,4 @@
 import Sidebar from "@/src/features/sidebar/components/Sidebar";
-import { SelectionQuotePopup } from "@/src/features/chat/components/selection/SelectionQuotePopup";
 import { PreviewPanel } from "@/src/features/preview/components/PreviewPanel";
 import { PreviewList } from "@/src/features/preview/components/PreviewList";
 import { ChatRoom } from "./components/ChatRoom";
@@ -16,7 +15,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* PreviewPanel（带边框，独立区域） */}
         <PreviewPanel />
       </div>
-      <SelectionQuotePopup />
     </div>
   );
 }

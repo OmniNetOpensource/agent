@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import { useChatRequestStore, useComposerStore } from "@/src/features/chat/store";
 import { MODEL_CONFIGS } from "@/src/features/chat/lib/config";
 import { SystemPromptPopover } from "./SystemPromptPopover";
 import type { SelectedSearchTool } from "@/src/features/chat/types/chat";
@@ -47,14 +47,14 @@ const SEARCH_TOOL_OPTIONS: Array<{
 
 export function ComposerToolbar() {
   // Store state
-  const currentModel = useChatStore((state) => state.currentModel);
-  const setCurrentModel = useChatStore((state) => state.setCurrentModel);
-  const uploading = useChatStore((state) => state.uploading);
-  const addAttachments = useChatStore((state) => state.addAttachments);
-  const selectedSearchTool = useChatStore(
+  const currentModel = useChatRequestStore((state) => state.currentModel);
+  const setCurrentModel = useChatRequestStore((state) => state.setCurrentModel);
+  const uploading = useComposerStore((state) => state.uploading);
+  const addAttachments = useComposerStore((state) => state.addAttachments);
+  const selectedSearchTool = useChatRequestStore(
     (state) => state.selectedSearchTool
   );
-  const setSelectedSearchTool = useChatStore(
+  const setSelectedSearchTool = useChatRequestStore(
     (state) => state.setSelectedSearchTool
   );
 
@@ -66,6 +66,8 @@ export function ComposerToolbar() {
     MODEL_CONFIGS.find((m) => m.id === currentModel)?.label ?? "";
   const selectedSearchLabel = SEARCH_TOOL_LABELS[selectedSearchTool];
   const isSearchActive = selectedSearchTool !== "none";
+  const toolButtonBaseClass =
+    "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-[var(--interactive-primary)] hover:!text-[var(--interactive-primary-hover)]";
 
   // Initialize model from localStorage
   // 合并 model 初始化 effect
@@ -116,11 +118,9 @@ export function ComposerToolbar() {
               variant="ghost"
               size="sm"
               className={cn(
-                "group h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium",
-                "data-[state=open]:bg-(--surface-hover) data-[state=open]:text-foreground",
-                isSearchActive
-                  ? "text-[var(--interactive-primary)]"
-                  : "text-muted-foreground hover:text-foreground"
+                "group",
+                toolButtonBaseClass,
+                "data-[state=open]:bg-(--surface-hover) data-[state=open]:text-[var(--interactive-primary-hover)]"
               )}
             >
               <Globe
@@ -168,7 +168,10 @@ export function ComposerToolbar() {
             size="sm"
             onClick={handlePickFiles}
             disabled={uploading}
-            className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className={cn(
+              toolButtonBaseClass,
+              "disabled:cursor-not-allowed disabled:opacity-60 disabled:text-muted-foreground"
+            )}
           >
             {uploading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -189,8 +192,9 @@ export function ComposerToolbar() {
             <Button
               variant="ghost"
               className={cn(
-                "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground",
-                modelSelectorOpen && "bg-(--surface-hover) text-foreground"
+                toolButtonBaseClass,
+                modelSelectorOpen &&
+                  "bg-(--surface-hover) text-[var(--interactive-primary-hover)]"
               )}
             >
               <span className="max-w-[80px] truncate">{currentModelLabel}</span>

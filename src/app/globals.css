@@ -19,12 +19,9 @@
   --text-tertiary: #7B88A1; /* Tertiary text, placeholders */
 
   /* Interactive - Buttons, links, toggles */
-  --interactive-primary: #88C0D0; /* nord8 - Primary actions, links */
-  --interactive-primary-hover: #81A1C1; /* nord9 - Primary hover state */
+  --interactive-primary: #c6613f; /* nord8 - Primary actions, links */
+  --interactive-primary-hover: #e49378; /* nord9 - Primary hover state */
 
-  /* Content - Decorative accents */
-  --content-accent: #88C0D0;
-  --content-accent-muted: rgba(136, 192, 208, 0.6);
 
   /* Feedback - Loading, cursor */
   --feedback-loading: #81A1C1;

@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  useEditingStore,
+  useMessageTreeStore,
+} from "@/src/features/chat/store";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import {
@@ -99,9 +102,11 @@ type LinearInput = NonNullable<ReturnType<typeof toLinearInput>>;
 
 export function useConversationLoader(conversationId: string | undefined) {
   const router = useRouter();
-  const currentConversationId = useChatStore((state) => state.conversationId);
-  const initializeTree = useChatStore((state) => state.initializeTree);
-  const setConversationId = useChatStore((state) => state.setConversationId);
+  const currentConversationId = useMessageTreeStore(
+    (state) => state.conversationId
+  );
+  const initializeTree = useMessageTreeStore((state) => state.initializeTree);
+  const setConversationId = useMessageTreeStore((state) => state.setConversationId);
 
   useEffect(() => {
     if (!conversationId || currentConversationId === conversationId) {
@@ -164,6 +169,7 @@ export function useConversationLoader(conversationId: string | undefined) {
         }
 
         usePreviewStore.getState().reset();
+        useEditingStore.getState().clear();
         setConversationId(conversationId);
         initializeTree(mappedMessages, currentPath);
       } catch (error) {

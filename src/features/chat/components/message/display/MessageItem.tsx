@@ -19,7 +19,11 @@ import {
   GitBranch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useChatStore } from "@/src/features/chat/store/useChatStore";
+import {
+  useChatRequestStore,
+  useEditingStore,
+  useMessageTreeStore,
+} from "@/src/features/chat/store";
 import { MessageEditor } from "../editing/MessageEditor";
 import { BranchNavigator } from "../editing/BranchNavigator";
 import {
@@ -120,7 +124,7 @@ const BranchConversationButton = ({
   disabled,
 }: BranchConversationButtonProps) => {
   const router = useRouter();
-  const branchToNewConversation = useChatStore(
+  const branchToNewConversation = useMessageTreeStore(
     (state) => state.branchToNewConversation,
   );
   const [open, setOpen] = useState(false);
@@ -195,11 +199,11 @@ export const MessageItem = memo(function MessageItem({
   branchInfo,
 }: MessageItemProps) {
   const router = useRouter();
-  const pending = useChatStore((state) => state.pending);
-  const editingState = useChatStore((state) => state.editingState);
-  const startEditing = useChatStore((state) => state.startEditing);
-  const retryFromMessage = useChatStore((state) => state.retryFromMessage);
-  const navigateBranch = useChatStore((state) => state.navigateBranch);
+  const pending = useChatRequestStore((state) => state.pending);
+  const editingState = useEditingStore((state) => state.editingState);
+  const startEditing = useEditingStore((state) => state.startEditing);
+  const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
+  const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
   const isMobile = useIsMobile();
   const isUser = message.role === "user";
   const isEditing = editingState?.messageId === messageId;
