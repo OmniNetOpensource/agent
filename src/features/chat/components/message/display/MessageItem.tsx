@@ -200,13 +200,14 @@ export const MessageItem = memo(function MessageItem({
 }: MessageItemProps) {
   const router = useRouter();
   const pending = useChatRequestStore((state) => state.pending);
-  const editingState = useEditingStore((state) => state.editingState);
+  const isEditing = useEditingStore(
+    (state) => state.editingState?.messageId === messageId,
+  );
   const startEditing = useEditingStore((state) => state.startEditing);
   const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
   const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
   const isMobile = useIsMobile();
   const isUser = message.role === "user";
-  const isEditing = editingState?.messageId === messageId;
   const attachmentBlocks = message.blocks.filter(
     (
       block,
