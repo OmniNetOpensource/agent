@@ -6,10 +6,13 @@ import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
 import {
   useChatRequestStore,
+  useComposerStore,
   useMessageTreeStore,
 } from "@/src/features/chat/store";
 import { computeMessagesFromPath } from "@/src/features/chat/lib/tree";
 import { Button } from "@/components/ui/button";
+import { useTextSelection } from "@/src/features/chat/hooks/useTextSelection";
+import { SelectionQuoteButton } from "./SelectionQuoteButton";
 
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
@@ -20,6 +23,24 @@ export function MessageList() {
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const { selection, updateSelection, clearSelection } =
+    useTextSelection(scrollRef);
+  const clearSelectionRef = useRef(clearSelection);
+
+  const handleQuote = () => {
+    if (selection.text) {
+      useComposerStore.getState().addQuotedText(selection.text);
+      clearSelection();
+    }
+  };
+
+  useEffect(() => {
+    clearSelectionRef.current = clearSelection;
+  }, [clearSelection]);
+
+  useEffect(() => {
+    clearSelectionRef.current();
+  }, [messages.length]);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -61,7 +82,12 @@ export function MessageList() {
 
   return (
     <div className="relative h-full w-full">
-      <div ref={scrollRef} className="h-full w-full overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="h-full w-full overflow-y-auto"
+        onMouseUp={updateSelection}
+        onTouchEnd={updateSelection}
+      >
         <div
           role="log"
           aria-live="polite"
@@ -92,6 +118,14 @@ export function MessageList() {
           )}
         </div>
       </div>
+
+      {selection.text && (
+        <SelectionQuoteButton
+          text={selection.text}
+          rect={selection.rect}
+          onQuote={handleQuote}
+        />
+      )}
 
       {messages.length > 0 && !isAtBottom && (
         <div className="absolute bottom-32 md:bottom-36 left-0 right-0 flex justify-end px-3 sm:px-4 md:px-0 pointer-events-none z-(--z-sticky)">

@@ -21,11 +21,11 @@
   /* Interactive - Buttons, links, toggles */
   --interactive-primary: #c6613f; /* nord8 - Primary actions, links */
   --interactive-primary-hover: #e49378; /* nord9 - Primary hover state */
+  --interactive-secondary: #81A1C1; /* Legacy primary - secondary actions */
+  --interactive-secondary-hover: #88C0D0; /* Legacy primary hover */
 
 
-  /* Feedback - Loading, cursor */
-  --feedback-loading: #81A1C1;
-  --feedback-cursor: #88C0D0;
+
 
   /* Inline Code */
   --code-inline-bg: #D8DEE9;
@@ -74,8 +74,10 @@ html.dark {
   --text-tertiary: #7B88A1; /* Tertiary text, placeholders */
 
   /* Interactive - Buttons, links, toggles */
-  --interactive-primary: #88C0D0; /* nord8 - Primary actions, links */
-  --interactive-primary-hover: #8FBCBB; /* nord7 - Primary hover state */
+  --interactive-primary: #c6613f; /* nord8 - Primary actions, links */
+  --interactive-primary-hover: #e49378; /* nord9 - Primary hover state */
+  --interactive-secondary: #88C0D0; /* nord8 - Legacy primary */
+  --interactive-secondary-hover: #8FBCBB; /* nord7 - Legacy primary hover */
 
 
   /* Content - Decorative accents */

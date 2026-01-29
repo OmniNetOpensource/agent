@@ -1,16 +1,27 @@
 "use client";
 
-import { memo, useState } from "react";
-import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
+import type { ReactNode } from "react";
+import { memo } from "react";
+import {
+  AlertTriangle,
+  Brain,
+  Check,
+  Link,
+  Loader2,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
+import type {
+  ResearchItem as ResearchItemData,
+  Tool,
+} from "@/src/features/chat/types/chat";
 import { FetchUrl } from "./tools/FetchUrl";
 import { UnifiedSearch } from "./tools/UnifiedSearch";
 import { RenderHtml } from "./tools/RenderHtml";
 import { ThinkingItem } from "./tools/ThinkingItem";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { ResearchCard } from "./ResearchCard";
+import { getToolLifecycle } from "./utils";
 
 type ResearchBlockProps = {
   items: ResearchItemData[];
@@ -21,31 +32,291 @@ type ResearchBlockProps = {
 
 type ResearchBlockItemProps = {
   item: ResearchItemData;
-  itemKey: string;
+  isLatest: boolean;
+  isActive?: boolean;
+  syncKey: number;
 };
+
+const SEARCH_TOOL_NAMES = new Set([
+  "brave_search",
+  "serp_search",
+  "tavily_search",
+]);
+
+const NON_EXPANDABLE_TOOLS = new Set(["fetch_url", "render_html"]);
+
+const SEARCH_ERROR_PREFIXES = [
+  "Error:",
+  "Error executing",
+  "Brave Search API error:",
+  "Brave Search error:",
+  "SerpAPI error:",
+  "Tavily API error:",
+  "Tavily Search error:",
+];
+
+type RenderHtmlResult = {
+  success: boolean;
+  error?: string;
+};
+
+const parseRenderHtmlResult = (
+  resultStr: string | undefined
+): RenderHtmlResult | null => {
+  if (!resultStr) return null;
+  try {
+    const parsed = JSON.parse(resultStr) as RenderHtmlResult;
+    if (typeof parsed?.success !== "boolean") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const getSearchResultCount = (rawResult: string): number | null => {
+  try {
+    const data = JSON.parse(rawResult) as {
+      results?: unknown;
+      rawResults?: unknown;
+      web?: { results?: unknown };
+    };
+    const rawResults =
+      (Array.isArray(data?.results) && data.results) ||
+      (Array.isArray(data?.rawResults) && data.rawResults) ||
+      (Array.isArray(data?.web?.results) && data.web.results) ||
+      [];
+
+    if (!Array.isArray(rawResults)) {
+      return null;
+    }
+
+    return rawResults.filter((item) => {
+      if (!item || typeof item !== "object") {
+        return false;
+      }
+      const url =
+        "url" in item && typeof item.url === "string"
+          ? item.url
+          : "link" in item && typeof item.link === "string"
+            ? item.link
+            : "";
+      return Boolean(url);
+    }).length;
+  } catch {
+    return null;
+  }
+};
+
+const getToolDescription = (
+  tool: Tool,
+  toolName: string
+): ReactNode | null => {
+  const { result } = getToolLifecycle(tool);
+  const resultText = typeof result?.result === "string" ? result.result : "";
+
+  if (!result) {
+    if (toolName === "fetch_url") {
+      return (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin text-foreground" />
+          <span>Loading...</span>
+        </>
+      );
+    }
+
+    if (toolName === "render_html") {
+      return (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin text-foreground" />
+          <span>Creating preview...</span>
+        </>
+      );
+    }
+
+    if (SEARCH_TOOL_NAMES.has(toolName)) {
+      return (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin text-foreground" />
+          <span>Searching...</span>
+        </>
+      );
+    }
+
+    return null;
+  }
+
+  if (toolName === "fetch_url") {
+    const isError = resultText.startsWith("Error");
+    return isError ? (
+      <>
+        <X className="h-3 w-3 text-(--status-destructive)" />
+        <span>Failed</span>
+      </>
+    ) : (
+      <>
+        <Check className="h-3 w-3 text-(--status-success)" />
+        <span>Success</span>
+      </>
+    );
+  }
+
+  if (toolName === "render_html") {
+    const parsedResult = parseRenderHtmlResult(resultText);
+    const isError = parsedResult?.success === false;
+    return isError ? (
+      <>
+        <X className="h-3 w-3 text-(--status-destructive)" />
+        <span>Failed</span>
+      </>
+    ) : (
+      <>
+        <Check className="h-3 w-3 text-(--status-success)" />
+        <span>Preview ready</span>
+      </>
+    );
+  }
+
+  if (SEARCH_TOOL_NAMES.has(toolName)) {
+    const isError = SEARCH_ERROR_PREFIXES.some((prefix) =>
+      resultText.startsWith(prefix)
+    );
+
+    if (isError) {
+      return (
+        <>
+          <X className="h-3 w-3 text-(--status-destructive)" />
+          <span>Error</span>
+        </>
+      );
+    }
+
+    const resultCount = getSearchResultCount(resultText);
+    if (resultCount === 0) {
+      return (
+        <>
+          <X className="h-3 w-3 text-(--status-destructive)" />
+          <span>No results found</span>
+        </>
+      );
+    }
+
+    if (typeof resultCount === "number") {
+      return (
+        <>
+          <Check className="h-3 w-3 text-(--status-success)" />
+          <span>
+            Found {resultCount} result{resultCount === 1 ? "" : "s"}
+          </span>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Check className="h-3 w-3 text-(--status-success)" />
+        <span>Results ready</span>
+      </>
+    );
+  }
+
+  return null;
+};
+
+const isToolExpandable = (toolName: string) =>
+  !NON_EXPANDABLE_TOOLS.has(toolName);
 
 const ResearchBlockItem = memo(function ResearchBlockItem({
   item,
-  itemKey,
+  isLatest,
+  isActive,
+  syncKey,
 }: ResearchBlockItemProps) {
-  // Handle thinking
   if (item.kind === "thinking") {
-    return <ThinkingItem item={item} itemKey={itemKey} />;
+    return (
+      <ResearchCard
+        title="Thinking Process"
+        icon={<Brain className="h-3.5 w-3.5" />}
+        isLatest={isLatest}
+        isActive={isActive}
+        syncKey={syncKey}
+      >
+        <ThinkingItem item={item} />
+      </ResearchCard>
+    );
   }
 
-  // Handle tool calls - each tool component handles its own result/progress
   if (item.kind === "tool") {
     const toolName = item.data.call.tool;
+    const args = item.data.call.args as Record<string, unknown>;
+    const description = getToolDescription(item.data, toolName);
+    const expandable = isToolExpandable(toolName);
 
     switch (toolName) {
-      case "fetch_url":
-        return <FetchUrl tool={item.data} />;
+      case "fetch_url": {
+        const url = typeof args.url === "string" ? args.url : "";
+        let hostname = "URL";
+        if (url) {
+          try {
+            hostname = new URL(url).hostname;
+          } catch {
+            hostname = url;
+          }
+        }
+
+        return (
+          <ResearchCard
+            title={`Fetching ${hostname}`}
+            icon={<Link className="h-3.5 w-3.5" />}
+            description={description}
+            expandable={expandable}
+            isLatest={isLatest}
+            isActive={isActive}
+            syncKey={syncKey}
+          >
+            <FetchUrl tool={item.data} />
+          </ResearchCard>
+        );
+      }
       case "brave_search":
       case "serp_search":
       case "tavily_search":
-        return <UnifiedSearch tool={item.data} />;
-      case "render_html":
-        return <RenderHtml tool={item.data} />;
+        return (
+          <ResearchCard
+            title={
+              typeof args.query === "string"
+                ? `Search Results: ${args.query}`
+                : "Search Results"
+            }
+            icon={<Search className="h-3.5 w-3.5" />}
+            description={description}
+            expandable={expandable}
+            isLatest={isLatest}
+            isActive={isActive}
+            syncKey={syncKey}
+          >
+            <UnifiedSearch tool={item.data} />
+          </ResearchCard>
+        );
+      case "render_html": {
+        const title =
+          typeof args.title === "string" ? args.title : "preview";
+
+        return (
+          <ResearchCard
+            title={`Creating ${title}`}
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            description={description}
+            expandable={expandable}
+            isLatest={isLatest}
+            isActive={isActive}
+            syncKey={syncKey}
+          >
+            <RenderHtml tool={item.data} />
+          </ResearchCard>
+        );
+      }
       default:
         if (process.env.NODE_ENV === "development") {
           console.error(
@@ -53,9 +324,19 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
           );
         }
         return (
-          <div className="px-3 py-1 text-xs font-mono text-destructive/80">
-            Missing UI for tool: <strong>{toolName}</strong>
-          </div>
+          <ResearchCard
+            title={`Running ${toolName}`}
+            icon={<AlertTriangle className="h-3.5 w-3.5" />}
+            description={description}
+            expandable={expandable}
+            isLatest={isLatest}
+            isActive={isActive}
+            syncKey={syncKey}
+          >
+            <div className="text-xs font-mono text-destructive/80">
+              Missing UI for tool: <strong>{toolName}</strong>
+            </div>
+          </ResearchCard>
         );
     }
   }
@@ -63,121 +344,30 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
   return null;
 });
 
-const getLatestStatus = (items: ResearchItemData[]): string => {
-  if (items.length === 0) return "Researching...";
-
-  const lastItem = items[items.length - 1];
-
-  if (lastItem.kind === "thinking") {
-    return "Thinking...";
-  }
-
-  if (lastItem.kind === "tool") {
-    const toolName = lastItem.data.call.tool;
-    const args = lastItem.data.call.args;
-
-    if (
-      toolName === "brave_search" ||
-      toolName === "serp_search" ||
-      toolName === "tavily_search"
-    ) {
-      const query = args.query as string;
-      return `Searching "${query}"`;
-    }
-
-    if (toolName === "fetch_url") {
-      const url = args.url as string;
-      try {
-        const hostname = new URL(url).hostname;
-        return `Fetching ${hostname}`;
-      } catch {
-        return `Fetching URL`;
-      }
-    }
-
-    if (toolName === "render_html") {
-      const title = args.title as string | undefined;
-      return title ? `Creating "${title}"` : "Creating preview";
-    }
-
-    return `Running ${toolName}`;
-  }
-
-  return "Researching...";
-};
-
-const ShimmerText = ({ children }: { children: string }) => {
-  return (
-    <>
-      <style>
-        {`
-          @keyframes research-shimmer {
-            0% { background-position: 200% 50%; }
-            100% { background-position: -200% 50%; }
-          }
-        `}
-      </style>
-      <span
-        style={{
-          display: "inline-block",
-          fontSize: "14px",
-          fontWeight: 500,
-          color: "transparent",
-          backgroundImage: `linear-gradient(90deg,
-            var(--text-tertiary) 0%,
-            var(--text-tertiary) 35%,
-            var(--text-primary) 50%,
-            var(--text-tertiary) 65%,
-            var(--text-tertiary) 100%)`,
-          backgroundSize: "400% 100%",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          animation: "research-shimmer 4s linear infinite",
-        }}
-      >
-        {children}
-      </span>
-    </>
-  );
-};
-
 export const ResearchBlock = memo(function ResearchBlock({
   items,
   blockIndex,
   messageIndex,
   isActive,
 }: ResearchBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const syncKey = items.length;
 
   return (
-    <Collapsible
-      open={isExpanded}
-      onOpenChange={setIsExpanded}
-      className="my-2"
-    >
-      <CollapsibleTrigger
-        className="w-full px-1.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--interactive-primary)/30"
-      >
-        {isActive ? (
-          <ShimmerText>{getLatestStatus(items)}</ShimmerText>
-        ) : (
-          <span className="text-sm font-medium text-(--text-tertiary) transition-colors hover:text-(--text-secondary)">
-            Research Completed
-          </span>
-        )}
-      </CollapsibleTrigger>
+    <div className="my-2 space-y-2">
+      {items.map((item, itemIndex) => {
+        const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
+        const isLatest = itemIndex === items.length - 1;
 
-      <CollapsibleContent>
-        <div className="max-h-[500px] overflow-y-auto overscroll-contain bg-transparent">
-          {items.map((item, itemIndex) => {
-            const itemKey = `${messageIndex}-${blockIndex}-${itemIndex}`;
-            return (
-              <ResearchBlockItem key={itemKey} item={item} itemKey={itemKey} />
-            );
-          })}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+        return (
+          <ResearchBlockItem
+            key={itemKey}
+            item={item}
+            isLatest={isLatest}
+            isActive={isActive}
+            syncKey={syncKey}
+          />
+        );
+      })}
+    </div>
   );
 });

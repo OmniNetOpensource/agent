@@ -62,14 +62,15 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
     selectedSearchTool: getInitialSearchTool(),
     systemInstruction: "",
     sendMessage: async (navigate) => {
-      const { input, pendingAttachments } = useComposerStore.getState();
+      const { input, pendingAttachments, quotedTexts } =
+        useComposerStore.getState();
       const trimmed = input.trim();
       const selectedModel = get().currentModel;
 
       if (get().pending) {
         return;
       }
-      if (!trimmed && pendingAttachments.length === 0) {
+      if (!trimmed && pendingAttachments.length === 0 && quotedTexts.length === 0) {
         return;
       }
       if (!selectedModel) {
@@ -77,10 +78,23 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
         return;
       }
 
+      let finalInput = input;
+      if (quotedTexts.length > 0) {
+        const quotedBlocks = quotedTexts
+          .map((quote) =>
+            quote.text
+              .split(/\r?\n/)
+              .map((line) => `> ${line}`)
+              .join("\n")
+          )
+          .join("\n\n");
+        finalInput = trimmed ? `${quotedBlocks}\n\n${input}` : quotedBlocks;
+      }
+
       const treeStore = useMessageTreeStore.getState();
       const result = treeStore._addMessage(
         "user",
-        buildUserBlocks(input, pendingAttachments)
+        buildUserBlocks(finalInput, pendingAttachments)
       );
 
       const pathMessages = computeMessagesFromPath(
@@ -88,7 +102,7 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
         result.currentPath
       );
 
-      useComposerStore.setState({ input: "", pendingAttachments: [] });
+      useComposerStore.getState().clear();
 
       const { get: getRequestState, set: setRequestState } =
         getChatRequestHandlers();

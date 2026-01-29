@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
+import { useIsMobile } from "@/src/shared/mobile/MobileContext";
 import {
   useChatRequestStore,
   useComposerStore,
@@ -81,6 +82,7 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   );
   const cancelEditing = useEditingStore((state) => state.cancelEditing);
   const submitEdit = useEditingStore((state) => state.submitEdit);
+  const isMobile = useIsMobile();
   const uploading = useComposerStore((state) => state.uploading);
   const pending = useChatRequestStore((state) => state.pending);
   const currentModel = useEditingStore((state) => state.currentModel);
@@ -181,6 +183,9 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isMobile) {
+      return;
+    }
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       if (!sendDisabled) {
@@ -277,6 +282,7 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
         onPaste={handlePaste}
         rows={1}
         placeholder="编辑消息内容..."
+        enterKeyHint={isMobile ? "enter" : undefined}
         className="min-h-10 max-h-[200px] resize-none border-0 bg-transparent py-2.5 text-sm focus-visible:ring-0 sm:text-base"
         style={{ height: "44px" }}
       />

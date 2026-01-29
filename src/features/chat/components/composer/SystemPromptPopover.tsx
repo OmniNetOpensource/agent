@@ -1,32 +1,24 @@
 "use client";
 
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  ChevronDown,
+  Circle,
+  CircleDot,
   PencilLine,
   Plus,
   SlidersHorizontal,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useSystemPrompts } from "@/src/features/chat/hooks/useSystemPrompts";
 import { useChatRequestStore } from "@/src/features/chat/store";
-import { SystemPromptModal } from "./SystemPromptModal";
+import { CreateSystemPromptModal } from "./CreateSystemPromptModal";
+import { EditSystemPromptModal } from "./EditSystemPromptModal";
 
 export function SystemPromptPopover() {
   const setSystemInstruction = useChatRequestStore(
@@ -45,93 +37,60 @@ export function SystemPromptPopover() {
   const [instructionOpen, setInstructionOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [createPromptTitle, setCreatePromptTitle] = useState("");
-  const [createPromptValue, setCreatePromptValue] = useState("");
-  const [editPromptTitle, setEditPromptTitle] = useState("");
-  const [editPromptValue, setEditPromptValue] = useState("");
+  const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
 
-  const instructionValue = selectedPrompt?.content ?? "";
-  const isBuiltInPrompt = selectedPrompt?.isBuiltIn ?? false;
-  const canCreatePrompt = createPromptValue.trim().length > 0;
-  const canEditPrompt = Boolean(
-    selectedPrompt &&
-      !isBuiltInPrompt &&
-      editPromptTitle.trim().length > 0 &&
-      (editPromptTitle.trim() !== selectedPrompt.name ||
-        editPromptValue !== selectedPrompt.content)
-  );
+  const editingPrompt =
+    prompts.find((prompt) => prompt.id === editingPromptId) ?? null;
   const settingsButtonClass =
-    "text-[var(--interactive-primary)] hover:!text-[var(--interactive-primary-hover)]";
+    "text-[var(--interactive-secondary)] hover:!text-[var(--interactive-secondary-hover)]";
 
   useEffect(() => {
     const nextContent = selectedPrompt?.content ?? "";
     setSystemInstruction(nextContent.trim());
   }, [selectedPrompt, setSystemInstruction]);
 
-  const handlePromptSelect = (event: ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value;
-    selectPrompt(value ? value : null);
+  const handlePromptSelect = (value: string | null) => {
+    selectPrompt(value);
   };
 
   const handleCreatePrompt = () => {
     setInstructionOpen(false);
-    setCreatePromptTitle("");
-    setCreatePromptValue("");
     setCreateDialogOpen(true);
   };
 
   const handleCreateDialogOpenChange = (open: boolean) => {
     setCreateDialogOpen(open);
-    if (!open) {
-      setCreatePromptTitle("");
-      setCreatePromptValue("");
-    }
   };
 
-  const handleConfirmCreate = () => {
-    if (!canCreatePrompt) return;
-    const created = createPrompt({
-      name: createPromptTitle,
-      content: createPromptValue,
-    });
-    handleCreateDialogOpenChange(false);
+  const handleConfirmCreate = (data: { name: string; content: string }) => {
+    const created = createPrompt(data);
     if (created) {
       setSystemInstruction(created.content.trim());
     }
   };
 
-  const handleEditPrompt = () => {
-    if (!selectedPrompt) return;
+  const handleEditPrompt = (prompt: (typeof prompts)[number]) => {
     setInstructionOpen(false);
-    setEditPromptTitle(selectedPrompt.name ?? "");
-    setEditPromptValue(selectedPrompt.content ?? "");
+    setEditingPromptId(prompt.id);
+    selectPrompt(prompt.id);
     setEditDialogOpen(true);
   };
 
   const handleEditDialogOpenChange = (open: boolean) => {
     setEditDialogOpen(open);
     if (!open) {
-      setEditPromptTitle("");
-      setEditPromptValue("");
+      setEditingPromptId(null);
     }
   };
 
-  const handleConfirmEdit = () => {
-    if (!selectedPrompt) return;
-    const nextTitle = editPromptTitle.trim();
-    if (!nextTitle) return;
-    updatePrompt(selectedPrompt.id, {
-      name: nextTitle,
-      content: editPromptValue,
-    });
-    handleEditDialogOpenChange(false);
+  const handleConfirmEdit = (data: { name: string; content: string }) => {
+    if (!editingPromptId) return;
+    updatePrompt(editingPromptId, data);
   };
 
   const handleConfirmDelete = () => {
-    if (!selectedPrompt) return;
-    deletePrompt(selectedPrompt.id);
-    setDeleteDialogOpen(false);
+    if (!editingPromptId) return;
+    deletePrompt(editingPromptId);
   };
 
   return (
@@ -159,130 +118,95 @@ export function SystemPromptPopover() {
             <div className="text-xs font-medium text-muted-foreground">
               自定义系统指令
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <select
-                  value={selectedPrompt?.id ?? ""}
-                  onChange={handlePromptSelect}
+            <div className="max-h-96 overflow-y-auto">
+              <div className="flex flex-col gap-1 pr-1">
+                <div
                   className={cn(
-                    "border-(--border-primary) bg-card text-foreground focus-visible:border-(--interactive-primary) focus-visible:ring-(--interactive-primary)/50 dark:bg-(--surface-muted)/30 flex h-8 w-full appearance-none rounded-md border px-2 pr-7 text-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px]",
-                    "disabled:cursor-not-allowed disabled:opacity-50"
+                    "group flex cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+                    selectedPrompt
+                      ? "border-transparent hover:bg-[var(--surface-hover)]"
+                      : "border-[var(--interactive-secondary)] bg-[var(--surface-hover)]"
                   )}
+                  onClick={() => handlePromptSelect(null)}
                 >
-                  <option value="">默认</option>
-                  {prompts.map((prompt) => (
-                    <option key={prompt.id} value={prompt.id}>
-                      {prompt.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                  <div className="flex items-center gap-2">
+                    {selectedPrompt ? (
+                      <Circle className="h-4 w-4" />
+                    ) : (
+                      <CircleDot className="h-4 w-4" />
+                    )}
+                    <span>默认</span>
+                  </div>
+                </div>
+                {prompts.map((prompt) => {
+                  const isSelected = selectedPrompt?.id === prompt.id;
+                  const isEditable = !prompt.isBuiltIn;
+                  return (
+                    <div
+                      key={prompt.id}
+                      className={cn(
+                        "group flex cursor-pointer items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+                        isSelected
+                          ? "border-[var(--interactive-secondary)] bg-[var(--surface-hover)]"
+                          : "border-transparent hover:bg-[var(--surface-hover)]"
+                      )}
+                      onClick={() => handlePromptSelect(prompt.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        {isSelected ? (
+                          <CircleDot className="h-4 w-4" />
+                        ) : (
+                          <Circle className="h-4 w-4" />
+                        )}
+                        <span>{prompt.name}</span>
+                      </div>
+                      {isEditable ? (
+                        <button
+                          type="button"
+                          aria-label="编辑系统指令"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleEditPrompt(prompt);
+                          }}
+                          className="rounded-sm p-1 opacity-0 transition-opacity hover:bg-[var(--surface-hover)] group-hover:opacity-100"
+                        >
+                          <PencilLine className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleCreatePrompt}
-                className={cn("h-8 gap-1.5 px-2 text-xs", settingsButtonClass)}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                新建
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={!selectedPrompt || isBuiltInPrompt}
-                onClick={handleEditPrompt}
-                className={cn(
-                  "h-8 gap-1.5 px-2 text-xs disabled:text-muted-foreground",
-                  settingsButtonClass
-                )}
-              >
-                <PencilLine className="h-3.5 w-3.5" />
-                编辑
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={!selectedPrompt || isBuiltInPrompt}
-                onClick={() => setDeleteDialogOpen(true)}
-                className={cn(
-                  "h-8 gap-1.5 px-2 text-xs disabled:text-muted-foreground",
-                  settingsButtonClass
-                )}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                删除
-              </Button>
             </div>
-            <Textarea
-              rows={4}
-              value={instructionValue}
-              placeholder="例如：你是一名擅长解释代码的前端导师，回答要简洁、分点。"
-              readOnly
-              className="h-32 resize-none overflow-y-auto text-sm"
-            />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleCreatePrompt}
+              className={cn(
+                "h-8 w-full justify-start gap-1.5 px-2 text-xs",
+                settingsButtonClass
+              )}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              新建系统指令
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
 
-      <SystemPromptModal
+      <CreateSystemPromptModal
         open={createDialogOpen}
         onOpenChange={handleCreateDialogOpenChange}
-        title="新建指令"
-        description="填写系统指令内容，确定后保存。"
-        confirmLabel="确定"
-        confirmDisabled={!canCreatePrompt}
         onConfirm={handleConfirmCreate}
-        promptTitle={createPromptTitle}
-        onPromptTitleChange={setCreatePromptTitle}
-        promptContent={createPromptValue}
-        onPromptContentChange={setCreatePromptValue}
       />
 
-      <SystemPromptModal
+      <EditSystemPromptModal
         open={editDialogOpen}
         onOpenChange={handleEditDialogOpenChange}
-        title="编辑指令"
-        description="修改标题或内容后保存。"
-        confirmLabel="保存"
-        confirmDisabled={!canEditPrompt}
+        prompt={editingPrompt}
         onConfirm={handleConfirmEdit}
-        promptTitle={editPromptTitle}
-        onPromptTitleChange={setEditPromptTitle}
-        promptContent={editPromptValue}
-        onPromptContentChange={setEditPromptValue}
+        onDelete={handleConfirmDelete}
       />
-
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>
-              确定要删除「{selectedPrompt?.name}」吗？此操作无法撤销。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setDeleteDialogOpen(false)}
-              className={settingsButtonClass}
-            >
-              取消
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleConfirmDelete}
-            >
-              删除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

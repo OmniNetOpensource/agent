@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
+  useComposerStore,
   useEditingStore,
   useMessageTreeStore,
 } from "@/src/features/chat/store";
@@ -112,6 +113,8 @@ export function useConversationLoader(conversationId: string | undefined) {
     if (!conversationId || currentConversationId === conversationId) {
       return;
     }
+
+    useComposerStore.getState().clear();
 
     const abortController = new AbortController();
     const { signal } = abortController;

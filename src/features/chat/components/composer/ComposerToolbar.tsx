@@ -67,7 +67,7 @@ export function ComposerToolbar() {
   const selectedSearchLabel = SEARCH_TOOL_LABELS[selectedSearchTool];
   const isSearchActive = selectedSearchTool !== "none";
   const toolButtonBaseClass =
-    "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-[var(--interactive-primary)] hover:!text-[var(--interactive-primary-hover)]";
+    "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-[var(--interactive-secondary)] hover:!text-[var(--interactive-secondary-hover)]";
 
   // Initialize model from localStorage
   // 合并 model 初始化 effect
@@ -120,7 +120,7 @@ export function ComposerToolbar() {
               className={cn(
                 "group",
                 toolButtonBaseClass,
-                "data-[state=open]:bg-(--surface-hover) data-[state=open]:text-[var(--interactive-primary-hover)]"
+                "data-[state=open]:bg-(--surface-hover) data-[state=open]:text-[var(--interactive-secondary-hover)]"
               )}
             >
               <Globe
@@ -145,7 +145,7 @@ export function ComposerToolbar() {
               >
                 <span>{option.label}</span>
                 {option.value === selectedSearchTool ? (
-                  <Check className="h-3.5 w-3.5 text-[var(--interactive-primary)]" />
+                  <Check className="h-3.5 w-3.5 text-[var(--interactive-secondary)]" />
                 ) : null}
               </DropdownMenuItem>
             ))}
@@ -194,7 +194,7 @@ export function ComposerToolbar() {
               className={cn(
                 toolButtonBaseClass,
                 modelSelectorOpen &&
-                  "bg-(--surface-hover) text-[var(--interactive-primary-hover)]"
+                  "bg-(--surface-hover) text-[var(--interactive-secondary-hover)]"
               )}
             >
               <span className="max-w-[80px] truncate">{currentModelLabel}</span>
@@ -229,7 +229,7 @@ export function ComposerToolbar() {
                 >
                   <span>{model.label}</span>
                   {currentModel === model.id && (
-                    <Check className="w-3.5 h-3.5 text-[var(--interactive-primary)]" />
+                    <Check className="w-3.5 h-3.5 text-[var(--interactive-secondary)]" />
                   )}
                 </button>
               ))}

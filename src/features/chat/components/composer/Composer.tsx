@@ -8,7 +8,7 @@ import {
   useRef,
 } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, Paperclip, Quote, Square, X } from "lucide-react";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
 import {
@@ -21,17 +21,21 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
+import { useIsMobile } from "@/src/shared/mobile/MobileContext";
 
 export function Composer() {
   const router = useRouter();
   const input = useComposerStore((state) => state.input);
   const pending = useChatRequestStore((state) => state.pending);
   const pendingAttachments = useComposerStore((state) => state.pendingAttachments);
+  const quotedTexts = useComposerStore((state) => state.quotedTexts);
   const uploading = useComposerStore((state) => state.uploading);
   const currentModel = useChatRequestStore((state) => state.currentModel);
+  const isMobile = useIsMobile();
   const setInput = useComposerStore((state) => state.setInput);
   const addAttachments = useComposerStore((state) => state.addAttachments);
   const removeAttachment = useComposerStore((state) => state.removeAttachment);
+  const removeQuotedText = useComposerStore((state) => state.removeQuotedText);
   const sendMessage = useChatRequestStore((state) => state.sendMessage);
   const stop = useChatRequestStore((state) => state.stop);
 
@@ -39,9 +43,10 @@ export function Composer() {
     const trimmed = input.trim();
     const hasContent = trimmed.length > 0;
     const hasAttachment = pendingAttachments.length > 0;
+    const hasQuotes = quotedTexts.length > 0;
     const hasModel = !!currentModel;
 
-    if (pending || (!hasContent && !hasAttachment) || !hasModel) {
+    if (pending || (!hasContent && !hasAttachment && !hasQuotes) || !hasModel) {
       if (!hasModel) {
         toast.warning("请先选择模型");
       }
@@ -59,6 +64,9 @@ export function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isMobile) {
+      return;
+    }
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       void submitMessage();
@@ -134,10 +142,11 @@ export function Composer() {
 
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
+  const hasQuotes = quotedTexts.length > 0;
   const hasModel = !!currentModel;
   const sendDisabled = pending
     ? false
-    : (!hasText && !hasAttachments) ||
+    : (!hasText && !hasAttachments && !hasQuotes) ||
       !hasModel ||
       uploading;
   const isNewchat = useIsNewChat();
@@ -155,7 +164,38 @@ export function Composer() {
       onSubmit={handleSubmit}
       className={formClassName}
     >
-      <div className="relative flex w-full flex-col gap-1 rounded-2xl border bg-card p-2 shadow-lg transition-all focus-within:border-(--interactive-primary) focus-within:shadow-xl">
+      <div className="relative flex w-full flex-col gap-1 rounded-2xl border bg-card p-2 shadow-lg transition-all focus-within:border-(--interactive-secondary) focus-within:shadow-xl">
+        {hasQuotes && (
+          <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0 mb-2">
+            {quotedTexts.map((quote) => (
+              <div
+                key={quote.id}
+                className="flex min-w-[200px] max-w-full items-start gap-3 rounded-lg border bg-(--surface-primary) p-2 pr-3 shadow-sm"
+              >
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted">
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <Quote className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-foreground line-clamp-2">
+                    {quote.text}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="移除引用"
+                  onClick={() => removeQuotedText(quote.id)}
+                  className="h-6 w-6 rounded-full hover:text-destructive"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
         {hasAttachments && (
           <div className="flex flex-wrap gap-2 rounded-2xl bg-card px-0 py-0">
             {pendingAttachments.map((attachment) =>
@@ -224,6 +264,7 @@ export function Composer() {
             onPaste={handlePaste}
             rows={1}
             placeholder="输入您的消息..."
+            enterKeyHint={isMobile ? "enter" : undefined}
             className="min-h-10 max-h-[200px] flex-1 resize-none border-0 bg-transparent py-2.5 text-sm focus-visible:ring-0 sm:text-base"
             style={{ height: "44px" }}
           />
