@@ -18,7 +18,6 @@ import {
   switchBranch,
   type AssistantAddition,
 } from "@/src/features/chat/lib/tree";
-import { cleanupTreeAttachments } from "@/src/features/chat/lib/attachments";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
@@ -72,10 +71,6 @@ export const useMessageTreeStore = create<MessageTreeState & MessageTreeActions>
     ...createEmptyMessageState(),
     conversationId: null,
     setMessages: (messages) => {
-      const existingMessages = get().messages;
-      if (existingMessages.length > 0) {
-        cleanupTreeAttachments(existingMessages);
-      }
       // Normalize to a linear tree so branch navigation works with simple lists.
       const linearState = createLinearMessages(
         messages.map((message) => ({
@@ -92,11 +87,6 @@ export const useMessageTreeStore = create<MessageTreeState & MessageTreeActions>
       });
     },
     initializeTree: (messages = [], currentPath = []) => {
-      const existingMessages = get().messages;
-      if (existingMessages.length > 0) {
-        cleanupTreeAttachments(existingMessages);
-      }
-
       const resolvedCurrentPath =
         Array.isArray(currentPath) &&
         currentPath.every((id) => typeof id === "number")
@@ -122,7 +112,6 @@ export const useMessageTreeStore = create<MessageTreeState & MessageTreeActions>
       computeMessagesFromPath(get().messages, get().currentPath),
     setConversationId: (id) => set({ conversationId: id }),
     clear: () => {
-      cleanupTreeAttachments(get().messages);
       set({
         ...createEmptyMessageState(),
         conversationId: null,

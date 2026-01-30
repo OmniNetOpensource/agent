@@ -1,58 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PanelLeft, X } from "lucide-react";
+import { useEffect } from "react";
+import { X } from "lucide-react";
 
 import { ConversationList } from "./history/ConversationList";
 import { ProfileMenu } from "./profile/ProfileMenu";
 import { NewChatButton } from "./NewChatButton";
-import { useIsMobile } from "@/src/shared/mobile/MobileContext";
+import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 import { useSidebarStore } from "@/src/features/sidebar/store/useSidebarStore";
 
-function MobileSidebarToggle({
-  isOpen,
-  setIsOpen,
-}: {
-  isOpen: boolean;
-  setIsOpen: (v: boolean) => void;
-}) {
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsOpen(!isOpen);
-  };
+export default function Sidebar() {
+  const deviceType = useResponsive();
+  const isMobile = deviceType === "mobile";
+  const isOpen = useSidebarStore((state) => state.isOpen);
+  const setIsOpen = useSidebarStore((state) => state.setIsOpen);
 
-  return (
-    <button
-      type="button"
-      onClick={isOpen ? undefined : handleClick}
-      aria-label={isOpen ? "关闭侧边栏" : "打开侧边栏"}
-      className={`fixed top-4 left-4 z-[calc(var(--z-mobile-overlay)-1)] inline-flex h-10 w-10 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground ${
-        isOpen ? "pointer-events-none" : ""
-      }`}
-    >
-      <PanelLeft className="h-5 w-5" />
-    </button>
-  );
-}
-
-function MobileSidebarWrapper({
-  isOpen,
-  onClose,
-  children,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
   useEffect(() => {
+    if (!isMobile) return;
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose();
+      if (e.key === "Escape" && isOpen) setIsOpen(false);
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
-  }, [isOpen, onClose]);
+  }, [isMobile, isOpen, setIsOpen]);
 
   useEffect(() => {
+    if (!isMobile) return;
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -61,53 +34,35 @@ function MobileSidebarWrapper({
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isOpen]);
-
-  return (
-    <div
-      className={`fixed inset-0 z-(--z-mobile-overlay) ${
-        !isOpen ? "pointer-events-none" : ""
-      }`}
-    >
-      {isOpen && (
-        <div
-          className="absolute inset-0 bg-black/50 mobile-sidebar-overlay"
-          onClick={onClose}
-        />
-      )}
-      <aside
-        className={`absolute left-0 top-0 h-full bg-(--surface-primary) mobile-sidebar-drawer z-(--z-mobile-sidebar) overflow-hidden ${
-          isOpen ? "w-[80vw] max-w-xs transition-[width] duration-300" : "w-0"
-        }`}
-      >
-        {children}
-      </aside>
-    </div>
-  );
-}
-
-export default function Sidebar() {
-  const isMobile = useIsMobile();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const isOpen = useSidebarStore((state) => state.isOpen);
+  }, [isMobile, isOpen]);
 
   if (isMobile) {
     return (
-      <>
-        <MobileSidebarToggle
-          isOpen={isMobileOpen}
-          setIsOpen={setIsMobileOpen}
-        />
-        <MobileSidebarWrapper
-          isOpen={isMobileOpen}
-          onClose={() => setIsMobileOpen(false)}
+      <div
+        className={`fixed inset-0 z-(--z-mobile-overlay) ${
+          !isOpen ? "pointer-events-none" : ""
+        }`}
+      >
+        {isOpen && (
+          <div
+            className="absolute inset-0 bg-black/50 mobile-sidebar-overlay"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+
+        <aside
+          className={`absolute left-0 top-0 h-full bg-(--surface-primary) mobile-sidebar-drawer z-(--z-mobile-sidebar) overflow-hidden ${
+            isOpen
+              ? "w-[80vw] max-w-xs transition-[width] duration-300"
+              : "w-0"
+          }`}
         >
           <div className="flex h-full flex-col bg-(--surface-primary)">
             <div className="flex items-center justify-between px-3 h-14 shrink-0">
               <div className="h-10 w-10" aria-hidden="true" />
               <button
                 type="button"
-                onClick={() => setIsMobileOpen(false)}
+                onClick={() => setIsOpen(false)}
                 aria-label="关闭侧边栏"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-(--surface-hover) hover:text-foreground"
               >
@@ -127,8 +82,8 @@ export default function Sidebar() {
 
             <ProfileMenu isCollapsed={false} />
           </div>
-        </MobileSidebarWrapper>
-      </>
+        </aside>
+      </div>
     );
   }
 
@@ -138,25 +93,27 @@ export default function Sidebar() {
         isOpen ? "w-52 shrink-0" : "w-0"
       }`}
     >
-      {isOpen ? (
-        <>
-          <div className="flex items-center px-3 h-14 shrink-0">
-            <div className="h-10 w-10" aria-hidden="true" />
-          </div>
+      <div
+        className={`flex h-full flex-col transition-opacity duration-300 ${
+          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      >
+        <div className="flex items-center px-3 h-14 shrink-0">
+          <div className="h-10 w-10" aria-hidden="true" />
+        </div>
 
-          <div className="px-3 pb-4">
-            <NewChatButton isCollapsed={false} />
-          </div>
+        <div className="px-3 pb-4">
+          <NewChatButton isCollapsed={false} />
+        </div>
 
-          <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
-            <div className="flex h-full flex-col gap-3">
-              <ConversationList />
-            </div>
+        <div className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 py-2">
+          <div className="flex h-full flex-col gap-3">
+            <ConversationList />
           </div>
+        </div>
 
-          <ProfileMenu isCollapsed={false} />
-        </>
-      ) : null}
+        <ProfileMenu isCollapsed={false} />
+      </div>
     </aside>
   );
 }

@@ -28,9 +28,14 @@ export class AnthropicProvider implements IProvider {
     this.context = context;
     this.initialized = true;
 
-    const systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
+    const systemPrompt = buildSystemPrompt();
+    const rolePrompt = this.config.systemInstruction?.trim();
+    const rolePromptMessages: AnthropicMessage[] = rolePrompt
+      ? [{ role: "user", content: rolePrompt }]
+      : [];
     this.anthropicMessages = [
       { role: "user", content: systemPrompt },
+      ...rolePromptMessages,
       ...convertToAnthropicMessages(this.context.conversationHistory),
     ];
   }

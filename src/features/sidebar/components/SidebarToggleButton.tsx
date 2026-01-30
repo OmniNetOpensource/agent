@@ -2,17 +2,11 @@
 
 import { PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/src/shared/mobile/MobileContext";
 import { useSidebarStore } from "@/src/features/sidebar/store/useSidebarStore";
 
 export function SidebarToggleButton() {
-  const isMobile = useIsMobile();
   const isOpen = useSidebarStore((state) => state.isOpen);
   const toggle = useSidebarStore((state) => state.toggle);
-
-  if (isMobile) {
-    return null;
-  }
 
   return (
     <Button

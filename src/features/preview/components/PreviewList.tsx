@@ -5,6 +5,7 @@ import { X, FileCode } from "lucide-react";
 import { usePreviewStore } from "../store/usePreviewStore";
 import { localDB, type HtmlPreview } from "@/src/shared/lib/indexed-db";
 import { useMessageTreeStore } from "@/src/features/chat/store";
+import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -17,6 +18,8 @@ export function PreviewList() {
   const conversationId = useMessageTreeStore((state) => state.conversationId);
   const [previews, setPreviews] = useState<HtmlPreview[]>([]);
   const [loading, setLoading] = useState(false);
+  const deviceType = useResponsive();
+  const isDesktop = deviceType === "desktop";
 
   useEffect(() => {
     let cancelled = false;
@@ -49,7 +52,13 @@ export function PreviewList() {
   }
 
   return (
-    <div className="w-64 flex flex-col border border-(--border-primary) rounded-xl bg-(--surface-primary)">
+    <div
+      className={
+        isDesktop
+          ? "w-64 flex flex-col border border-(--border-primary) rounded-xl bg-(--surface-primary)"
+          : "fixed inset-0 z-50 flex flex-col bg-(--surface-primary)"
+      }
+    >
       <div className="flex items-center h-12 px-4 border-b border-(--border-primary) rounded-t-xl">
         <span className="flex-1 text-sm font-medium text-(--text-primary)">
           HTML Previews

@@ -1,11 +1,11 @@
 "use client";
 
 import { memo, useState, type ReactNode } from "react";
-import { useIsMobile } from "@/src/shared/mobile/MobileContext";
+import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
-import { BranchInfo, Message, GeneratedImage } from "@/src/features/chat/types/chat";
+import { BranchInfo, Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "../research/ResearchBlock";
@@ -35,13 +35,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Calculate approximate size of base64 data URL
-const getBase64Size = (dataUrl: string): number => {
-  const base64 = dataUrl.split(",")[1];
-  if (!base64) return 0;
-  return Math.round((base64.length * 3) / 4);
-};
 
 type CopyButtonProps = {
   blocks: Message["blocks"];
@@ -206,7 +199,8 @@ export const MessageItem = memo(function MessageItem({
   const startEditing = useEditingStore((state) => state.startEditing);
   const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
   const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
-  const isMobile = useIsMobile();
+  const deviceType = useResponsive();
+  const isDesktop = deviceType === "desktop";
   const isUser = message.role === "user";
   const attachmentBlocks = message.blocks.filter(
     (
@@ -323,22 +317,6 @@ export const MessageItem = memo(function MessageItem({
                   );
                 }
 
-                if (block.type === "generated_images") {
-                  return (
-                    <div key={blockKey} className="flex flex-wrap gap-3 my-2">
-                      {block.images.map((image: GeneratedImage) => (
-                        <ImagePreview
-                          key={image.id}
-                          url={image.url}
-                          name={image.revisedPrompt || "Generated image"}
-                          size={getBase64Size(image.url)}
-                          className="h-64 w-64"
-                        />
-                      ))}
-                    </div>
-                  );
-                }
-
                 return (
                   <div
                     key={blockKey}
@@ -362,9 +340,9 @@ export const MessageItem = memo(function MessageItem({
           className={cn(
             "flex items-center gap-1.5 transition-opacity duration-150",
             isUser ? "justify-end" : "justify-start",
-            isMobile
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            isDesktop
+              ? "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto"
+              : "opacity-100 pointer-events-auto",
           )}
         >
           {isUser && (
@@ -412,9 +390,9 @@ export const MessageItem = memo(function MessageItem({
           className={cn(
             "flex items-center gap-1.5 transition-opacity duration-150",
             isUser ? "justify-end" : "justify-start",
-            isMobile
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto",
+            isDesktop
+              ? "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto"
+              : "opacity-100 pointer-events-auto",
           )}
         >
           <BranchNavigator

@@ -31,17 +31,7 @@ export function formatFileSize(bytes: number): string {
   return `${formatted} ${units[unitIndex]}`;
 }
 
-export function createBlobUrl(blob: Blob): string {
-  return URL.createObjectURL(blob);
-}
-
-export function revokeBlobUrl(url: string): void {
-  if (url.startsWith("blob:")) {
-    URL.revokeObjectURL(url);
-  }
-}
-
-export function convertBlobToBase64(blob: Blob): Promise<string> {
+export function convertFileToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 

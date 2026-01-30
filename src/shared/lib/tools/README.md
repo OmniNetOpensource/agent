@@ -9,4 +9,4 @@
 
 ## 内容
 - 子目录：无直接子目录
-- 文件：brave-search.ts、fetch.ts、types.ts
+- 文件：tavily-search.ts、fetch.ts、types.ts

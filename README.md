@@ -1,69 +1,13 @@
-﻿# Aether 对话应用
+# Aether
 
-Aether 是一个基于 Next.js 的多模型 AI 对话应用，支持实时搜索、文件附件和会话持久化，适合作为日常问答、信息检索和轻量研究工作台。
+想象一个对话空间，在这里思维流动着，模型在切换，搜索在发生，文件在传递……这就是 Aether，一个用 Next.js 搭建的对话场所，不只是问答，更像是一个轻盈的研究工作台，信息在这里汇聚、流转、沉淀。
 
-## 核心功能
+对话是流式的，你能看到模型在思考什么，它在调用什么工具，搜索引擎返回了什么，网页被抓取成了什么样子……一切都在眼前展开，像是透明的思维过程。OpenRouter 连接着各种大模型，你可以随时切换，Tavily Search 在需要的时候介入，fetch_url 把网页的噪音过滤掉，只留下正文。
 
-- 多模型大模型支持：通过 OpenRouter 接入多种 LLM，前端可选择模型。
-- 流式对话与思维过程展示：消息以 SSE 流式返回，支持「thinking」和工具调用过程可视化。
-- 实时搜索与抓取：
-  - `brave_search`：调用 Brave Search 获取最新搜索结果。
-  - `fetch_url`：抓取网页正文，去除 HTML/JS/CSS 噪音。
-- 附件消息：
-  - 支持图片、视频、音频和通用文件（PDF、文本等）作为消息附件。
-  - 前端预览图片与文件大小信息。
-- 会话历史与管理：
-  - 对话保存在浏览器 IndexedDB，支持历史列表展示和按更新时间排序。
-  - 支持新建会话、切换会话、删除会话。
-- 研究轨迹（Research）：
-  - 记录并展示每轮回答中的思考文本、工具调用进度和结果。
-  - 便于追踪模型的检索与推理路径。
-- UI 与体验：
-  - 侧边栏会话列表 + 用户信息区域。
-  - 消息输入区支持多行自动伸缩、上传附件、流式停止/继续。
-  - 支持深浅主题（基于 CSS 变量和 Tailwind v4）。
+附件可以是图片、视频、音频，也可以是 PDF 或者任何文件，它们成为对话的一部分，被序列化、被传递、被理解。会话存在浏览器的 IndexedDB 里，不依赖服务器，本地优先，历史可追溯，可以随时回到某个分支，或者开启新的对话线。
 
-## 技术栈
+界面是简洁的，侧边栏列出所有会话，输入框会随着内容自动伸缩，主题可以在深浅之间切换，一切都基于 CSS 变量和 Tailwind v4。状态由 Zustand 管理，消息树记录着每一次编辑、重试和分支，研究轨迹（Research）记录着每一步的思考和工具调用，你可以看到模型是如何一步步推理的。
 
-- 前端框架：Next.js App Router（React 18+）
-- UI 与样式：Tailwind CSS v4、Lucide 图标、Framer Motion 动效
-- 状态管理：Zustand（`useChatStore` / `useConversationsStore` / `usePreviewStore`）
-- 后端服务：
-  - OpenRouter：对接多模型聊天接口与工具调用
-  - Brave Search API：可选的实时搜索能力
+技术上，Next.js App Router 驱动着整个应用，React 18+ 提供组件能力，Framer Motion 带来流畅的动效，Lucide 提供图标，OpenRouter 和 Tavily Search API 在后端提供能力。SSE 流式传输让对话实时呈现，工具循环最多 20 次迭代，直到得到最终答案。
 
-## 环境变量
-
-在项目根目录创建 `.env.local`，配置以下变量（按需调整）：
-
-```env
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_DEFAULT_MODEL=openrouter/auto           # 可选，服务端默认模型
-OPENROUTER_HTTP_REFERER=https://your-site.example  # 可选，推荐配置
-OPENROUTER_X_TITLE=Your App Name                   # 可选，推荐配置
-
-BRAVE_API_KEY=your_brave_api_key_here              # 可选，启用实时搜索
-```
-
-- `OPENROUTER_API_KEY`：从 [OpenRouter](https://openrouter.ai/) 获取，用于调用 LLM。
-- `BRAVE_API_KEY`：从 Brave 控制台获取，用于启用 `brave_search` 工具。
-
-## 本地开发
-
-1. 安装依赖：
-
-   ```bash
-   npm install
-   # 或
-   pnpm install
-   ```
-
-2. 启动开发服务器：
-
-   ```bash
-   npm run dev
-   # 或
-   pnpm dev
-   ```
-
-3. 打开浏览器访问 `http://localhost:3000` 即可使用应用。
+要运行它，你需要一些环境变量——OPENROUTER_API_KEY 是必需的，TAVILY_API_KEY 是可选的，如果你想要搜索能力的话。然后 `pnpm install`，`pnpm dev`，打开 `localhost:3000`，就这样，对话开始了。

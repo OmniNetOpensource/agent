@@ -1,4 +1,8 @@
-import type { Tool, ToolProgress, ToolResult } from "@/src/features/chat/types/chat";
+import type {
+  Tool,
+  ToolProgress,
+  ToolResult,
+} from "@/src/features/chat/types/chat";
 
 export function getToolLifecycle(tool: Tool): {
   progress: ToolProgress[];
@@ -8,4 +12,66 @@ export function getToolLifecycle(tool: Tool): {
     progress: tool.progress ?? [],
     result: tool.result,
   };
+}
+
+type RenderHtmlResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export function parseRenderHtmlResult(
+  resultStr: string | undefined
+): RenderHtmlResult | null {
+  if (!resultStr) return null;
+  try {
+    const parsed = JSON.parse(resultStr) as RenderHtmlResult;
+    if (typeof parsed?.success !== "boolean") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function getSearchResultCount(rawResult: string): number | null {
+  try {
+    const data = JSON.parse(rawResult) as {
+      results?: unknown;
+      rawResults?: unknown;
+      web?: { results?: unknown };
+    };
+    const rawResults =
+      (Array.isArray(data?.results) && data.results) ||
+      (Array.isArray(data?.rawResults) && data.rawResults) ||
+      (Array.isArray(data?.web?.results) && data.web.results) ||
+      [];
+
+    if (!Array.isArray(rawResults)) {
+      return null;
+    }
+
+    return rawResults.filter((item) => {
+      if (!item || typeof item !== "object") {
+        return false;
+      }
+      const url =
+        "url" in item && typeof item.url === "string"
+          ? item.url
+          : "link" in item && typeof item.link === "string"
+            ? item.link
+            : "";
+      return Boolean(url);
+    }).length;
+  } catch {
+    return null;
+  }
+}
+
+export function tryGetHostname(url: string): string {
+  if (!url) return "URL";
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }

@@ -8,5 +8,5 @@
 - 提供统一的研究块渲染入口。
 
 ## 内容
-- 子目录：tools
+- 子目录：cards
 - 文件：ResearchBlock.tsx、utils.ts

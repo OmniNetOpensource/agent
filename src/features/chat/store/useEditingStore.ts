@@ -1,24 +1,20 @@
 import { create } from "zustand";
 import type { Attachment, EditingState } from "@/src/features/chat/types/chat";
 import { toast } from "@/src/shared/toast";
-import { revokeBlobUrl } from "@/src/shared/utils/file";
 import {
   buildUserBlocks,
   cloneBlocks,
-  collectAttachmentIds,
   computeMessagesFromPath,
   editMessage,
   extractAttachmentsFromBlocks,
   extractContentFromBlocks,
 } from "@/src/features/chat/lib/tree";
 import { startChatRequest } from "@/src/features/chat/lib/network";
-import { cleanupEditingAttachments } from "@/src/features/chat/lib/attachments";
 import { useMessageTreeStore } from "./useMessageTreeStore";
 import { getChatRequestHandlers, useChatRequestStore } from "./useChatRequestStore";
 
 type EditingStoreState = {
   editingState: EditingState | null;
-  currentModel: string;
 };
 
 type EditingStoreActions = {
@@ -32,30 +28,17 @@ type EditingStoreActions = {
     depth: number,
     navigate?: (path: string) => void
   ) => Promise<void>;
-  setCurrentModel: (model: string) => void;
   clear: () => void;
 };
 
 export const useEditingStore = create<EditingStoreState & EditingStoreActions>(
   (set, get) => ({
     editingState: null,
-    currentModel: "",
     startEditing: (messageId) => {
       const messages = useMessageTreeStore.getState().messages;
       const target = messages[messageId - 1];
       if (!target || target.role !== "user") {
         return;
-      }
-
-      const existingEditing = get().editingState;
-      if (existingEditing?.messageId && existingEditing.messageId !== messageId) {
-        // Revoke previews that are not part of the original message blocks.
-        const originalIds = collectAttachmentIds(existingEditing.originalBlocks);
-        for (const attachment of existingEditing.editedAttachments) {
-          if (!originalIds.has(attachment.id)) {
-            revokeBlobUrl(attachment.displayUrl);
-          }
-        }
       }
 
       const originalBlocks = cloneBlocks(target.blocks ?? []);
@@ -91,16 +74,6 @@ export const useEditingStore = create<EditingStoreState & EditingStoreActions>(
           return state;
         }
 
-        const originalIds = collectAttachmentIds(state.editingState.originalBlocks);
-        const nextIds = new Set(attachments.map((attachment) => attachment.id));
-
-        // Only revoke newly-added previews that are being removed.
-        for (const attachment of state.editingState.editedAttachments) {
-          if (!nextIds.has(attachment.id) && !originalIds.has(attachment.id)) {
-            revokeBlobUrl(attachment.displayUrl);
-          }
-        }
-
         return {
           editingState: {
             ...state.editingState,
@@ -108,19 +81,16 @@ export const useEditingStore = create<EditingStoreState & EditingStoreActions>(
           },
         };
       }),
-    cancelEditing: () => {
-      cleanupEditingAttachments(get().editingState);
-      set({ editingState: null });
-    },
+    cancelEditing: () => set({ editingState: null }),
     submitEdit: async (depth, navigate) => {
       const editingState = get().editingState;
       if (!editingState) {
         return;
       }
 
-      const selectedModel = get().currentModel;
-      if (!selectedModel) {
-        toast.warning("请先选择模型");
+      const selectedRole = useChatRequestStore.getState().currentRole;
+      if (!selectedRole) {
+        toast.warning("请先选择角色");
         return;
       }
 
@@ -179,9 +149,9 @@ export const useEditingStore = create<EditingStoreState & EditingStoreActions>(
         return;
       }
 
-      const selectedModel = get().currentModel;
-      if (!selectedModel) {
-        toast.warning("请先选择模型");
+      const selectedRole = useChatRequestStore.getState().currentRole;
+      if (!selectedRole) {
+        toast.warning("请先选择角色");
         return;
       }
 
@@ -249,10 +219,6 @@ export const useEditingStore = create<EditingStoreState & EditingStoreActions>(
         titleSource,
       });
     },
-    setCurrentModel: (model) => set({ currentModel: model }),
-    clear: () => {
-      cleanupEditingAttachments(get().editingState);
-      set({ editingState: null });
-    },
+    clear: () => set({ editingState: null }),
   })
 );

@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
-import { useIsMobile } from "@/src/shared/mobile/MobileContext";
+import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 
 export function Composer() {
   const router = useRouter();
@@ -30,8 +30,9 @@ export function Composer() {
   const pendingAttachments = useComposerStore((state) => state.pendingAttachments);
   const quotedTexts = useComposerStore((state) => state.quotedTexts);
   const uploading = useComposerStore((state) => state.uploading);
-  const currentModel = useChatRequestStore((state) => state.currentModel);
-  const isMobile = useIsMobile();
+  const currentRole = useChatRequestStore((state) => state.currentRole);
+  const deviceType = useResponsive();
+  const isDesktop = deviceType === "desktop";
   const setInput = useComposerStore((state) => state.setInput);
   const addAttachments = useComposerStore((state) => state.addAttachments);
   const removeAttachment = useComposerStore((state) => state.removeAttachment);
@@ -44,11 +45,11 @@ export function Composer() {
     const hasContent = trimmed.length > 0;
     const hasAttachment = pendingAttachments.length > 0;
     const hasQuotes = quotedTexts.length > 0;
-    const hasModel = !!currentModel;
+    const hasRole = !!currentRole;
 
-    if (pending || (!hasContent && !hasAttachment && !hasQuotes) || !hasModel) {
-      if (!hasModel) {
-        toast.warning("请先选择模型");
+    if (pending || (!hasContent && !hasAttachment && !hasQuotes) || !hasRole) {
+      if (!hasRole) {
+        toast.warning("请先选择角色");
       }
       return;
     }
@@ -64,10 +65,16 @@ export function Composer() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isMobile) {
+    const isEnter = event.key === "Enter";
+    if (isDesktop) {
+      if (isEnter && !event.shiftKey) {
+        event.preventDefault();
+        void submitMessage();
+      }
       return;
     }
-    if (event.key === "Enter" && !event.shiftKey) {
+
+    if (isEnter && event.ctrlKey && !event.shiftKey) {
       event.preventDefault();
       void submitMessage();
     }
@@ -143,20 +150,20 @@ export function Composer() {
   const hasText = input.trim().length > 0;
   const hasAttachments = pendingAttachments.length > 0;
   const hasQuotes = quotedTexts.length > 0;
-  const hasModel = !!currentModel;
+  const hasRole = !!currentRole;
   const sendDisabled = pending
     ? false
     : (!hasText && !hasAttachments && !hasQuotes) ||
-      !hasModel ||
+      !hasRole ||
       uploading;
   const isNewchat = useIsNewChat();
 
   const formClassName = isNewchat
     ? // 移除了 px-3 sm:px-4 md:px-6
-      "flex flex-col flex-1 items-center justify-center py-12 w-[90%] md:w-[50%] mx-auto gap-3"
+      "flex flex-col flex-1 items-center justify-center py-12 w-[90%] md:w-[70%] lg:w-[50%] mx-auto gap-3"
     : // 1. 移除了 px-3 sm:px-4 md:px-6
       // 2. 将 py-4 md:py-6 改为了 mb-4 md:mb-6 (仅底部外边距)
-      "absolute inset-x-0 bottom-0 z-(--z-composer) flex flex-col w-[90%] md:w-[50%] mx-auto mb-4 md:mb-6 gap-3";
+      "absolute inset-x-0 bottom-0 z-(--z-composer) flex flex-col w-[90%] md:w-[70%] lg:w-[50%] mx-auto mb-4 md:mb-6 gap-3";
 
   return (
     <form
@@ -264,7 +271,7 @@ export function Composer() {
             onPaste={handlePaste}
             rows={1}
             placeholder="输入您的消息..."
-            enterKeyHint={isMobile ? "enter" : undefined}
+            enterKeyHint={isDesktop ? undefined : "enter"}
             className="min-h-10 max-h-[200px] flex-1 resize-none border-0 bg-transparent py-2.5 text-sm focus-visible:ring-0 sm:text-base"
             style={{ height: "44px" }}
           />

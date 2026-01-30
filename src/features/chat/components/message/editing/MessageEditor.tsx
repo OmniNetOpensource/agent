@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "@/src/shared/toast";
-import { useIsMobile } from "@/src/shared/mobile/MobileContext";
+import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 import {
   useChatRequestStore,
   useComposerStore,
@@ -16,7 +16,7 @@ import {
 } from "@/src/features/chat/store";
 import {
   MAX_ATTACHMENT_SIZE,
-  createBlobUrl,
+  convertFileToBase64,
   detectAttachmentKind,
   formatFileSize,
 } from "@/src/shared/utils/file";
@@ -50,8 +50,7 @@ const buildAttachmentsFromFiles = async (
 
     try {
       const mimeType = file.type || "application/octet-stream";
-      const blob = file;
-      const displayUrl = createBlobUrl(blob);
+      const displayUrl = await convertFileToBase64(file);
       attachments.push({
         id:
           typeof crypto !== "undefined" && crypto.randomUUID
@@ -61,7 +60,6 @@ const buildAttachmentsFromFiles = async (
         name: file.name,
         size: file.size,
         mimeType,
-        blob,
         displayUrl,
       });
     } catch (error) {
@@ -82,10 +80,11 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   );
   const cancelEditing = useEditingStore((state) => state.cancelEditing);
   const submitEdit = useEditingStore((state) => state.submitEdit);
-  const isMobile = useIsMobile();
+  const deviceType = useResponsive();
+  const isDesktop = deviceType === "desktop";
   const uploading = useComposerStore((state) => state.uploading);
   const pending = useChatRequestStore((state) => state.pending);
-  const currentModel = useEditingStore((state) => state.currentModel);
+  const currentRole = useChatRequestStore((state) => state.currentRole);
 
   const state =
     editingState?.messageId === messageId ? editingState : null;
@@ -134,7 +133,7 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   const hasText = editedContent.trim().length > 0;
   const hasAttachments = editedAttachments.length > 0;
   const sendDisabled =
-    pending || uploading || (!hasText && !hasAttachments) || !currentModel;
+    pending || uploading || (!hasText && !hasAttachments) || !currentRole;
 
   const handleAddAttachments = async (files: File[]) => {
     if (!files.length) {
@@ -183,7 +182,7 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (isMobile) {
+    if (!isDesktop) {
       return;
     }
     if (event.key === "Enter" && !event.shiftKey) {
@@ -282,7 +281,7 @@ export function MessageEditor({ messageId, depth }: MessageEditorProps) {
         onPaste={handlePaste}
         rows={1}
         placeholder="编辑消息内容..."
-        enterKeyHint={isMobile ? "enter" : undefined}
+        enterKeyHint={isDesktop ? undefined : "enter"}
         className="min-h-10 max-h-[200px] resize-none border-0 bg-transparent py-2.5 text-sm focus-visible:ring-0 sm:text-base"
         style={{ height: "44px" }}
       />

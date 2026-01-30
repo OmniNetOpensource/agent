@@ -27,10 +27,7 @@ export type ChatMessage = {
   reasoningDetails?: ReasoningDetail[];
 };
 
-export const buildSystemPrompt = (
-  searchEnabled: boolean = true,
-  customInstruction?: string
-) => {
+export const buildSystemPrompt = () => {
   const now = new Date();
   const localDate = now.toLocaleString("zh-CN", {
     year: "numeric",
@@ -43,23 +40,10 @@ export const buildSystemPrompt = (
   });
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  let prompt = `
+  const prompt = `
 今天的日期和时间是：${localDate} (时区: ${timezone})
 不需要在回答时引用出处。
 `;
-
-  const trimmedInstruction = customInstruction?.trim();
-
-  if (trimmedInstruction) {
-    prompt += `
-# 用户自定义指令
-${trimmedInstruction}
-`;
-  }
-
-  if (!searchEnabled) {
-    return prompt;
-  }
 
   return `${prompt}
 # 需要搜索的时候：非必要情况下不要用中文搜索；在没有足够上下文之前不要回答；如果没有搞清楚，就不断调研直到搞清楚，不要只是了解皮毛，要深入搜索资料去了解，要了解全方位的资料搜寻才能开始回答。
@@ -138,4 +122,3 @@ export const toChatMessages = (history: SerializedMessage[]): ChatMessage[] =>
       }
       return Array.isArray(msg.content) && msg.content.length > 0;
     });
-

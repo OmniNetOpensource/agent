@@ -43,9 +43,16 @@ export class OpenAIProvider implements IProvider {
     this.context = context;
     this.initialized = true;
 
-    this.openaiInput = convertToOpenAIInput(this.context.conversationHistory);
+    const rolePrompt = this.config.systemInstruction?.trim();
+    const rolePromptInput: OpenAIInputItem[] = rolePrompt
+      ? [{ type: "message", role: "system", content: rolePrompt }]
+      : [];
+    this.openaiInput = [
+      ...rolePromptInput,
+      ...convertToOpenAIInput(this.context.conversationHistory),
+    ];
     this.manualInput = this.openaiInput;
-    this.systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
+    this.systemPrompt = buildSystemPrompt();
   }
 
   async *runIteration(): AsyncGenerator<StreamEvent, IterationResult, undefined> {

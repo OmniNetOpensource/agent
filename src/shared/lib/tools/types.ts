@@ -1,8 +1,6 @@
 export type ToolName =
   | "fetch_url"
-  | "brave_search"
   | "render_html"
-  | "serp_search"
   | "tavily_search";
 
 export type ChatTool = {

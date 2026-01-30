@@ -6,7 +6,6 @@ import type {
   SerializedContentBlock,
   SerializedMessage,
 } from "@/src/features/chat/types/chat";
-import { convertBlobToBase64 } from "@/src/shared/utils/file";
 
 const serializeAttachments = async (
   attachments: Attachment[]
@@ -14,14 +13,13 @@ const serializeAttachments = async (
   const serialized: SerializedAttachment[] = [];
 
   for (const attachment of attachments) {
-    const url = await convertBlobToBase64(attachment.blob);
     serialized.push({
       id: attachment.id,
       kind: attachment.kind,
       name: attachment.name,
       size: attachment.size,
       mimeType: attachment.mimeType,
-      url,
+      url: attachment.displayUrl,
     });
   }
 

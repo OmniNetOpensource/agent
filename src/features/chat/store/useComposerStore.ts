@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import type { Attachment } from "@/src/features/chat/types/chat";
 import { buildAttachmentsFromFiles } from "@/src/features/chat/lib/attachments";
-import { cleanupPendingAttachments } from "@/src/features/chat/lib/attachments";
-import { revokeBlobUrl } from "@/src/shared/utils/file";
 
 type ComposerState = {
   input: string;
@@ -35,7 +33,7 @@ const createQuotedTextId = () => {
 };
 
 export const useComposerStore = create<ComposerState & ComposerActions>(
-  (set, get) => ({
+  (set) => ({
     input: "",
     pendingAttachments: [],
     uploading: false,
@@ -64,10 +62,6 @@ export const useComposerStore = create<ComposerState & ComposerActions>(
     },
     removeAttachment: (id) =>
       set((state) => {
-        const attachment = state.pendingAttachments.find((item) => item.id === id);
-        if (attachment?.displayUrl) {
-          revokeBlobUrl(attachment.displayUrl);
-        }
         return {
           pendingAttachments: state.pendingAttachments.filter(
             (item) => item.id !== id
@@ -91,12 +85,8 @@ export const useComposerStore = create<ComposerState & ComposerActions>(
         quotedTexts: state.quotedTexts.filter((item) => item.id !== id),
       })),
     clearInput: () => set({ input: "" }),
-    clearAttachments: () => {
-      cleanupPendingAttachments(get().pendingAttachments);
-      set({ pendingAttachments: [] });
-    },
+    clearAttachments: () => set({ pendingAttachments: [] }),
     clear: () => {
-      cleanupPendingAttachments(get().pendingAttachments);
       set({
         input: "",
         pendingAttachments: [],

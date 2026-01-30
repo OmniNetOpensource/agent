@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RefObject } from "react";
 
 export type TextSelectionState = {
@@ -33,7 +33,7 @@ const getSelectionRect = (range: Range) => {
 export function useTextSelection(containerRef: RefObject<HTMLElement | null>) {
   const [selection, setSelection] = useState<TextSelectionState>(emptySelection);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     if (typeof window !== "undefined") {
       const current = window.getSelection();
       if (current) {
@@ -41,7 +41,7 @@ export function useTextSelection(containerRef: RefObject<HTMLElement | null>) {
       }
     }
     setSelection(emptySelection);
-  };
+  }, []);
 
   const updateSelection = () => {
     if (typeof window === "undefined") {

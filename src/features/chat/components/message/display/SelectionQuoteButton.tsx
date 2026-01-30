@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,34 +15,18 @@ export function SelectionQuoteButton({
   rect,
   onQuote,
 }: SelectionQuoteButtonProps) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (!text || !rect) {
-      setVisible(false);
-      return;
-    }
-
-    setVisible(false);
-    const timer = window.setTimeout(() => setVisible(true), 300);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [text, rect]);
-
   const hasSelection = Boolean(text && rect);
   const top = rect ? rect.bottom + 8 : 0;
   const left = rect ? rect.left + rect.width / 2 : 0;
 
   return (
     <AnimatePresence>
-      {hasSelection && visible && (
+      {hasSelection && (
         <motion.div
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.15, delay: 0.3 }}
           className="fixed z-(--z-draggable)"
           style={{ top, left, transform: "translateX(-50%)" }}
           data-selection-quote-button

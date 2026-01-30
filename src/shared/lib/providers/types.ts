@@ -17,7 +17,6 @@ export type StreamEvent =
       callId?: string;
     }
   | { type: "tool_result"; tool: string; result: unknown; callId?: string }
-  | { type: "generated_image"; id: string; url: string; revisedPrompt?: string }
   | { type: "error"; message: string }
   | { type: "conversation_created"; conversationId: string; title: string; user_id: string; created_at: string; updated_at: string }
   | { type: "conversation_updated"; conversationId: string; updated_at: string };
@@ -47,9 +46,9 @@ export type IterationResult = {
 export type ProviderConfig = {
   model: string;
   tools: ChatTool[];
-  searchEnabled: boolean;
   systemInstruction?: string;
   provider?: ProviderPreferences;
+  searchEnabled?: boolean;
 };
 
 // Context for provider execution

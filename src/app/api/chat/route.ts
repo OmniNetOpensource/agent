@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { toolSpecs } from "@/src/shared/lib/tools";
 import { isSupportedChatModel } from "@/src/shared/lib/openrouter/server";
-import type {
-  ChatRequest,
-  SelectedSearchTool,
-} from "@/src/features/chat/types/chat";
+import type { ChatRequest } from "@/src/features/chat/types/chat";
+import {
+  getDefaultRoleConfig,
+  getRoleConfig,
+} from "./role-config";
 import {
   ConversationLogger,
   createConversationLogger,
@@ -29,37 +30,14 @@ export async function POST(req: Request) {
     const {
       conversationHistory,
       conversationId,
-      model,
-      provider: providerPreferences,
-      selectedSearchTool,
-      searchEnabled,
-      systemInstruction,
-      backend,
-    } = (await req.json()) as ChatRequest & { searchEnabled?: boolean };
-
-    const isValidSearchTool = (
-      value: unknown
-    ): value is SelectedSearchTool =>
-      value === "none" ||
-      value === "brave_search" ||
-      value === "serp_search" ||
-      value === "tavily_search";
-
-    const resolvedSearchTool: SelectedSearchTool = isValidSearchTool(
-      selectedSearchTool
-    )
-      ? selectedSearchTool
-      : searchEnabled === true
-        ? "brave_search"
-        : "none";
+      role,
+    } = (await req.json()) as ChatRequest;
 
     logger = createConversationLogger();
 
     logger?.log("FRONTEND", "Received chat request", {
       conversationId,
-      model,
-      selectedSearchTool: resolvedSearchTool,
-      hasSystemInstruction: !!systemInstruction,
+      role,
       messageCount: conversationHistory.length,
     });
 
@@ -88,33 +66,39 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!isSupportedChatModel(model)) {
+    const roleConfig = role
+      ? getRoleConfig(role)
+      : getDefaultRoleConfig();
+
+    if (!roleConfig) {
+      return NextResponse.json(
+        { reply: "Invalid or missing role" },
+        { status: 400 }
+      );
+    }
+
+    if (!isSupportedChatModel(roleConfig.model)) {
       return NextResponse.json(
         { reply: "Invalid or missing model" },
         { status: 400 }
       );
     }
 
-    const requestedModel = model;
+    const requestedModel = roleConfig.model;
+    const systemInstruction = roleConfig.systemPrompt;
+    const backend = roleConfig.backend;
 
-    const allowedToolNames = new Set<string>(["fetch_url", "render_html"]);
-    if (resolvedSearchTool !== "none") {
-      allowedToolNames.add(resolvedSearchTool);
-    }
+    const allowedToolNames = new Set<string>([
+      "fetch_url",
+      "render_html",
+      "tavily_search",
+    ]);
 
     const tools = toolSpecs.filter(
       (tool) =>
         tool.type === "function" &&
         allowedToolNames.has(tool.function.name)
     );
-
-    const searchToolAvailable =
-      resolvedSearchTool !== "none" &&
-      tools.some(
-        (tool) =>
-          tool.type === "function" &&
-          tool.function.name === resolvedSearchTool
-      );
 
     let activeConversationId = conversationId ?? null;
     let conversationCreatedEvent: {
@@ -142,16 +126,14 @@ export async function POST(req: Request) {
     }
 
     // Get provider instance
-    const provider = getProvider(backend ?? "openrouter");
+    const provider = getProvider(backend);
 
     // Initialize provider
     provider.initialize(
       {
         model: requestedModel,
         tools,
-        searchEnabled: searchToolAvailable,
         systemInstruction,
-        provider: providerPreferences,
       },
       {
         conversationHistory: conversationHistory.map((message) => ({
@@ -240,7 +222,7 @@ export async function POST(req: Request) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             try {
               eventSender.send({ type: "error", message: `错误：${errorMessage}` });
-            } catch (enqueueError) {
+            } catch {
             }
             eventSender.close();
           }
@@ -255,7 +237,7 @@ export async function POST(req: Request) {
         Connection: "keep-alive",
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { reply: "Unable to process request" },
       { status: 500 }

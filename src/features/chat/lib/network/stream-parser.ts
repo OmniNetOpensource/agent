@@ -12,7 +12,6 @@ export type StreamEvent =
       callId?: string;
     }
   | { type: "tool_result"; tool: string; result: string | object; callId?: string }
-  | { type: "generated_image"; id: string; url: string; revisedPrompt?: string }
   | { type: "error"; message: string }
   | {
       type: "conversation_created";

@@ -35,7 +35,6 @@ type AttachmentBase = {
 };
 
 export type Attachment = AttachmentBase & {
-  blob: Blob;
   displayUrl: string;
 };
 
@@ -50,23 +49,15 @@ type ResearchBlock = {
   items: ResearchItem[];
 };
 
-export type GeneratedImage = {
-  id: string;
-  url: string; // base64 data URL
-  revisedPrompt?: string;
-};
-
 export type ContentBlock =
   | { type: "content"; content: string }
   | { type: "attachments"; attachments: Attachment[] }
-  | { type: "generated_images"; images: GeneratedImage[] }
   | ResearchBlock
   | { type: "error"; message: string };
 
 export type SerializedContentBlock =
   | { type: "content"; content: string }
   | { type: "attachments"; attachments: SerializedAttachment[] }
-  | { type: "generated_images"; images: GeneratedImage[] }
   | ResearchBlock
   | { type: "error"; message: string };
 
@@ -115,9 +106,5 @@ export type SelectedSearchTool =
 export type ChatRequest = {
   conversationHistory: SerializedMessage[];
   conversationId?: string | null;
-  model?: string;
-  provider?: ProviderPreferences;
-  selectedSearchTool?: SelectedSearchTool;
-  systemInstruction?: string;
-  backend?: Backend;
+  role?: string;
 };

@@ -7,7 +7,6 @@ import type {
   Message,
   MessageLike,
   SerializedMessage,
-  SelectedSearchTool,
 } from "@/src/features/chat/types/chat";
 import { serializeMessagesForRequest } from "./serialization";
 import {
@@ -16,7 +15,6 @@ import {
   type AssistantAddition,
 } from "../tree/block-operations";
 import { computeMessagesFromPath } from "../tree/message-tree";
-import { getModelConfig } from "../config/model-config";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import type { HtmlPreview } from "@/src/shared/lib/indexed-db/conversations";
 
@@ -93,9 +91,7 @@ type StoreGetter = () => {
   messages: Message[];
   currentPath: number[];
   conversationId: string | null;
-  currentModel: string;
-  selectedSearchTool: SelectedSearchTool;
-  systemInstruction: string;
+  currentRole: string;
   pending: boolean;
   activeRequestId: string | null;
   appendToAssistant: (addition: AssistantAddition) => void;
@@ -130,18 +126,16 @@ export const startChatRequest = async (
   options: StartRequestOptions
 ) => {
   const { messages, navigate, titleSource, preferLocalTitle } = options;
-  const selectedModel = get().currentModel;
+  const selectedRole = get().currentRole;
 
   if (get().pending) {
     return;
   }
-  if (!selectedModel) {
-    toast.warning("请先选择模型");
+  if (!selectedRole) {
+    toast.warning("请先选择角色");
     return;
   }
 
-  const selectedSearchTool = get().selectedSearchTool;
-  const systemInstruction = get().systemInstruction;
   let currentConversationId = get().conversationId;
 
   const requestId = generateLocalMessageId();
@@ -417,17 +411,6 @@ export const startChatRequest = async (
           type: "error",
           message,
         });
-      } else if (data.type === "generated_image") {
-        const id = typeof data.id === "string" ? data.id : `img_${Date.now()}`;
-        const url = typeof data.url === "string" ? data.url : "";
-        const revisedPrompt =
-          typeof data.revisedPrompt === "string" ? data.revisedPrompt : undefined;
-        if (url) {
-          get().appendToAssistant({
-            type: "generated_images",
-            images: [{ id, url, revisedPrompt }],
-          });
-        }
       } else if (data.type === "content") {
         const addition =
           typeof data.content === "string"
@@ -491,14 +474,9 @@ export const startChatRequest = async (
     });
   }
 
-  const modelConfig = getModelConfig(selectedModel);
   chatClient.sendMessage(
     serializedMessages,
-    selectedModel,
-    currentConversationId,
-    selectedSearchTool,
-    systemInstruction,
-    modelConfig?.provider,
-    modelConfig?.backend
+    selectedRole,
+    currentConversationId
   );
 };

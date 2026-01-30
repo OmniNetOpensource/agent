@@ -1,7 +1,5 @@
-import { braveSearchTool } from "./tools/brave-search";
 import { fetchUrlTool } from "./tools/fetch";
 import { renderHtmlTool } from "./tools/render-html";
-import { serpSearchTool } from "./tools/serp-search";
 import { tavilySearchTool } from "./tools/tavily-search";
 import {
   type ChatTool,
@@ -11,22 +9,12 @@ import {
   type ToolName,
 } from "./tools/types";
 
-const hasBraveKey = Boolean(process.env.BRAVE_API_KEY);
-const hasSerpKey = Boolean(process.env.SERP_API_KEY);
 const hasTavilyKey = Boolean(process.env.TAVILY_API_KEY);
 
 const toolMap: Partial<Record<ToolName, ToolDefinition>> = {
   fetch_url: fetchUrlTool,
   render_html: renderHtmlTool,
 };
-
-if (hasBraveKey) {
-  toolMap.brave_search = braveSearchTool;
-}
-
-if (hasSerpKey) {
-  toolMap.serp_search = serpSearchTool;
-}
 
 if (hasTavilyKey) {
   toolMap.tavily_search = tavilySearchTool;
@@ -39,14 +27,6 @@ const toolEntries = Object.entries(toolMap) as Array<
 toolEntries.forEach(([name]) => {
   console.error("[Tools] Enabled tool:", name);
 });
-
-if (!hasBraveKey) {
-  console.error("[Tools] Skipping tool: brave_search (missing BRAVE_API_KEY)");
-}
-
-if (!hasSerpKey) {
-  console.error("[Tools] Skipping tool: serp_search (missing SERP_API_KEY)");
-}
 
 if (!hasTavilyKey) {
   console.error("[Tools] Skipping tool: tavily_search (missing TAVILY_API_KEY)");

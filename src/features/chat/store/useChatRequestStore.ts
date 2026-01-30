@@ -2,55 +2,47 @@ import { create } from "zustand";
 import { toast } from "@/src/shared/toast";
 import type { ChatClient } from "@/src/features/chat/lib/network";
 import { startChatRequest } from "@/src/features/chat/lib/network";
-import type { SelectedSearchTool } from "@/src/features/chat/types/chat";
+import { DEFAULT_ROLE_ID, ROLES } from "@/src/shared/config/roles";
 import {
   buildUserBlocks,
   computeMessagesFromPath,
 } from "@/src/features/chat/lib/tree";
 import { useComposerStore } from "./useComposerStore";
 import { useMessageTreeStore } from "./useMessageTreeStore";
-import { useEditingStore } from "./useEditingStore";
 
 type ChatRequestState = {
   pending: boolean;
   chatClient: ChatClient | null;
   activeRequestId: string | null;
-  currentModel: string;
-  selectedSearchTool: SelectedSearchTool;
-  systemInstruction: string;
+  currentRole: string;
 };
 
 type ChatRequestActions = {
   sendMessage: (navigate?: (path: string) => void) => Promise<void>;
   stop: () => void;
-  setCurrentModel: (model: string) => void;
-  setSelectedSearchTool: (tool: SelectedSearchTool) => void;
-  setSystemInstruction: (instruction: string) => void;
+  setCurrentRole: (role: string) => void;
   clear: () => void;
   _setPending: (pending: boolean) => void;
   _setChatClient: (client: ChatClient | null) => void;
   _setActiveRequestId: (id: string | null) => void;
 };
 
-const SEARCH_TOOL_STORAGE_KEY = "selected-search-tool";
-
-const isValidSearchTool = (value: string): value is SelectedSearchTool =>
-  value === "none" ||
-  value === "brave_search" ||
-  value === "serp_search" ||
-  value === "tavily_search";
-
-const getInitialSearchTool = (): SelectedSearchTool => {
+const ROLE_STORAGE_KEY = "selected-role";
+const getInitialRole = (): string => {
   if (typeof window === "undefined") {
-    return "none";
+    return DEFAULT_ROLE_ID;
   }
 
-  const stored = window.localStorage.getItem(SEARCH_TOOL_STORAGE_KEY);
-  if (stored && isValidSearchTool(stored)) {
+  const stored = window.localStorage.getItem(ROLE_STORAGE_KEY);
+  if (stored && ROLES.some((role) => role.id === stored)) {
     return stored;
   }
 
-  return "none";
+  if (ROLES.some((role) => role.id === DEFAULT_ROLE_ID)) {
+    return DEFAULT_ROLE_ID;
+  }
+
+  return ROLES[0]?.id ?? "";
 };
 
 export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>(
@@ -58,14 +50,12 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
     pending: false,
     chatClient: null,
     activeRequestId: null,
-    currentModel: "",
-    selectedSearchTool: getInitialSearchTool(),
-    systemInstruction: "",
+    currentRole: getInitialRole(),
     sendMessage: async (navigate) => {
       const { input, pendingAttachments, quotedTexts } =
         useComposerStore.getState();
       const trimmed = input.trim();
-      const selectedModel = get().currentModel;
+      const selectedRole = get().currentRole;
 
       if (get().pending) {
         return;
@@ -73,8 +63,8 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
       if (!trimmed && pendingAttachments.length === 0 && quotedTexts.length === 0) {
         return;
       }
-      if (!selectedModel) {
-        toast.warning("请先选择模型");
+      if (!selectedRole) {
+        toast.warning("请先选择角色");
         return;
       }
 
@@ -122,18 +112,12 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
       chatClient.abort();
       set({ pending: false, chatClient: null, activeRequestId: null });
     },
-    setCurrentModel: (model) => {
-      set({ currentModel: model });
-      useEditingStore.getState().setCurrentModel(model);
-    },
-    setSelectedSearchTool: (tool) => {
-      set({ selectedSearchTool: tool });
+    setCurrentRole: (role) => {
+      set({ currentRole: role });
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(SEARCH_TOOL_STORAGE_KEY, tool);
+        window.localStorage.setItem(ROLE_STORAGE_KEY, role);
       }
     },
-    setSystemInstruction: (instruction) =>
-      set({ systemInstruction: instruction }),
     clear: () => {
       const client = get().chatClient;
       if (client) {
@@ -197,9 +181,7 @@ export const getChatRequestHandlers = () => {
       messages: treeState.messages,
       currentPath: treeState.currentPath,
       conversationId: treeState.conversationId,
-      currentModel: requestState.currentModel,
-      selectedSearchTool: requestState.selectedSearchTool,
-      systemInstruction: requestState.systemInstruction,
+      currentRole: requestState.currentRole,
       pending: requestState.pending,
       activeRequestId: requestState.activeRequestId,
       appendToAssistant: treeState.appendToAssistant,

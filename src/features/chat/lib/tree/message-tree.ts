@@ -67,12 +67,6 @@ export const cloneBlocks = (blocks: ContentBlock[]): ContentBlock[] =>
         attachments: block.attachments.map((attachment) => ({ ...attachment })),
       };
     }
-    if (block.type === "generated_images") {
-      return {
-        ...block,
-        images: block.images.map((image) => ({ ...image })),
-      };
-    }
     return { ...block };
   });
 

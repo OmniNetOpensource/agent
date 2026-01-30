@@ -1,30 +1,10 @@
-import type { Attachment, EditingState, Message } from "@/src/features/chat/types/chat";
+import type { Attachment } from "@/src/features/chat/types/chat";
 import {
   MAX_ATTACHMENT_SIZE,
-  createBlobUrl,
+  convertFileToBase64,
   detectAttachmentKind,
-  revokeBlobUrl,
 } from "@/src/shared/utils/file";
 import { toast } from "@/src/shared/toast";
-import { collectAttachmentIds } from "@/src/features/chat/lib/tree";
-
-export const revokeAttachments = (attachments: Attachment[]) => {
-  for (const attachment of attachments) {
-    if (attachment.displayUrl) {
-      revokeBlobUrl(attachment.displayUrl);
-    }
-  }
-};
-
-export const revokeTreeAttachments = (messages: Message[]) => {
-  for (const message of messages) {
-    for (const block of message.blocks) {
-      if (block.type === "attachments") {
-        revokeAttachments(block.attachments);
-      }
-    }
-  }
-};
 
 export const buildAttachmentsFromFiles = async (
   files: File[]
@@ -49,8 +29,7 @@ export const buildAttachmentsFromFiles = async (
 
     try {
       const mimeType = file.type || "application/octet-stream";
-      const blob = file;
-      const displayUrl = createBlobUrl(blob);
+      const displayUrl = await convertFileToBase64(file);
       attachments.push({
         id:
           typeof crypto !== "undefined" && crypto.randomUUID
@@ -60,7 +39,6 @@ export const buildAttachmentsFromFiles = async (
         name: file.name,
         size: file.size,
         mimeType,
-        blob,
         displayUrl,
       });
     } catch (error) {
@@ -70,31 +48,4 @@ export const buildAttachmentsFromFiles = async (
   }
 
   return attachments;
-};
-
-export const cleanupTreeAttachments = (messages: Message[]) => {
-  if (!messages.length) {
-    return;
-  }
-  revokeTreeAttachments(messages);
-};
-
-export const cleanupPendingAttachments = (attachments: Attachment[]) => {
-  if (!attachments.length) {
-    return;
-  }
-  revokeAttachments(attachments);
-};
-
-export const cleanupEditingAttachments = (editingState: EditingState | null) => {
-  if (!editingState) {
-    return;
-  }
-
-  const originalIds = collectAttachmentIds(editingState.originalBlocks);
-  for (const attachment of editingState.editedAttachments) {
-    if (!originalIds.has(attachment.id) && attachment.displayUrl) {
-      revokeBlobUrl(attachment.displayUrl);
-    }
-  }
 };

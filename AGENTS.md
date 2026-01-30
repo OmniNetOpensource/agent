@@ -8,7 +8,7 @@ This file provides guidance to AI coding agents (Claude Code, GPT-based tools, e
 
 - Multi-model LLM support via OpenRouter (model picker persisted in localStorage)
 - Streaming SSE responses with thinking/tool progress
-- Tools for web search and URL fetching (brave_search, fetch_url)
+- Tools for web search and URL fetching (tavily_search, fetch_url)
 - Message attachments (image, video, audio, file) serialized to base64 for requests
 - Local-first persistence in IndexedDB (message tree, pinned conversations)
 - Message editing, retry, and branching with branch navigation
@@ -85,7 +85,7 @@ Message branching is stored in `MessageTree` (nodes + rootIds + currentPath).
 **`useChatStore`**
 - `messageTree` is the source of truth; `messages` are derived from the current path
 - Tracks `editingState`, `activeRequestId`, `pending`, `chatClient`, `currentModel`
-- `searchEnabled` + `systemInstruction` control tool usage and system prompt
+- `systemInstruction` controls system prompt
 - Handles attachments (`pendingAttachments`, `uploading`)
 - Actions include `sendMessage`, `appendToAssistant`, `stop`, `startEditing`, `submitEdit`, `retryFromMessage`, `branchToNewConversation`, `navigateBranch`
 
@@ -110,7 +110,7 @@ Message branching is stored in `MessageTree` (nodes + rootIds + currentPath).
 ## Persistence
 
 - IndexedDB (`localDB`) stores conversations with `messageTree`, pinned state, and legacy `messages`
-- localStorage keys: `selected-model`, `search-enabled`, `system-prompts`, `selected-prompt-id`, `theme`
+- localStorage keys: `selected-model`, `system-prompts`, `selected-prompt-id`, `theme`
 
 ## Environment Variables
 
@@ -120,13 +120,13 @@ Required in `.env.local`:
 Optional:
 - `OPENROUTER_HTTP_REFERER`
 - `OPENROUTER_X_TITLE`
-- `BRAVE_API_KEY` (enables `brave_search`)
+- `TAVILY_API_KEY` (enables `tavily_search`)
 
 ## Tools Available During Chat
 
-1. **brave_search**
+1. **tavily_search**
    - Input: `{ query: string }`
-   - Only enabled when `BRAVE_API_KEY` is set
+   - Only enabled when `TAVILY_API_KEY` is set
 
 2. **fetch_url**
    - Input: `{ url: string }`
@@ -158,6 +158,7 @@ Optional:
 - frontend style need to fit in the current project's style
 - be flexible
 - Do not use `useCallback` or `useMemo`
+- At the end of each task, run `pnpm check` until all issues are fixed
 
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.

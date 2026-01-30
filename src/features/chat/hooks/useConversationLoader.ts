@@ -16,40 +16,18 @@ import type {
   LegacyAttachment,
   Message,
 } from "@/src/features/chat/types/chat";
-import { base64ToBlob, createBlobUrl } from "@/src/shared/utils/file";
-
-const buildAttachment = (
-  att: Attachment | LegacyAttachment,
-  blob: Blob
-): Attachment => ({
-  id: att.id,
-  kind: att.kind,
-  name: att.name,
-  size: att.size,
-  mimeType: att.mimeType,
-  blob,
-  displayUrl: createBlobUrl(blob),
-});
 
 const restoreDisplayUrls = (
   attachments: Array<Attachment | LegacyAttachment>
 ): Attachment[] =>
-  attachments.map((att) => {
-    if ("blob" in att && att.blob instanceof Blob) {
-      return buildAttachment(att, att.blob);
-    }
-
-    if (
-      "url" in att &&
-      typeof att.url === "string" &&
-      att.url.startsWith("data:")
-    ) {
-      const blob = base64ToBlob(att.url);
-      return buildAttachment(att, blob);
-    }
-
-    return att as Attachment;
-  });
+  attachments.map((att) => ({
+    id: att.id,
+    kind: att.kind,
+    name: att.name,
+    size: att.size,
+    mimeType: att.mimeType,
+    displayUrl: "url" in att ? att.url : att.displayUrl,
+  }));
 
 const hydrateBlocks = (blocks: Message["blocks"]) =>
   Array.isArray(blocks)

@@ -2,12 +2,20 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { cookies, headers } from "next/headers";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Outfit } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { MobileProvider } from "@/src/shared/mobile/MobileContext";
+import { ResponsiveProvider } from "@/src/shared/responsive/ResponsiveContext";
+import { detectDeviceTypeFromUA } from "@/src/shared/responsive/server";
 import { ToastContainer } from "@/components/ui/toast-container";
 import "./globals.css";
 import "katex/dist/katex.min.css";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-body",
+});
 
 
 export const metadata: Metadata = {
@@ -32,24 +40,21 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const userAgent = headersList.get("user-agent") || "";
-  const isMobile =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      userAgent
-    );
+  const deviceType = detectDeviceTypeFromUA(userAgent);
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get("theme")?.value;
   const initialThemeClass = themeCookie === "dark" ? "dark" : "";
+  const htmlClassName = initialThemeClass
+    ? `${initialThemeClass} ${outfit.variable}`
+    : outfit.variable;
 
   return (
     <html
       lang="en"
-      className={initialThemeClass}
+      className={htmlClassName}
       suppressHydrationWarning={true}
     >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
         <Script id="theme-init" strategy="beforeInteractive">{`
 (function () {
   try {
@@ -78,12 +83,12 @@ export default async function RootLayout({
         )}
       </head>
       <body className="antialiased">
-        <MobileProvider initialIsMobile={isMobile}>
+        <ResponsiveProvider initialDeviceType={deviceType}>
           <TooltipProvider>
             {children}
             <ToastContainer />
           </TooltipProvider>
-        </MobileProvider>
+        </ResponsiveProvider>
         <SpeedInsights />
       </body>
     </html>

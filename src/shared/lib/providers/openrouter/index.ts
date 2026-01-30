@@ -12,7 +12,6 @@ import {
   parseSSEStream,
 } from "@/src/shared/lib/openrouter/server";
 import { buildSystemPrompt, toChatMessages, type ChatMessage, type ReasoningDetail, type StreamToolCall } from "@/src/app/api/chat/utils";
-import { supportsImageGeneration } from "@/src/features/chat/lib/config";
 
 export class OpenRouterProvider implements IProvider {
   readonly name = "openrouter" as const;
@@ -27,9 +26,14 @@ export class OpenRouterProvider implements IProvider {
     this.context = context;
     this.initialized = true;
 
-    const systemPrompt = buildSystemPrompt(this.config.searchEnabled, this.config.systemInstruction);
+    const systemPrompt = buildSystemPrompt();
+    const rolePrompt = this.config.systemInstruction?.trim();
+    const rolePromptMessages: ChatMessage[] = rolePrompt
+      ? [{ role: "system", content: rolePrompt }]
+      : [];
     this.currentMessages = [
       { role: "system", content: systemPrompt },
+      ...rolePromptMessages,
       ...toChatMessages(this.context.conversationHistory),
     ];
   }
@@ -39,16 +43,13 @@ export class OpenRouterProvider implements IProvider {
       throw new Error(`Provider ${this.name} not initialized. Call initialize() first.`);
     }
 
-    const isImageModel = supportsImageGeneration(this.config.model);
-
     let stream: ReadableStream<Uint8Array>;
     try {
       const requestPayload = {
         model: this.config.model,
         messages: this.currentMessages,
-        tools: isImageModel ? undefined : (this.config.tools.length > 0 ? this.config.tools : undefined),
+        tools: this.config.tools.length > 0 ? this.config.tools : undefined,
         provider: this.config.provider,
-        modalities: isImageModel ? ["text", "image"] as ("text" | "image")[] : undefined,
       };
       stream = await streamChatCompletion(requestPayload);
     } catch (error) {
@@ -97,21 +98,7 @@ export class OpenRouterProvider implements IProvider {
 
     for await (const chunk of parseSSEStream(stream)) {
       const delta = chunk?.choices?.[0]?.delta;
-      const message = chunk?.choices?.[0]?.message;
       const finishReason = chunk?.choices?.[0]?.finishReason as string | undefined;
-
-      // Handle generated images from message (non-streaming response)
-      const images = message?.images;
-      if (images?.length) {
-        for (const image of images) {
-          const imageId = `img_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-          yield {
-            type: "generated_image",
-            id: imageId,
-            url: image.image_url.url,
-          };
-        }
-      }
 
       if (delta?.reasoning) {
         currentReasoning += delta.reasoning;
