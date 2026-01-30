@@ -19,6 +19,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useStoreWithEqualityFn } from "zustand/traditional";
 import {
   useChatRequestStore,
   useEditingStore,
@@ -26,6 +27,18 @@ import {
 } from "@/src/features/chat/store";
 import { MessageEditor } from "../editing/MessageEditor";
 import { BranchNavigator } from "../editing/BranchNavigator";
+
+const branchInfoEquality = (a: BranchInfo | null, b: BranchInfo | null) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.currentIndex !== b.currentIndex) return false;
+  if (a.total !== b.total) return false;
+  if (a.siblingIds.length !== b.siblingIds.length) return false;
+  for (let i = 0; i < a.siblingIds.length; i++) {
+    if (a.siblingIds[i] !== b.siblingIds[i]) return false;
+  }
+  return true;
+};
 import {
   Dialog,
   DialogContent,
@@ -187,7 +200,6 @@ type MessageItemProps = {
   index: number;
   depth: number;
   isStreaming: boolean;
-  branchInfo: BranchInfo | null;
 };
 
 export const MessageItem = memo(function MessageItem({
@@ -196,8 +208,12 @@ export const MessageItem = memo(function MessageItem({
   index,
   depth,
   isStreaming,
-  branchInfo,
 }: MessageItemProps) {
+  const branchInfo = useStoreWithEqualityFn(
+    useMessageTreeStore,
+    (state) => state.getBranchInfo(messageId),
+    branchInfoEquality,
+  );
   const router = useRouter();
   const pending = useChatRequestStore((state) => state.pending);
   const isEditing = useEditingStore(
