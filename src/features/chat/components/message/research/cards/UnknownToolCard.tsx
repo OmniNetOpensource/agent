@@ -8,10 +8,13 @@ import { BaseResearchCard } from "./BaseResearchCard";
 
 type UnknownToolCardProps = {
   item: Extract<ResearchItem, { kind: "tool" }>;
-  isActive: boolean;
+  isActive?: boolean;
 };
 
-export function UnknownToolCard({ item, isActive }: UnknownToolCardProps) {
+export function UnknownToolCard({
+  item,
+  isActive = false,
+}: UnknownToolCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentId = useId();
   const toolName = item.data.call.tool;
@@ -23,8 +26,6 @@ export function UnknownToolCard({ item, isActive }: UnknownToolCardProps) {
       );
     }
   }, [toolName]);
-
-  const showActive = isActive;
 
   return (
     <BaseResearchCard
@@ -41,7 +42,7 @@ export function UnknownToolCard({ item, isActive }: UnknownToolCardProps) {
           )}
         />
       }
-      isActive={showActive}
+      isActive={isActive}
       onClick={() => setIsExpanded((prev) => !prev)}
       buttonProps={{
         "aria-expanded": isExpanded,
@@ -53,7 +54,7 @@ export function UnknownToolCard({ item, isActive }: UnknownToolCardProps) {
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
           isExpanded
-            ? "mt-2 max-h-[280px] opacity-100"
+            ? "max-h-[280px] opacity-100"
             : "max-h-0 opacity-0"
         )}
       >

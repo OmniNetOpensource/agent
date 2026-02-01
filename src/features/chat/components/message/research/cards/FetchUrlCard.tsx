@@ -1,29 +1,26 @@
 "use client";
 
-import { useId, useState } from "react";
-import { Check, ChevronRight, Link, Loader2, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check, Link, Loader2, X } from "lucide-react";
 import type { ResearchItem } from "@/src/features/chat/types/chat";
-import Markdown from "@/src/shared/components/Markdown";
 import { BaseResearchCard } from "./BaseResearchCard";
 import { getToolLifecycle, tryGetHostname } from "../utils";
 
 type FetchUrlCardProps = {
   item: Extract<ResearchItem, { kind: "tool" }>;
-  isActive: boolean;
+  isActive?: boolean;
 };
 
-export function FetchUrlCard({ item, isActive }: FetchUrlCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const contentId = useId();
+export function FetchUrlCard({ item, isActive = false }: FetchUrlCardProps) {
   const tool = item.data;
   const { result } = getToolLifecycle(tool);
   const args = tool.call.args as Record<string, unknown>;
   const url = typeof args.url === "string" ? args.url : "";
   const hostname = url ? tryGetHostname(url) : "URL";
   const resultText = typeof result?.result === "string" ? result.result : "";
-  const isError = resultText.startsWith("Error");
-  const showActive = isActive;
+  const isSystemPromptTooLong =
+    resultText.startsWith("[系统提示:") &&
+    (resultText.includes("内容过长") || resultText.includes("已省略不返回"));
+  const isError = resultText.startsWith("Error") || isSystemPromptTooLong;
 
   const description = !result ? (
     <>
@@ -47,40 +44,12 @@ export function FetchUrlCard({ item, isActive }: FetchUrlCardProps) {
       icon={<Link className="h-3.5 w-3.5" />}
       title={`Fetching ${hostname}`}
       description={description}
-      action={
-        <ChevronRight
-          className={cn(
-            "h-3.5 w-3.5 text-muted-foreground transition-all duration-200 group-hover/research-card:text-(--text-secondary)",
-            isExpanded && "rotate-90"
-          )}
-        />
-      }
-      isActive={showActive}
-      onClick={() => setIsExpanded((prev) => !prev)}
+      action={null}
+      isActive={isActive}
+      onClick={undefined}
       buttonProps={{
-        "aria-expanded": isExpanded,
-        "aria-controls": contentId,
+        "aria-disabled": true,
       }}
-    >
-      <div
-        id={contentId}
-        className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          isExpanded
-            ? "mt-2 max-h-[420px] opacity-100"
-            : "max-h-0 opacity-0"
-        )}
-      >
-        <div className="max-h-[420px] overflow-y-auto overflow-x-auto pr-1 text-xs text-(--text-secondary)">
-          {!result ? null : isError ? (
-            <div className="text-xs text-destructive">
-              <Markdown content={resultText} />
-            </div>
-          ) : (
-            <Markdown content={resultText} />
-          )}
-        </div>
-      </div>
-    </BaseResearchCard>
+    />
   );
 }

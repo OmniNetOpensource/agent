@@ -17,6 +17,7 @@ import {
 import { computeMessagesFromPath } from "../tree/message-tree";
 import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import type { HtmlPreview } from "@/src/shared/lib/indexed-db/conversations";
+import { saveConversationToCloud } from "@/src/shared/lib/convex/cloud-conversations";
 
 const generateLocalMessageId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -195,6 +196,13 @@ export const startChatRequest = async (
       updated_at: now,
       pinned,
       pinned_at,
+    });
+
+    void saveConversationToCloud({
+      conversationId: id,
+      created_at,
+      updated_at: now,
+      messages: pathMessages,
     });
   };
 

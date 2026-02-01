@@ -8,10 +8,13 @@ import { getToolLifecycle, parseRenderHtmlResult } from "../utils";
 
 type RenderHtmlCardProps = {
   item: Extract<ResearchItem, { kind: "tool" }>;
-  isActive: boolean;
+  isActive?: boolean;
 };
 
-export function RenderHtmlCard({ item, isActive }: RenderHtmlCardProps) {
+export function RenderHtmlCard({
+  item,
+  isActive = false,
+}: RenderHtmlCardProps) {
   const tool = item.data;
   const { result } = getToolLifecycle(tool);
   const args = tool.call.args as Record<string, unknown>;
@@ -19,7 +22,6 @@ export function RenderHtmlCard({ item, isActive }: RenderHtmlCardProps) {
   const resultText = typeof result?.result === "string" ? result.result : "";
   const parsedResult = parseRenderHtmlResult(resultText);
   const isError = parsedResult?.success === false;
-  const showActive = isActive;
 
   const description = !result ? (
     <>
@@ -44,14 +46,14 @@ export function RenderHtmlCard({ item, isActive }: RenderHtmlCardProps) {
       title={`Creating ${title}`}
       description={description}
       action={null}
-      isActive={showActive}
       onClick={undefined}
+      isActive={isActive}
       buttonProps={{
         "aria-disabled": true,
       }}
     >
       {result ? (
-        <div className="mt-2 text-xs text-(--text-secondary)">
+        <div className="text-xs text-(--text-secondary)">
           {isError ? (
             <div className="text-destructive">
               <Markdown content={parsedResult?.error || resultText} />

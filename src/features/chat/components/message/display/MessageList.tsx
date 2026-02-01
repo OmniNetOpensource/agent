@@ -113,9 +113,7 @@ export function MessageList() {
             );
           })}
 
-          {pending && messages[messages.length - 1]?.role === "user" && (
-            <PendingIndicator />
-          )}
+          {pending && <PendingIndicator />}
         </div>
       </div>
 

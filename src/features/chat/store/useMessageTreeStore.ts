@@ -20,6 +20,7 @@ import {
 } from "@/src/features/chat/lib/tree";
 import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
 import { localDB } from "@/src/shared/lib/indexed-db";
+import { saveConversationToCloud } from "@/src/shared/lib/convex/cloud-conversations";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { useChatRequestStore } from "./useChatRequestStore";
 
@@ -291,6 +292,13 @@ export const useMessageTreeStore = create<MessageTreeState & MessageTreeActions>
         messages: cloneMessages(linearState.messages),
         created_at: now,
         updated_at: now,
+      });
+
+      void saveConversationToCloud({
+        conversationId: newConversationId,
+        created_at: now,
+        updated_at: now,
+        messages: linearState.messages,
       });
 
       const { addConversation } = useConversationsStore.getState();

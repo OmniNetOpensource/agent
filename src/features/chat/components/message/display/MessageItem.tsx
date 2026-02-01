@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useState, type ReactNode } from "react";
-import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
@@ -199,8 +198,6 @@ export const MessageItem = memo(function MessageItem({
   const startEditing = useEditingStore((state) => state.startEditing);
   const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
   const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
-  const deviceType = useResponsive();
-  const isDesktop = deviceType === "desktop";
   const isUser = message.role === "user";
   const attachmentBlocks = message.blocks.filter(
     (
@@ -296,9 +293,6 @@ export const MessageItem = memo(function MessageItem({
                       items={block.items}
                       blockIndex={blockIndex}
                       messageIndex={index}
-                      isActive={
-                        isStreaming && blockIndex === contentBlocks.length - 1
-                      }
                     />
                   );
                 }
@@ -338,11 +332,8 @@ export const MessageItem = memo(function MessageItem({
       {shouldShowToolbar && (
         <div
           className={cn(
-            "flex items-center gap-1.5 transition-opacity duration-150",
+            "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
             isUser ? "justify-end" : "justify-start",
-            isDesktop
-              ? "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto"
-              : "opacity-100 pointer-events-auto",
           )}
         >
           {isUser && (
@@ -388,11 +379,8 @@ export const MessageItem = memo(function MessageItem({
       {branchInfo && !isEditing && (
         <div
           className={cn(
-            "flex items-center gap-1.5 transition-opacity duration-150",
+            "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
             isUser ? "justify-end" : "justify-start",
-            isDesktop
-              ? "opacity-0 pointer-events-none group-hover/message:opacity-100 group-hover/message:pointer-events-auto group-focus-within/message:opacity-100 group-focus-within/message:pointer-events-auto"
-              : "opacity-100 pointer-events-auto",
           )}
         >
           <BranchNavigator

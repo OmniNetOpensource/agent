@@ -20,7 +20,7 @@ import { BaseResearchCard } from "./BaseResearchCard";
 
 type SearchCardProps = {
   item: Extract<ResearchItem, { kind: "tool" }>;
-  isActive: boolean;
+  isActive?: boolean;
 };
 
 type SearchResult = {
@@ -155,10 +155,7 @@ function SearchResultCard({
   );
 }
 
-export function SearchCard({
-  item,
-  isActive,
-}: SearchCardProps) {
+export function SearchCard({ item, isActive = false }: SearchCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentId = useId();
   const tool = item.data;
@@ -171,8 +168,6 @@ export function SearchCard({
   );
   const resultCount = result ? getSearchResultCount(resultText) : null;
   const searchResults = result ? parseSearchResults(resultText) : null;
-
-  const showActive = isActive;
 
   const description = !result ? (
     <>
@@ -216,7 +211,7 @@ export function SearchCard({
           )}
         />
       }
-      isActive={showActive}
+      isActive={isActive}
       onClick={() => setIsExpanded((prev) => !prev)}
       buttonProps={{
         "aria-expanded": isExpanded,
@@ -228,7 +223,7 @@ export function SearchCard({
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
           isExpanded
-            ? "mt-2 max-h-[420px] opacity-100"
+            ? "max-h-[420px] opacity-100"
             : "max-h-0 opacity-0"
         )}
       >

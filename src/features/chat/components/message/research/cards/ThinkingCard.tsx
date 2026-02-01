@@ -9,14 +9,12 @@ import { BaseResearchCard } from "./BaseResearchCard";
 
 type ThinkingCardProps = {
   item: Extract<ResearchItem, { kind: "thinking" }>;
-  isActive: boolean;
+  isActive?: boolean;
 };
 
-export function ThinkingCard({ item, isActive }: ThinkingCardProps) {
+export function ThinkingCard({ item, isActive = false }: ThinkingCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentId = useId();
-
-  const showActive = isActive;
 
   return (
     <BaseResearchCard
@@ -30,7 +28,7 @@ export function ThinkingCard({ item, isActive }: ThinkingCardProps) {
           )}
         />
       }
-      isActive={showActive}
+      isActive={isActive}
       onClick={() => setIsExpanded((prev) => !prev)}
       buttonProps={{
         "aria-expanded": isExpanded,
@@ -42,7 +40,7 @@ export function ThinkingCard({ item, isActive }: ThinkingCardProps) {
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
           isExpanded
-            ? "mt-2 max-h-[420px] opacity-100"
+            ? "max-h-[420px] opacity-100"
             : "max-h-0 opacity-0"
         )}
       >

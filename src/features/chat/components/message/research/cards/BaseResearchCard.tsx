@@ -8,10 +8,10 @@ type BaseResearchCardProps = {
   title: string;
   description?: ReactNode;
   action?: ReactNode;
-  isActive?: boolean;
   onClick?: () => void;
   buttonProps?: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick">;
   children?: ReactNode;
+  isActive?: boolean;
 };
 
 export function BaseResearchCard({
@@ -19,10 +19,10 @@ export function BaseResearchCard({
   title,
   description,
   action,
-  isActive = false,
   onClick,
   buttonProps,
   children,
+  isActive = false,
 }: BaseResearchCardProps) {
   const { className: buttonClassName, ...restButtonProps } =
     buttonProps ?? {};
@@ -30,10 +30,9 @@ export function BaseResearchCard({
   return (
     <div
       className={cn(
-        "group/research-card rounded-lg border border-(--border-primary) bg-(--surface-secondary) p-3 transition-all duration-300 ease-in-out",
+        "group/research-card  border border-(--border-primary) bg-(--surface-secondary) px-3 py-1 transition-all duration-300 ease-in-out",
         "hover:bg-(--surface-hover)",
-        isActive &&
-          "relative border-l-4 border-l-(--interactive-primary) before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-(--interactive-primary) before:opacity-60 before:animate-pulse"
+        isActive && "ring-1 ring-(--interactive-primary)/30"
       )}
     >
       <button

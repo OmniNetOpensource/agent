@@ -31,8 +31,8 @@ const parseFetchUrlArgs = (args: unknown): FetchUrlArgs => {
 
 const PROGRESS_CHUNK_BYTES = 50 * 1024;
 const PROGRESS_INTERVAL_MS = 500;
-// 添加最大内容长度限制 (约 50k 字符)
-const MAX_CONTENT_LENGTH = 50000;
+// 添加最大内容长度限制 (约 70k 字符)
+const MAX_CONTENT_LENGTH = 70000;
 
 const formatKilobytes = (bytes: number) => (bytes / 1024).toFixed(1);
 
