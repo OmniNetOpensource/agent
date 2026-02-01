@@ -56,7 +56,10 @@ export function RenderHtmlCard({
         <div className="text-xs text-(--text-secondary)">
           {isError ? (
             <div className="text-destructive">
-              <Markdown content={parsedResult?.error || resultText} />
+              <Markdown
+                content={parsedResult?.error || resultText}
+                isAnimating={false}
+              />
             </div>
           ) : (
             <span>Preview saved. Open the preview panel to view it.</span>

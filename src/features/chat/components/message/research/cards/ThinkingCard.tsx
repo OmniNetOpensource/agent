@@ -45,7 +45,7 @@ export function ThinkingCard({ item, isActive = false }: ThinkingCardProps) {
         )}
       >
         <div className="max-h-[420px] overflow-y-auto overflow-x-auto pr-1 text-xs text-(--text-secondary)">
-          <Markdown content={item.text} />
+          <Markdown content={item.text} isAnimating={isActive} />
         </div>
       </div>
     </BaseResearchCard>

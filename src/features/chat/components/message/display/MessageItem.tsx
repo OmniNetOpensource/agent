@@ -261,8 +261,8 @@ export const MessageItem = memo(function MessageItem({
           ) : isUser ? (
             <div
               className={cn(
-                "space-y-2 rounded-xl sm:rounded-2xl px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3",
-                "bg-muted text-foreground w-fit max-w-[60%]",
+                "rounded-xl sm:rounded-2xl px-4 py-2 sm:px-5 sm:py-2.5 md:px-6 md:py-3",
+                "bg-muted text-foreground max-w-[85%]",
               )}
             >
               {contentBlocks.map((block, blockIndex) => {
@@ -274,7 +274,7 @@ export const MessageItem = memo(function MessageItem({
                       key={blockKey}
                       className="text-base leading-relaxed text-foreground"
                     >
-                      <Markdown content={block.content} />
+                      <Markdown content={block.content} isAnimating={false} />
                     </div>
                   );
                 }
@@ -316,7 +316,10 @@ export const MessageItem = memo(function MessageItem({
                     key={blockKey}
                     className="text-base leading-relaxed text-foreground"
                   >
-                    <Markdown content={block.content} />
+                    <Markdown
+                      content={block.content}
+                      isAnimating={isStreaming}
+                    />
                     {isStreaming && blockIndex === contentBlocks.length - 1 && (
                       <span className="ml-1 inline-flex h-5 w-0.5 animate-pulse bg-(--feedback-cursor) align-middle" />
                     )}

@@ -1,3 +1,4 @@
+import { RefObject } from "react";
 import { create } from "zustand";
 import type { Attachment } from "@/src/features/chat/types/chat";
 import { buildAttachmentsFromFiles } from "@/src/features/chat/lib/attachments";
@@ -7,6 +8,7 @@ type ComposerState = {
   pendingAttachments: Attachment[];
   uploading: boolean;
   quotedTexts: QuotedText[];
+  textareaRef: RefObject<HTMLTextAreaElement | null> | null;
 };
 
 type ComposerActions = {
@@ -18,6 +20,8 @@ type ComposerActions = {
   clearInput: () => void;
   clearAttachments: () => void;
   clear: () => void;
+  setTextareaRef: (ref: RefObject<HTMLTextAreaElement | null>) => void;
+  focusTextarea: () => void;
 };
 
 type QuotedText = {
@@ -33,11 +37,12 @@ const createQuotedTextId = () => {
 };
 
 export const useComposerStore = create<ComposerState & ComposerActions>(
-  (set) => ({
+  (set, get) => ({
     input: "",
     pendingAttachments: [],
     uploading: false,
     quotedTexts: [],
+    textareaRef: null,
     setInput: (value) => set({ input: value }),
     addAttachments: async (files) => {
       const items = Array.from(files || []);
@@ -93,6 +98,11 @@ export const useComposerStore = create<ComposerState & ComposerActions>(
         uploading: false,
         quotedTexts: [],
       });
+    },
+    setTextareaRef: (ref) => set({ textareaRef: ref }),
+    focusTextarea: () => {
+      const { textareaRef } = get();
+      textareaRef?.current?.focus();
     },
   })
 );

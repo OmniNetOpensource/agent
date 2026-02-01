@@ -30,6 +30,7 @@ export function MessageList() {
   const handleQuote = () => {
     if (selection.text) {
       useComposerStore.getState().addQuotedText(selection.text);
+      useComposerStore.getState().focusTextarea();
       clearSelection();
     }
   };

@@ -37,6 +37,7 @@ export function Composer() {
   const addAttachments = useComposerStore((state) => state.addAttachments);
   const removeAttachment = useComposerStore((state) => state.removeAttachment);
   const removeQuotedText = useComposerStore((state) => state.removeQuotedText);
+  const setTextareaRef = useComposerStore((state) => state.setTextareaRef);
   const sendMessage = useChatRequestStore((state) => state.sendMessage);
   const stop = useChatRequestStore((state) => state.stop);
 
@@ -110,6 +111,10 @@ export function Composer() {
   useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
+
+  useEffect(() => {
+    setTextareaRef(textareaRef);
+  }, [setTextareaRef]);
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
     const clipboardData = event.clipboardData;

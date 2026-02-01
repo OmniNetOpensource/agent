@@ -68,11 +68,6 @@ export function useTextSelection(containerRef: RefObject<HTMLElement | null>) {
       return;
     }
 
-    if (container.closest("pre, code")) {
-      setSelection(emptySelection);
-      return;
-    }
-
     const rect = getSelectionRect(range);
     if (!rect) {
       setSelection(emptySelection);
@@ -110,6 +105,24 @@ export function useTextSelection(containerRef: RefObject<HTMLElement | null>) {
       document.removeEventListener("mousedown", handleMouseDown);
     };
   }, [selection.text, containerRef, clearSelection]);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      if (typeof window === "undefined") {
+        return;
+      }
+      const current = window.getSelection();
+      if (!current || current.isCollapsed || current.rangeCount === 0) {
+        setSelection(emptySelection);
+      }
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+    };
+  }, []);
 
   return { selection, updateSelection, clearSelection };
 }
