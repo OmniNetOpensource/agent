@@ -1,14 +1,16 @@
 "use client";
 
 import { memo, useState, type ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useResponsive } from "@/src/shared/responsive/ResponsiveContext";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
-import { BranchInfo, Message } from "@/src/features/chat/types/chat";
+import { Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "../research/ResearchBlock";
+import { getBranchInfo } from "@/src/features/chat/lib/tree";
 import {
   Copy,
   Check,
@@ -180,7 +182,6 @@ type MessageItemProps = {
   index: number;
   depth: number;
   isStreaming: boolean;
-  branchInfo: BranchInfo | null;
 };
 
 export const MessageItem = memo(function MessageItem({
@@ -189,9 +190,11 @@ export const MessageItem = memo(function MessageItem({
   index,
   depth,
   isStreaming,
-  branchInfo,
 }: MessageItemProps) {
   const router = useRouter();
+  const branchInfo = useMessageTreeStore(
+    useShallow((state) => getBranchInfo(state.messages, messageId)),
+  );
   const pending = useChatRequestStore((state) => state.pending);
   const isEditing = useEditingStore(
     (state) => state.editingState?.messageId === messageId,
