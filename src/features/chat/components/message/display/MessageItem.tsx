@@ -274,7 +274,7 @@ export const MessageItem = memo(function MessageItem({
                       key={blockKey}
                       className="text-base leading-relaxed text-foreground"
                     >
-                      <Markdown content={block.content} isAnimating={false} />
+                      <Markdown content={block.content} />
                     </div>
                   );
                 }
@@ -316,10 +316,7 @@ export const MessageItem = memo(function MessageItem({
                     key={blockKey}
                     className="text-base leading-relaxed text-foreground"
                   >
-                    <Markdown
-                      content={block.content}
-                      isAnimating={isStreaming}
-                    />
+                    <Markdown content={block.content} />
                     {isStreaming && blockIndex === contentBlocks.length - 1 && (
                       <span className="ml-1 inline-flex h-5 w-0.5 animate-pulse bg-(--feedback-cursor) align-middle" />
                     )}

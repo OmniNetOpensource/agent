@@ -246,11 +246,11 @@ export function SearchCard({ item, isActive = false }: SearchCardProps) {
             </div>
           ) : isError ? (
             <div className="text-xs text-destructive">
-              <Markdown content={resultText} isAnimating={false} />
+              <Markdown content={resultText} />
             </div>
           ) : (
             <div className="overflow-x-auto text-xs text-(--text-secondary)">
-              <Markdown content={resultText} isAnimating={false} />
+              <Markdown content={resultText} />
             </div>
           )}
         </div>
