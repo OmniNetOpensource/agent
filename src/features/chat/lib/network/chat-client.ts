@@ -100,9 +100,8 @@ export class ChatClient {
         (error instanceof Error && error.name === "AbortError");
 
       if (!isAbortError) {
-        this.options.onError(
-          error instanceof Error ? error : new Error(String(error))
-        );
+        const enhancedError = this.enhanceError(error);
+        this.options.onError(enhancedError);
       }
     } finally {
       this.abortController = null;
@@ -115,5 +114,59 @@ export class ChatClient {
       this.abortController.abort();
       this.abortController = null;
     }
+  }
+
+  private enhanceError(error: unknown): Error {
+    if (!(error instanceof Error)) {
+      return new Error(`未知错误: ${String(error)}`);
+    }
+
+    const errorName = error.name;
+    const errorMessage = error.message;
+
+    // 网络连接失败 (通常是 TypeError: Failed to fetch)
+    if (error instanceof TypeError && errorMessage.includes("fetch")) {
+      return new Error(
+        `网络连接失败: ${errorMessage}\n` +
+        `可能原因: 网络断开、DNS 解析失败、服务器不可达\n` +
+        `建议: 请检查网络连接后重试`
+      );
+    }
+
+    // 网络超时
+    if (errorName === "TimeoutError" || errorMessage.includes("timeout")) {
+      return new Error(
+        `请求超时: ${errorMessage}\n` +
+        `可能原因: 网络延迟过高、服务器响应缓慢\n` +
+        `建议: 请稍后重试`
+      );
+    }
+
+    // 流读取中断 (网络不稳定导致)
+    if (
+      errorMessage.includes("network") ||
+      errorMessage.includes("connection") ||
+      errorMessage.includes("socket") ||
+      errorMessage.includes("ECONNRESET") ||
+      errorMessage.includes("ENOTFOUND") ||
+      errorMessage.includes("ETIMEDOUT")
+    ) {
+      return new Error(
+        `网络中断: ${errorMessage}\n` +
+        `可能原因: 网络不稳定、连接被重置\n` +
+        `建议: 请检查网络连接后重试`
+      );
+    }
+
+    // SSE 流解析错误
+    if (errorMessage.includes("SSE") || errorMessage.includes("parse")) {
+      return new Error(
+        `数据解析错误: ${errorMessage}\n` +
+        `可能原因: 服务器返回了异常数据、网络传输中数据损坏`
+      );
+    }
+
+    // 其他错误，保留原始信息并添加错误类型
+    return new Error(`${errorName}: ${errorMessage}`);
   }
 }

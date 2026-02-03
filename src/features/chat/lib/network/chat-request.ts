@@ -345,13 +345,30 @@ export const startChatRequest = async (
           result: resultText,
         });
       } else if (data.type === "error") {
-        const message =
+        const rawMessage =
           typeof data.message === "string"
             ? data.message
             : String(data.message ?? "");
+
+        // 增强服务端返回的错误信息
+        let enhancedMessage = rawMessage;
+        const lowerMessage = rawMessage.toLowerCase();
+
+        if (lowerMessage.includes("load error") || lowerMessage.includes("load_error")) {
+          enhancedMessage = `模型加载失败: ${rawMessage}\n可能原因: 网络不稳定、模型服务暂时不可用\n建议: 请稍后重试或切换其他模型`;
+        } else if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
+          enhancedMessage = `请求超时: ${rawMessage}\n可能原因: 网络延迟过高、服务器响应缓慢\n建议: 请稍后重试`;
+        } else if (lowerMessage.includes("rate limit") || lowerMessage.includes("too many")) {
+          enhancedMessage = `请求频率限制: ${rawMessage}\n建议: 请稍等片刻后重试`;
+        } else if (lowerMessage.includes("unavailable") || lowerMessage.includes("503")) {
+          enhancedMessage = `服务暂时不可用: ${rawMessage}\n可能原因: 服务器维护或过载\n建议: 请稍后重试`;
+        } else if (lowerMessage.includes("connection") || lowerMessage.includes("network")) {
+          enhancedMessage = `网络连接问题: ${rawMessage}\n可能原因: 网络不稳定\n建议: 请检查网络连接后重试`;
+        }
+
         get().appendToAssistant({
           type: "error",
-          message,
+          message: enhancedMessage,
         });
         if (currentConversationId) {
           void persistLocalConversation(currentConversationId, {
@@ -375,10 +392,10 @@ export const startChatRequest = async (
         return;
       }
       const message =
-        error instanceof Error ? error.message : "Unable to reach the chat API.";
+        error instanceof Error ? error.message : "无法连接到聊天服务";
       get().appendToAssistant({
         type: "error",
-        message: `Error: ${message}`,
+        message,
       });
     },
     onFinish: () => {
