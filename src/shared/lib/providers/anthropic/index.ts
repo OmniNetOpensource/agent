@@ -84,7 +84,11 @@ export class AnthropicProvider implements IProvider {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to start Anthropic completion";
-      yield { type: "error", message: `错误：${message}` };
+      const model = this.config?.model ?? "unknown";
+      yield {
+        type: "error",
+        message: `错误：Anthropic 请求失败 (model=${model}): ${message}`,
+      };
       return { shouldContinue: false, pendingToolCalls: [], assistantText: "" };
     }
 

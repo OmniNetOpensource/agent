@@ -109,6 +109,7 @@ export class OpenAIProvider implements IProvider {
         break;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to start OpenAI completion";
+        const model = this.config?.model ?? "unknown";
         if (
           !retriedWithoutPrevious &&
           this.usePreviousResponseId &&
@@ -124,7 +125,7 @@ export class OpenAIProvider implements IProvider {
           assistantText = "";
           continue;
         }
-        yield { type: "error", message: `Error: ${message}` };
+        yield { type: "error", message: `Error: OpenAI 请求失败 (model=${model}): ${message}` };
         return { shouldContinue: false, pendingToolCalls: [], assistantText: "" };
       }
     }
@@ -138,7 +139,11 @@ export class OpenAIProvider implements IProvider {
     }
 
     if (this.usePreviousResponseId && !responseId) {
-      yield { type: "error", message: "OpenAI response id missing for tool follow-up" };
+      const model = this.config?.model ?? "unknown";
+      yield {
+        type: "error",
+        message: `OpenAI response id missing for tool follow-up (model=${model})`,
+      };
       return { shouldContinue: false, pendingToolCalls: [], assistantText };
     }
 

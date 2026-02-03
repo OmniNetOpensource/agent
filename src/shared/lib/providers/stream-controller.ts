@@ -25,9 +25,26 @@ export function createEventSender(
     const logEventData =
       event.type === "tool_result"
         ? (() => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { result: _result, ...rest } = event;
-            return rest;
+            const { result, ...rest } = event;
+            let resultText = "";
+            let resultTruncated = false;
+            try {
+              resultText =
+                typeof result === "string" ? result : JSON.stringify(result);
+            } catch {
+              resultText = "[Unserializable tool_result]";
+            }
+
+            if (resultText.length > 500) {
+              resultText = `${resultText.slice(0, 500)}…`;
+              resultTruncated = true;
+            }
+
+            return {
+              ...rest,
+              result: resultText,
+              resultTruncated,
+            };
           })()
         : event;
     logger?.log("FRONTEND", `Sent SSE event: ${event.type}`, logEventData);

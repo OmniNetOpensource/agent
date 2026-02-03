@@ -35,18 +35,34 @@ export async function POST(req: Request) {
 
     logger = createConversationLogger();
 
+    const messageCount = Array.isArray(conversationHistory)
+      ? conversationHistory.length
+      : 0;
     logger?.log("FRONTEND", "Received chat request", {
       conversationId,
       role,
-      messageCount: conversationHistory.length,
+      messageCount,
+      conversationHistoryType: Array.isArray(conversationHistory)
+        ? "array"
+        : typeof conversationHistory,
     });
 
-    if (
-      !Array.isArray(conversationHistory) ||
-      conversationHistory.length === 0
-    ) {
+    if (!Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+      const historyType = Array.isArray(conversationHistory)
+        ? "array"
+        : typeof conversationHistory;
+      const historyLength = Array.isArray(conversationHistory)
+        ? conversationHistory.length
+        : "n/a";
+      const reply = `Invalid conversation history: expected non-empty array, got ${historyType} (length: ${historyLength}).`;
+      logger?.log("ERROR", "Invalid conversation history", {
+        conversationId,
+        role,
+        historyType,
+        historyLength,
+      });
       return NextResponse.json(
-        { reply: "Invalid conversation history" },
+        { reply },
         { status: 400 }
       );
     }
@@ -55,13 +71,23 @@ export async function POST(req: Request) {
       .reverse()
       .find((msg) => msg.role === "user");
 
-    if (
-      !latestUserMessage ||
-      !Array.isArray(latestUserMessage.blocks) ||
-      latestUserMessage.blocks.length === 0
-    ) {
+    if (!latestUserMessage || !Array.isArray(latestUserMessage.blocks) || latestUserMessage.blocks.length === 0) {
+      const reply = `Missing user message: latest user message missing or has empty blocks.`;
+      logger?.log("ERROR", "Missing user message", {
+        conversationId: conversationId ?? null,
+        role,
+        latestUserFound: Boolean(latestUserMessage),
+        blocksType: latestUserMessage
+          ? Array.isArray(latestUserMessage.blocks)
+            ? "array"
+            : typeof latestUserMessage.blocks
+          : "n/a",
+        blocksLength: Array.isArray(latestUserMessage?.blocks)
+          ? latestUserMessage.blocks.length
+          : "n/a",
+      });
       return NextResponse.json(
-        { reply: "Missing user message" },
+        { reply },
         { status: 400 }
       );
     }
@@ -71,15 +97,26 @@ export async function POST(req: Request) {
       : getDefaultRoleConfig();
 
     if (!roleConfig) {
+      const reply = `Invalid or missing role: "${String(role ?? "")}".`;
+      logger?.log("ERROR", "Invalid or missing role", {
+        conversationId,
+        role,
+      });
       return NextResponse.json(
-        { reply: "Invalid or missing role" },
+        { reply },
         { status: 400 }
       );
     }
 
     if (!isSupportedChatModel(roleConfig.model)) {
+      const reply = `Invalid or missing model: "${String(roleConfig.model ?? "")}".`;
+      logger?.log("ERROR", "Invalid or missing model", {
+        conversationId,
+        role,
+        model: roleConfig.model,
+      });
       return NextResponse.json(
-        { reply: "Invalid or missing model" },
+        { reply },
         { status: 400 }
       );
     }
@@ -203,7 +240,10 @@ export async function POST(req: Request) {
           }
 
           if (iteration >= maxIterations && !eventSender.isClosed()) {
-            eventSender.send({ type: "error", message: "[已达到最大工具调用次数限制]" });
+            eventSender.send({
+              type: "error",
+              message: `[已达到最大工具调用次数限制] iteration=${iteration} maxIterations=${maxIterations} backend=${backend} model=${requestedModel}`,
+            });
           }
 
           // Send final conversation updated event
@@ -218,9 +258,21 @@ export async function POST(req: Request) {
           eventSender.close();
         } catch (error) {
           if (!eventSender.isClosed()) {
+            const errorName = error instanceof Error ? error.name : "UnknownError";
             const errorMessage = error instanceof Error ? error.message : String(error);
+            logger?.log("ERROR", "Chat stream error", {
+              conversationId: activeConversationId,
+              backend,
+              model: requestedModel,
+              errorName,
+              errorMessage,
+              stack: error instanceof Error ? error.stack : undefined,
+            });
             try {
-              eventSender.send({ type: "error", message: `错误：${errorMessage}` });
+              eventSender.send({
+                type: "error",
+                message: `错误：${errorName}: ${errorMessage} (backend=${backend}, model=${requestedModel})`,
+              });
             } catch {
             }
             eventSender.close();
@@ -236,9 +288,11 @@ export async function POST(req: Request) {
         Connection: "keep-alive",
       },
     });
-  } catch {
+  } catch (error) {
+    const errorName = error instanceof Error ? error.name : "UnknownError";
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { reply: "Unable to process request" },
+      { reply: `Unable to process request: ${errorName}: ${errorMessage}` },
       { status: 500 }
     );
   }

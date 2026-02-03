@@ -353,6 +353,12 @@ export const startChatRequest = async (
           type: "error",
           message,
         });
+        if (currentConversationId) {
+          void persistLocalConversation(currentConversationId, {
+            updated_at: new Date().toISOString(),
+            titleSource,
+          });
+        }
       } else if (data.type === "content") {
         const addition =
           typeof data.content === "string"

@@ -57,8 +57,11 @@ export class StreamParser {
           this.callbacks.onEvent(data);
         } catch (e) {
           console.error("Failed to parse SSE data:", e, "line:", line);
+          const errorMessage = e instanceof Error ? e.message : String(e);
           this.callbacks.onError(
-            new Error(`Failed to parse SSE data: ${String(e)}`)
+            new Error(
+              `Failed to parse SSE data (line: ${line.slice(0, 200)}): ${errorMessage}`
+            )
           );
         }
       }

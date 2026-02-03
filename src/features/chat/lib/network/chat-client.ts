@@ -32,12 +32,50 @@ export class ChatClient {
       });
 
       if (!response.ok) {
-        throw new Error("Server refused the request");
+        const status = response.status;
+        const statusText = response.statusText || "Unknown Status";
+        let detail = "";
+
+        try {
+          const rawBody = await response.text();
+          if (rawBody) {
+            const clippedBody =
+              rawBody.length > 500 ? `${rawBody.slice(0, 500)}…` : rawBody;
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              try {
+                const data = JSON.parse(rawBody) as
+                  | { reply?: unknown; error?: unknown }
+                  | undefined;
+                const reply =
+                  typeof data?.reply === "string"
+                    ? data.reply
+                    : typeof data?.error === "string"
+                      ? data.error
+                      : "";
+                detail = reply || clippedBody;
+              } catch {
+                detail = clippedBody;
+              }
+            } else {
+              detail = clippedBody;
+            }
+          }
+        } catch {
+          // Ignore body parsing failures; fall back to status message.
+        }
+
+        const detailSuffix = detail ? ` - ${detail}` : "";
+        throw new Error(
+          `Chat API request failed: ${status} ${statusText}${detailSuffix}`
+        );
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error("The server response could not be streamed");
+        throw new Error(
+          "Chat stream unavailable: response body is empty or locked"
+        );
       }
 
       const parser = new StreamParser({

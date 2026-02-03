@@ -182,7 +182,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
         />
       );
     }
-    return <code {...props} className={className} />;
+    return <code {...props} className={cn(className, "bg-transparent")} />;
   },
   table: ({ className, ...props }) => (
     <div className="my-4 last:mb-0 first:mt-0 overflow-x-auto rounded-lg border border-(--border-primary)">

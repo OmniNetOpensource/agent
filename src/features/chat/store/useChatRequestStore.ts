@@ -5,8 +5,14 @@ import { startChatRequest } from "@/src/features/chat/lib/network";
 import { DEFAULT_ROLE_ID, ROLES } from "@/src/shared/config/roles";
 import {
   buildUserBlocks,
+  cloneMessages,
   computeMessagesFromPath,
 } from "@/src/features/chat/lib/tree";
+import type { Message } from "@/src/features/chat/types/chat";
+import { buildConversationTitle } from "@/src/shared/utils/chatFormat";
+import { localDB } from "@/src/shared/lib/indexed-db";
+import { saveConversationToCloud } from "@/src/shared/lib/convex/cloud-conversations";
+import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
 import { useComposerStore } from "./useComposerStore";
 import { useMessageTreeStore } from "./useMessageTreeStore";
 
@@ -43,6 +49,52 @@ const getInitialRole = (): string => {
   }
 
   return ROLES[0]?.id ?? "";
+};
+
+const persistConversation = async (
+  id: string,
+  messages: Message[],
+  currentPath: number[]
+) => {
+  const now = new Date().toISOString();
+  const existing = await localDB.get(id);
+  const allMessages = cloneMessages(messages);
+  const resolvedCurrentPath =
+    currentPath.length > 0 ? currentPath : existing?.currentPath ?? [];
+  const pathMessages = computeMessagesFromPath(messages, resolvedCurrentPath);
+  const { pinnedConversations, normalConversations } =
+    useConversationsStore.getState();
+  const storedConversation = [
+    ...pinnedConversations,
+    ...normalConversations,
+  ].find((item) => item.id === id);
+  const pinned = storedConversation?.pinned ?? existing?.pinned;
+  const pinned_at = storedConversation?.pinned_at ?? existing?.pinned_at;
+  const titleSource =
+    pathMessages.find((message) => message.role === "user") ??
+    pathMessages[0];
+  const title =
+    existing?.title ??
+    (titleSource ? buildConversationTitle(titleSource) : "New Chat");
+  const created_at = existing?.created_at ?? now;
+
+  await localDB.save({
+    id,
+    title,
+    currentPath: resolvedCurrentPath,
+    messages: allMessages,
+    created_at,
+    updated_at: now,
+    pinned,
+    pinned_at,
+  });
+
+  void saveConversationToCloud({
+    conversationId: id,
+    created_at,
+    updated_at: now,
+    messages: pathMessages,
+  });
 };
 
 export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>(
@@ -105,6 +157,11 @@ export const useChatRequestStore = create<ChatRequestState & ChatRequestActions>
     },
     stop: () => {
       const { chatClient } = get();
+      const treeState = useMessageTreeStore.getState();
+      const { conversationId, messages, currentPath } = treeState;
+      if (conversationId) {
+        void persistConversation(conversationId, messages, currentPath);
+      }
       if (!chatClient) {
         set({ pending: false, chatClient: null, activeRequestId: null });
         return;

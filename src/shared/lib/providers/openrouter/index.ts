@@ -54,7 +54,11 @@ export class OpenRouterProvider implements IProvider {
       stream = await streamChatCompletion(requestPayload);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to start chat completion";
-      yield { type: "error", message: `错误：${message}` };
+      const model = this.config?.model ?? "unknown";
+      yield {
+        type: "error",
+        message: `错误：OpenRouter 请求失败 (model=${model}): ${message}`,
+      };
       return { shouldContinue: false, pendingToolCalls: [], assistantText: "" };
     }
 
