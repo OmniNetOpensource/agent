@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
 import {
@@ -15,9 +16,13 @@ import { useTextSelection } from "@/src/features/chat/hooks/useTextSelection";
 import { SelectionQuoteButton } from "./SelectionQuoteButton";
 
 export function MessageList() {
-  const allMessages = useMessageTreeStore((state) => state.messages);
-  const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+  // Use useShallow to prevent re-renders when other branches or unrelated messages update.
+  // We only care about the specific list of messages in the current path.
+  const messages = useMessageTreeStore(
+    useShallow((state) =>
+      computeMessagesFromPath(state.messages, state.currentPath)
+    )
+  );
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
