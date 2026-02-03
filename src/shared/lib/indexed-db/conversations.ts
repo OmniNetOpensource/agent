@@ -10,7 +10,6 @@ import type { LegacyMessageTree } from "@/src/features/chat/lib/tree";
 const DB_NAME = "aether_local";
 const DB_VERSION = 4;
 const STORE_CONVERSATIONS = "conversations";
-const STORE_HTML_PREVIEWS = "htmlPreviews";
 
 export type LocalConversation = {
   id: string;
@@ -23,24 +22,11 @@ export type LocalConversation = {
   pinned_at?: string;
 };
 
-export type HtmlPreview = {
-  id: string;
-  conversationId: string;
-  html: string;
-  title: string;
-  createdAt: string;
-};
-
 interface AetherDB extends DBSchema {
   conversations: {
     key: string;
     value: LocalConversation;
     indexes: { updated_at: string; pinned_at: string };
-  };
-  htmlPreviews: {
-    key: string;
-    value: HtmlPreview;
-    indexes: { conversationId: string; createdAt: string };
   };
   // Legacy store kept in typing so upgrade can safely delete it.
   messages: {
@@ -79,15 +65,6 @@ const openDatabase = async (): Promise<IDBPDatabase<AetherDB>> => {
           const store = transaction?.objectStore(STORE_CONVERSATIONS);
           if (store && !store.indexNames.contains("pinned_at")) {
             store.createIndex("pinned_at", "pinned_at");
-          }
-        }
-        if (oldVersion < 4) {
-          if (!db.objectStoreNames.contains(STORE_HTML_PREVIEWS)) {
-            const previewStore = db.createObjectStore(STORE_HTML_PREVIEWS, {
-              keyPath: "id",
-            });
-            previewStore.createIndex("conversationId", "conversationId");
-            previewStore.createIndex("createdAt", "createdAt");
           }
         }
       },
@@ -272,16 +249,6 @@ export const localDB = {
 
     const db = await openDatabase();
     await db.delete(STORE_CONVERSATIONS, id);
-    if (db.objectStoreNames.contains(STORE_HTML_PREVIEWS)) {
-      const previewKeys = await db.getAllKeysFromIndex(
-        STORE_HTML_PREVIEWS,
-        "conversationId",
-        id
-      );
-      await Promise.all(
-        previewKeys.map((key) => db.delete(STORE_HTML_PREVIEWS, key))
-      );
-    }
   },
 
   async clear(): Promise<void> {
@@ -291,34 +258,5 @@ export const localDB = {
 
     const db = await openDatabase();
     await db.clear(STORE_CONVERSATIONS);
-    if (db.objectStoreNames.contains(STORE_HTML_PREVIEWS)) {
-      await db.clear(STORE_HTML_PREVIEWS);
-    }
-  },
-
-  // HTML Preview methods
-  async saveHtmlPreview(preview: HtmlPreview): Promise<void> {
-    if (!supportsIndexedDB) {
-      return;
-    }
-
-    const db = await openDatabase();
-    await db.put(STORE_HTML_PREVIEWS, preview);
-  },
-
-  async getHtmlPreviewsByConversation(
-    conversationId: string
-  ): Promise<HtmlPreview[]> {
-    if (!supportsIndexedDB) {
-      return [];
-    }
-
-    const db = await openDatabase();
-    const all = await db.getAllFromIndex(
-      STORE_HTML_PREVIEWS,
-      "conversationId",
-      conversationId
-    );
-    return all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 };

@@ -1,5 +1,4 @@
 import { fetchUrlTool } from "./tools/fetch";
-import { renderHtmlTool } from "./tools/render-html";
 import { tavilySearchTool } from "./tools/tavily-search";
 import {
   type ChatTool,
@@ -13,7 +12,6 @@ const hasTavilyKey = Boolean(process.env.TAVILY_API_KEY);
 
 const toolMap: Partial<Record<ToolName, ToolDefinition>> = {
   fetch_url: fetchUrlTool,
-  render_html: renderHtmlTool,
 };
 
 if (hasTavilyKey) {

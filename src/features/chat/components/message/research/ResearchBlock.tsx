@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import type { ResearchItem as ResearchItemData } from "@/src/features/chat/types/chat";
 import {
   FetchUrlCard,
-  RenderHtmlCard,
   SearchCard,
   ThinkingCard,
   UnknownToolCard,
@@ -40,8 +39,6 @@ const ResearchBlockItem = memo(function ResearchBlockItem({
         return <FetchUrlCard item={item} isActive={isActive} />;
       case "tavily_search":
         return <SearchCard item={item} isActive={isActive} />;
-      case "render_html":
-        return <RenderHtmlCard item={item} isActive={isActive} />;
       default:
         return <UnknownToolCard item={item} isActive={isActive} />;
     }

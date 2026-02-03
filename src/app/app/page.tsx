@@ -4,17 +4,14 @@ import { useEffect } from "react";
 import { Composer } from "@/src/features/chat/components/composer/Composer";
 import { MessageList } from "@/src/features/chat/components/message/display/MessageList";
 import { clearAllChatStores, useMessageTreeStore } from "@/src/features/chat/store";
-import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 
 export default function HomePage() {
   const messages = useMessageTreeStore((state) => state.messages);
-  const resetPreview = usePreviewStore((state) => state.reset);
   const hasMessages = messages.length > 0;
 
   useEffect(() => {
     clearAllChatStores();
-    resetPreview();
-  }, [resetPreview]);
+  }, []);
 
   return (
     <div className="flex h-full w-full flex-col">

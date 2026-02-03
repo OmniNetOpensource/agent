@@ -5,7 +5,6 @@ import {
   useEditingStore,
   useMessageTreeStore,
 } from "@/src/features/chat/store";
-import { usePreviewStore } from "@/src/features/preview/store/usePreviewStore";
 import { localDB } from "@/src/shared/lib/indexed-db";
 import {
   buildCurrentPath,
@@ -149,7 +148,6 @@ export function useConversationLoader(conversationId: string | undefined) {
           return;
         }
 
-        usePreviewStore.getState().reset();
         useEditingStore.getState().clear();
         setConversationId(conversationId);
         initializeTree(mappedMessages, currentPath);

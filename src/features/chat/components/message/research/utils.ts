@@ -14,25 +14,6 @@ export function getToolLifecycle(tool: Tool): {
   };
 }
 
-type RenderHtmlResult =
-  | { success: true }
-  | { success: false; error: string };
-
-export function parseRenderHtmlResult(
-  resultStr: string | undefined
-): RenderHtmlResult | null {
-  if (!resultStr) return null;
-  try {
-    const parsed = JSON.parse(resultStr) as RenderHtmlResult;
-    if (typeof parsed?.success !== "boolean") {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
 export function getSearchResultCount(rawResult: string): number | null {
   try {
     const data = JSON.parse(rawResult) as {

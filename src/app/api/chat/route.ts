@@ -90,7 +90,6 @@ export async function POST(req: Request) {
 
     const allowedToolNames = new Set<string>([
       "fetch_url",
-      "render_html",
       "tavily_search",
     ]);
 
