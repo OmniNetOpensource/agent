@@ -19,7 +19,6 @@ export function MessageList() {
   const currentPath = useMessageTreeStore((state) => state.currentPath);
   const messages = computeMessagesFromPath(allMessages, currentPath);
   const pending = useChatRequestStore((state) => state.pending);
-  const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -99,7 +98,6 @@ export function MessageList() {
             const isStreaming = isLastMessage && pending;
             const messageId = message.id;
             const depth = index + 1;
-            const branchInfo = getBranchInfo(messageId);
 
             return (
               <MessageItem
@@ -109,7 +107,6 @@ export function MessageList() {
                 index={index}
                 depth={depth}
                 isStreaming={isStreaming}
-                branchInfo={branchInfo}
               />
             );
           })}

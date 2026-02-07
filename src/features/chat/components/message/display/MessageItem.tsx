@@ -4,7 +4,7 @@ import { memo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
-import { BranchInfo, Message } from "@/src/features/chat/types/chat";
+import { Message } from "@/src/features/chat/types/chat";
 import { cn } from "@/lib/utils";
 import { formatFileSize } from "@/src/shared/utils/file";
 import { ResearchBlock } from "../research/ResearchBlock";
@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useShallow } from "zustand/react/shallow";
 
 type CopyButtonProps = {
   blocks: Message["blocks"];
@@ -179,7 +180,6 @@ type MessageItemProps = {
   index: number;
   depth: number;
   isStreaming: boolean;
-  branchInfo: BranchInfo | null;
 };
 
 export const MessageItem = memo(function MessageItem({
@@ -188,7 +188,6 @@ export const MessageItem = memo(function MessageItem({
   index,
   depth,
   isStreaming,
-  branchInfo,
 }: MessageItemProps) {
   const router = useRouter();
   const pending = useChatRequestStore((state) => state.pending);
@@ -198,6 +197,14 @@ export const MessageItem = memo(function MessageItem({
   const startEditing = useEditingStore((state) => state.startEditing);
   const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
   const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
+
+  const branchStats = useMessageTreeStore(
+    useShallow((state) => {
+      const info = state.getBranchInfo(messageId);
+      return info ? { currentIndex: info.currentIndex, total: info.total } : null;
+    })
+  );
+
   const isUser = message.role === "user";
   const attachmentBlocks = message.blocks.filter(
     (
@@ -376,7 +383,7 @@ export const MessageItem = memo(function MessageItem({
           )}
         </div>
       )}
-      {branchInfo && !isEditing && (
+      {branchStats && !isEditing && (
         <div
           className={cn(
             "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
@@ -384,7 +391,8 @@ export const MessageItem = memo(function MessageItem({
           )}
         >
           <BranchNavigator
-            branchInfo={branchInfo}
+            currentIndex={branchStats.currentIndex}
+            total={branchStats.total}
             onNavigate={(direction) => navigateBranch(messageId, depth, direction)}
             disabled={pending}
           />
