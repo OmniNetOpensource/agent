@@ -182,6 +182,45 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
+const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps) => {
+  if (
+    prevProps.messageId !== nextProps.messageId ||
+    prevProps.index !== nextProps.index ||
+    prevProps.depth !== nextProps.depth ||
+    prevProps.isStreaming !== nextProps.isStreaming ||
+    prevProps.message !== nextProps.message
+  ) {
+    return false;
+  }
+
+  const prevBranch = prevProps.branchInfo;
+  const nextBranch = nextProps.branchInfo;
+
+  if (prevBranch === nextBranch) {
+    return true;
+  }
+
+  if (!prevBranch || !nextBranch) {
+    return false;
+  }
+
+  if (
+    prevBranch.currentIndex !== nextBranch.currentIndex ||
+    prevBranch.total !== nextBranch.total ||
+    prevBranch.siblingIds.length !== nextBranch.siblingIds.length
+  ) {
+    return false;
+  }
+
+  for (let i = 0; i < prevBranch.siblingIds.length; i++) {
+    if (prevBranch.siblingIds[i] !== nextBranch.siblingIds[i]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const MessageItem = memo(function MessageItem({
   message,
   messageId,
@@ -392,4 +431,4 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+}, arePropsEqual);
