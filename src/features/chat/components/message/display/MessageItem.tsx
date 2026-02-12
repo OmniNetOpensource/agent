@@ -182,6 +182,40 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
+// Deeply compare branchInfo because it is a new object on every render
+// from the parent list, even if the content is the same.
+function areBranchInfosEqual(
+  prev: BranchInfo | null,
+  next: BranchInfo | null,
+) {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+
+  return (
+    prev.currentIndex === next.currentIndex &&
+    prev.total === next.total &&
+    prev.siblingIds.length === next.siblingIds.length &&
+    prev.siblingIds.every((id, i) => id === next.siblingIds[i])
+  );
+}
+
+// Custom equality check to prevent re-renders when branchInfo content is the same
+// but reference is different (which happens on every parent render).
+// This is critical for performance during streaming.
+function areMessageItemPropsEqual(
+  prev: MessageItemProps,
+  next: MessageItemProps,
+) {
+  return (
+    prev.message === next.message &&
+    prev.messageId === next.messageId &&
+    prev.index === next.index &&
+    prev.depth === next.depth &&
+    prev.isStreaming === next.isStreaming &&
+    areBranchInfosEqual(prev.branchInfo, next.branchInfo)
+  );
+}
+
 export const MessageItem = memo(function MessageItem({
   message,
   messageId,
@@ -392,4 +426,4 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+}, areMessageItemPropsEqual);
