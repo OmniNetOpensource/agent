@@ -173,6 +173,108 @@ const BranchConversationButton = ({
   );
 };
 
+// Optimized component to isolate pending state re-renders
+const MessageActions = memo(function MessageActions({
+  messageId,
+  depth,
+  blocks,
+  isUser,
+  isStreaming,
+}: {
+  messageId: number;
+  depth: number;
+  blocks: Message["blocks"];
+  isUser: boolean;
+  isStreaming: boolean;
+}) {
+  const router = useRouter();
+  // Only this component re-renders when pending state changes
+  const pending = useChatRequestStore((state) => state.pending);
+  const startEditing = useEditingStore((state) => state.startEditing);
+  const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
+        isUser ? "justify-end" : "justify-start",
+      )}
+    >
+      {isUser && (
+        <>
+          <ActionButton
+            onClick={() => startEditing(messageId)}
+            disabled={pending}
+            title="编辑消息"
+            icon={<Pencil className="h-3.5 w-3.5" />}
+            label="编辑"
+          />
+          <ActionButton
+            onClick={() =>
+              retryFromMessage(messageId, depth, (path: string) =>
+                router.push(path),
+              )
+            }
+            disabled={pending}
+            title="重试生成"
+            icon={<RotateCcw className="h-3.5 w-3.5" />}
+            label="重试"
+          />
+        </>
+      )}
+      <CopyButton blocks={blocks} />
+      {!isUser && (
+        <ActionButton
+          onClick={() =>
+            retryFromMessage(messageId, depth, (path: string) =>
+              router.push(path),
+            )
+          }
+          disabled={pending}
+          title="重试生成"
+          icon={<RotateCcw className="h-3.5 w-3.5" />}
+          label="重试"
+        />
+      )}
+      {!isUser && !isStreaming && (
+        <BranchConversationButton messageId={messageId} disabled={pending} />
+      )}
+    </div>
+  );
+});
+
+// Optimized component to isolate pending state re-renders
+const MessageBranchNavigation = memo(function MessageBranchNavigation({
+  branchInfo,
+  messageId,
+  depth,
+  isUser,
+}: {
+  branchInfo: BranchInfo;
+  messageId: number;
+  depth: number;
+  isUser: boolean;
+}) {
+  // Only this component re-renders when pending state changes
+  const pending = useChatRequestStore((state) => state.pending);
+  const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
+        isUser ? "justify-end" : "justify-start",
+      )}
+    >
+      <BranchNavigator
+        branchInfo={branchInfo}
+        onNavigate={(direction) => navigateBranch(messageId, depth, direction)}
+        disabled={pending}
+      />
+    </div>
+  );
+});
+
 type MessageItemProps = {
   message: Message;
   messageId: number;
@@ -190,14 +292,11 @@ export const MessageItem = memo(function MessageItem({
   isStreaming,
   branchInfo,
 }: MessageItemProps) {
-  const router = useRouter();
-  const pending = useChatRequestStore((state) => state.pending);
+  // Removed global pending subscription to prevent re-renders of the entire message item
   const isEditing = useEditingStore(
     (state) => state.editingState?.messageId === messageId,
   );
-  const startEditing = useEditingStore((state) => state.startEditing);
-  const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
-  const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
+
   const isUser = message.role === "user";
   const attachmentBlocks = message.blocks.filter(
     (
@@ -328,67 +427,25 @@ export const MessageItem = memo(function MessageItem({
         </>
       )}
 
-      {/* Only show copy button for user messages OR for assistant messages when not streaming */}
+      {/* Optimized: Isolated pending state subscription */}
       {shouldShowToolbar && (
-        <div
-          className={cn(
-            "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
-            isUser ? "justify-end" : "justify-start",
-          )}
-        >
-          {isUser && (
-            <>
-              <ActionButton
-                onClick={() => startEditing(messageId)}
-                disabled={pending}
-                title="编辑消息"
-                icon={<Pencil className="h-3.5 w-3.5" />}
-                label="编辑"
-              />
-              <ActionButton
-                onClick={() =>
-                  retryFromMessage(messageId, depth, (path: string) => router.push(path))
-                }
-                disabled={pending}
-                title="重试生成"
-                icon={<RotateCcw className="h-3.5 w-3.5" />}
-                label="重试"
-              />
-            </>
-          )}
-          <CopyButton blocks={message.blocks} />
-          {!isUser && (
-            <ActionButton
-              onClick={() =>
-                retryFromMessage(messageId, depth, (path: string) => router.push(path))
-              }
-              disabled={pending}
-              title="重试生成"
-              icon={<RotateCcw className="h-3.5 w-3.5" />}
-              label="重试"
-            />
-          )}
-          {!isUser && !isStreaming && (
-            <BranchConversationButton
-              messageId={messageId}
-              disabled={pending}
-            />
-          )}
-        </div>
+        <MessageActions
+          messageId={messageId}
+          depth={depth}
+          blocks={message.blocks}
+          isUser={isUser}
+          isStreaming={isStreaming}
+        />
       )}
+
+      {/* Optimized: Isolated pending state subscription */}
       {branchInfo && !isEditing && (
-        <div
-          className={cn(
-            "flex items-center gap-1.5 transition-opacity duration-150 opacity-100 pointer-events-auto",
-            isUser ? "justify-end" : "justify-start",
-          )}
-        >
-          <BranchNavigator
-            branchInfo={branchInfo}
-            onNavigate={(direction) => navigateBranch(messageId, depth, direction)}
-            disabled={pending}
-          />
-        </div>
+        <MessageBranchNavigation
+          branchInfo={branchInfo}
+          messageId={messageId}
+          depth={depth}
+          isUser={isUser}
+        />
       )}
     </div>
   );

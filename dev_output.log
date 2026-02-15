@@ -1,0 +1,39 @@
+
+> aether@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1159ms
+○ Compiling /app ...
+ GET / 200 in 12.5s (compile: 11.2s, render: 1229ms)
+[Tools] Enabled tool: fetch_url
+[Tools] Skipping tool: tavily_search (missing TAVILY_API_KEY)
+ GET / 200 in 121ms (compile: 7ms, render: 114ms)
+[FRONTEND] Received chat request {
+  conversationId: null,
+  role: 'patient-teacher',
+  messageCount: 1,
+  conversationHistoryType: 'array'
+}
+[FRONTEND] Sent SSE event: conversation_created {
+  type: 'conversation_created',
+  conversationId: 'ae5bc27f-e52a-4d19-8ebb-b621125d3682',
+  title: 'New Chat',
+  user_id: '',
+  created_at: '2026-02-15T04:12:48.906Z',
+  updated_at: '2026-02-15T04:12:48.906Z'
+}
+[FRONTEND] Sent SSE event: error {
+  type: 'error',
+  message: '错误：Anthropic 请求失败 (model=claude-opus-4-5-20251101): Missing ANTHROPIC_API_KEY'
+}
+[FRONTEND] Sent SSE event: conversation_updated {
+  type: 'conversation_updated',
+  conversationId: 'ae5bc27f-e52a-4d19-8ebb-b621125d3682',
+  updated_at: '2026-02-15T04:12:49.204Z'
+}
+ POST /api/chat 200 in 324ms (compile: 4ms, render: 320ms)
