@@ -182,6 +182,53 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
+/**
+ * Custom comparison function for React.memo to prevent unnecessary re-renders.
+ *
+ * The `branchInfo` prop is derived from the message tree state and is re-created
+ * on every render of the parent component (MessageList) when the tree updates
+ * (e.g., during streaming). This function performs a deep comparison on `branchInfo`
+ * to ensure that MessageItem only re-renders when the actual branch structure changes,
+ * not just the object reference.
+ *
+ * CAUTION: If you add new props to MessageItem, you MUST update this function
+ * to include them in the comparison, otherwise the component may fail to update.
+ */
+function arePropsEqual(
+  prevProps: MessageItemProps,
+  nextProps: MessageItemProps,
+) {
+  // 1. Primitive/Reference checks for stable props
+  if (
+    prevProps.message !== nextProps.message ||
+    prevProps.messageId !== nextProps.messageId ||
+    prevProps.index !== nextProps.index ||
+    prevProps.depth !== nextProps.depth ||
+    prevProps.isStreaming !== nextProps.isStreaming
+  ) {
+    return false;
+  }
+
+  // 2. Deep comparison for unstable branchInfo object
+  const prevBranch = prevProps.branchInfo;
+  const nextBranch = nextProps.branchInfo;
+
+  if (prevBranch === nextBranch) {
+    return true;
+  }
+
+  if (!prevBranch || !nextBranch) {
+    return false;
+  }
+
+  return (
+    prevBranch.currentIndex === nextBranch.currentIndex &&
+    prevBranch.total === nextBranch.total &&
+    prevBranch.siblingIds.length === nextBranch.siblingIds.length &&
+    prevBranch.siblingIds.every((id, i) => id === nextBranch.siblingIds[i])
+  );
+}
+
 export const MessageItem = memo(function MessageItem({
   message,
   messageId,
@@ -392,4 +439,4 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+}, arePropsEqual);
