@@ -182,6 +182,41 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
+// Custom comparison function for React.memo to prevent unnecessary re-renders.
+// The `branchInfo` prop is an object created in the parent component's render loop,
+// so it changes reference on every render even if the data is the same.
+// We perform a deep comparison on `branchInfo` to ensure the component only re-renders
+// when the branch information actually changes.
+const areBranchInfosEqual = (
+  prev: BranchInfo | null,
+  next: BranchInfo | null,
+) => {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  return (
+    prev.currentIndex === next.currentIndex &&
+    prev.total === next.total &&
+    prev.siblingIds.length === next.siblingIds.length &&
+    prev.siblingIds.every((id, i) => id === next.siblingIds[i])
+  );
+};
+
+const arePropsEqual = (
+  prevProps: MessageItemProps,
+  nextProps: MessageItemProps,
+) => {
+  if (
+    prevProps.messageId !== nextProps.messageId ||
+    prevProps.index !== nextProps.index ||
+    prevProps.depth !== nextProps.depth ||
+    prevProps.isStreaming !== nextProps.isStreaming ||
+    prevProps.message !== nextProps.message
+  ) {
+    return false;
+  }
+  return areBranchInfosEqual(prevProps.branchInfo, nextProps.branchInfo);
+};
+
 export const MessageItem = memo(function MessageItem({
   message,
   messageId,
@@ -392,4 +427,4 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+}, arePropsEqual);
