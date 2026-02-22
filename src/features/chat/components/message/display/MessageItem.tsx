@@ -182,6 +182,31 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
+/**
+ * Custom equality check to prevent unnecessary re-renders when `branchInfo`
+ * reference changes but content remains the same (common during streaming).
+ */
+function arePropsEqual(prevProps: MessageItemProps, nextProps: MessageItemProps) {
+  if (prevProps.isStreaming !== nextProps.isStreaming) return false;
+  if (prevProps.depth !== nextProps.depth) return false;
+  if (prevProps.messageId !== nextProps.messageId) return false;
+  if (prevProps.index !== nextProps.index) return false;
+  if (prevProps.message !== nextProps.message) return false;
+
+  const prevBranch = prevProps.branchInfo;
+  const nextBranch = nextProps.branchInfo;
+
+  if (prevBranch === nextBranch) return true;
+  if (!prevBranch || !nextBranch) return false;
+
+  return (
+    prevBranch.currentIndex === nextBranch.currentIndex &&
+    prevBranch.total === nextBranch.total &&
+    prevBranch.siblingIds.length === nextBranch.siblingIds.length &&
+    prevBranch.siblingIds.every((id, i) => id === nextBranch.siblingIds[i])
+  );
+}
+
 export const MessageItem = memo(function MessageItem({
   message,
   messageId,
@@ -392,4 +417,4 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+}, arePropsEqual);
