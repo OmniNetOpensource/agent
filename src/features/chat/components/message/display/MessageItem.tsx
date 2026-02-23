@@ -182,7 +182,49 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
-export const MessageItem = memo(function MessageItem({
+/**
+ * Deep equality check for BranchInfo.
+ * This is necessary because getBranchInfo returns a new object on every render,
+ * even if the branch structure hasn't changed.
+ */
+const areBranchInfosEqual = (
+  prev: BranchInfo | null,
+  next: BranchInfo | null,
+) => {
+  if (prev === next) {
+    return true;
+  }
+  if (!prev || !next) {
+    return false;
+  }
+  return (
+    prev.currentIndex === next.currentIndex &&
+    prev.total === next.total &&
+    prev.siblingIds.length === next.siblingIds.length &&
+    prev.siblingIds.every((id, i) => id === next.siblingIds[i])
+  );
+};
+
+/**
+ * Custom comparison function for React.memo.
+ * Prevents re-renders when parent re-renders but props are effectively the same.
+ * Specifically handles the unstable `branchInfo` prop.
+ */
+const areMessageItemPropsEqual = (
+  prevProps: MessageItemProps,
+  nextProps: MessageItemProps,
+) => {
+  return (
+    prevProps.message === nextProps.message &&
+    prevProps.messageId === nextProps.messageId &&
+    prevProps.index === nextProps.index &&
+    prevProps.depth === nextProps.depth &&
+    prevProps.isStreaming === nextProps.isStreaming &&
+    areBranchInfosEqual(prevProps.branchInfo, nextProps.branchInfo)
+  );
+};
+
+const MessageItemComponent = function MessageItem({
   message,
   messageId,
   index,
@@ -392,4 +434,6 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+};
+
+export const MessageItem = memo(MessageItemComponent, areMessageItemPropsEqual);
