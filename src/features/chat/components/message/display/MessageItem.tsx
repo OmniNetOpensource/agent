@@ -182,6 +182,34 @@ type MessageItemProps = {
   branchInfo: BranchInfo | null;
 };
 
+const areBranchInfosEqual = (
+  prev: BranchInfo | null,
+  next: BranchInfo | null,
+) => {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  return (
+    prev.currentIndex === next.currentIndex &&
+    prev.total === next.total &&
+    prev.siblingIds.length === next.siblingIds.length &&
+    prev.siblingIds.every((id, i) => id === next.siblingIds[i])
+  );
+};
+
+const areMessageItemPropsEqual = (
+  prev: MessageItemProps,
+  next: MessageItemProps,
+) => {
+  return (
+    prev.message === next.message &&
+    prev.messageId === next.messageId &&
+    prev.index === next.index &&
+    prev.depth === next.depth &&
+    prev.isStreaming === next.isStreaming &&
+    areBranchInfosEqual(prev.branchInfo, next.branchInfo)
+  );
+};
+
 export const MessageItem = memo(function MessageItem({
   message,
   messageId,
@@ -392,4 +420,4 @@ export const MessageItem = memo(function MessageItem({
       )}
     </div>
   );
-});
+}, areMessageItemPropsEqual);
