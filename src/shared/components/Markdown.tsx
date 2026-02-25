@@ -1,6 +1,6 @@
 "use client";
 
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { memo, isValidElement, type ReactElement, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -212,7 +212,7 @@ const components: React.ComponentProps<typeof ReactMarkdown>["components"] = {
   ),
 };
 
-export default function Markdown({ content }: Props) {
+const Markdown = memo(function Markdown({ content }: Props) {
   return (
     <div className="markdown-body text-sm leading-relaxed text-(--text-secondary)">
       <ReactMarkdown
@@ -224,4 +224,6 @@ export default function Markdown({ content }: Props) {
       </ReactMarkdown>
     </div>
   );
-}
+});
+
+export default Markdown;

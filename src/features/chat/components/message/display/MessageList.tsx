@@ -9,15 +9,18 @@ import {
   useComposerStore,
   useMessageTreeStore,
 } from "@/src/features/chat/store";
+import { useShallow } from "zustand/react/shallow";
 import { computeMessagesFromPath } from "@/src/features/chat/lib/tree";
 import { Button } from "@/components/ui/button";
 import { useTextSelection } from "@/src/features/chat/hooks/useTextSelection";
 import { SelectionQuoteButton } from "./SelectionQuoteButton";
 
 export function MessageList() {
-  const allMessages = useMessageTreeStore((state) => state.messages);
-  const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+  const messages = useMessageTreeStore(
+    useShallow((state) =>
+      computeMessagesFromPath(state.messages, state.currentPath)
+    )
+  );
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
