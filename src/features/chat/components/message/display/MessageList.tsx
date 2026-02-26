@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,13 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+
+  // Memoize messages to prevent recreation on every render
+  const messages = useMemo(
+    () => computeMessagesFromPath(allMessages, currentPath),
+    [allMessages, currentPath]
+  );
+
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -43,6 +49,7 @@ export function MessageList() {
     clearSelectionRef.current();
   }, [messages.length]);
 
+  // Handle scroll events efficiently without re-binding listeners
   useEffect(() => {
     const container = scrollRef.current;
 
@@ -54,12 +61,12 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+
+      // Use functional update to avoid dependency on isAtBottom state
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
-    // 初始化时同步一次状态
+    // Initialize state once on mount
     handleScroll();
 
     container.addEventListener("scroll", handleScroll);
@@ -67,7 +74,19 @@ export function MessageList() {
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []); // Empty dependency ensures listener is bound only once
+
+  // Re-check scroll position when messages change (content grows)
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages]); // Runs only when memoized messages change
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
