@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -9,7 +9,7 @@ import {
   useComposerStore,
   useMessageTreeStore,
 } from "@/src/features/chat/store";
-import { computeMessagesFromPath } from "@/src/features/chat/lib/tree";
+import { computeMessagesFromPath, getBranchInfo } from "@/src/features/chat/lib/tree";
 import { Button } from "@/components/ui/button";
 import { useTextSelection } from "@/src/features/chat/hooks/useTextSelection";
 import { SelectionQuoteButton } from "./SelectionQuoteButton";
@@ -17,9 +17,11 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+  const messages = useMemo(
+    () => computeMessagesFromPath(allMessages, currentPath),
+    [allMessages, currentPath]
+  );
   const pending = useChatRequestStore((state) => state.pending);
-  const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -54,9 +56,10 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+      // We don't read `isAtBottom` here directly from the outer scope to avoid
+      // re-binding the event listener when `isAtBottom` changes. Instead, we use
+      // the functional update form of `setIsAtBottom` to check the previous value.
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
     // 初始化时同步一次状态
@@ -67,7 +70,19 @@ export function MessageList() {
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
@@ -99,7 +114,7 @@ export function MessageList() {
             const isStreaming = isLastMessage && pending;
             const messageId = message.id;
             const depth = index + 1;
-            const branchInfo = getBranchInfo(messageId);
+            const branchInfo = getBranchInfo(allMessages, messageId);
 
             return (
               <MessageItem

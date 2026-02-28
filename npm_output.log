@@ -1,0 +1,14 @@
+
+> aether@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1122ms
+○ Compiling /app ...
+ GET /app 200 in 12.5s (compile: 11.3s, render: 1190ms)
+[Tools] Enabled tool: fetch_url
+[Tools] Skipping tool: tavily_search (missing TAVILY_API_KEY)
