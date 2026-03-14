@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,12 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+
+  // ⚡ Bolt Optimization: Memoize the derived messages array.
+  // computeMessagesFromPath returns a new array reference on every call.
+  // By memoizing this, we prevent unnecessary downstream re-renders of the MessageList
+  // (e.g. when 'pending' or 'isAtBottom' state changes during streaming).
+  const messages = useMemo(() => computeMessagesFromPath(allMessages, currentPath), [allMessages, currentPath]);
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
