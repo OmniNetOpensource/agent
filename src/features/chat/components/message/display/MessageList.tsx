@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,8 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+  // Wrap computeMessagesFromPath with useMemo to prevent generating new array references on every render
+  const messages = useMemo(() => computeMessagesFromPath(allMessages, currentPath), [allMessages, currentPath]);
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -54,20 +55,36 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+
+      // Use functional state updates to avoid stale state and dependency issues
+      setIsAtBottom((prev) => {
+        if (prev !== atBottom) {
+          return atBottom;
+        }
+        return prev;
+      });
     };
 
-    // 初始化时同步一次状态
+    // Initialize state
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    // Use passive: true to prevent scroll jank
+    container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []); // Empty dependency array prevents listener thrashing
+
+  // Handle programmatic position changes when new messages are added
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (container) {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+      setIsAtBottom(distanceToBottom <= 32);
+    }
+  }, [messages.length]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
