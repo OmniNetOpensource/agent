@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -9,7 +9,10 @@ import {
   useComposerStore,
   useMessageTreeStore,
 } from "@/src/features/chat/store";
-import { computeMessagesFromPath } from "@/src/features/chat/lib/tree";
+import {
+  computeMessagesFromPath,
+  getBranchInfo,
+} from "@/src/features/chat/lib/tree";
 import { Button } from "@/components/ui/button";
 import { useTextSelection } from "@/src/features/chat/hooks/useTextSelection";
 import { SelectionQuoteButton } from "./SelectionQuoteButton";
@@ -17,9 +20,15 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+
+  // Memoize messages array since computeMessagesFromPath returns a new reference on every call,
+  // preventing unnecessary downstream re-renders and effect thrashing during streaming
+  const messages = useMemo(
+    () => computeMessagesFromPath(allMessages, currentPath),
+    [allMessages, currentPath]
+  );
+
   const pending = useChatRequestStore((state) => state.pending);
-  const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -54,20 +63,36 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+
+      // Use functional state update to prevent cascading renders
+      // and allow empty dependency array for the scroll listener
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
-    // 初始化时同步一次状态
+    // Initialize state
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    // Bind scroll listener exactly once with passive: true
+    container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []);
+
+  // Handle position checks triggered by new messages
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages.length]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
@@ -99,7 +124,10 @@ export function MessageList() {
             const isStreaming = isLastMessage && pending;
             const messageId = message.id;
             const depth = index + 1;
-            const branchInfo = getBranchInfo(messageId);
+
+            // Import helper function directly from library instead of store action
+            // to allow efficient use alongside memoized allMessages
+            const branchInfo = getBranchInfo(allMessages, messageId);
 
             return (
               <MessageItem
