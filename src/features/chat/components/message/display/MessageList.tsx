@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,14 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+
+  // ⚡ Bolt: Memoize computeMessagesFromPath to prevent generating a new array
+  // reference on every render, which defeats React.memo in children and causes
+  // unnecessary effect thrashing.
+  const messages = useMemo(
+    () => computeMessagesFromPath(allMessages, currentPath),
+    [allMessages, currentPath]
+  );
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -43,9 +50,10 @@ export function MessageList() {
     clearSelectionRef.current();
   }, [messages.length]);
 
+  // ⚡ Bolt: Refactor scroll listener to prevent thrashing during frequent updates
+  // (e.g. streaming). Bind exactly once using empty dependency array.
   useEffect(() => {
     const container = scrollRef.current;
-
     if (!container) {
       return;
     }
@@ -54,20 +62,31 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+      // ⚡ Bolt: Use functional state update to prevent unnecessary renders and remove dependency on isAtBottom
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
-    // 初始化时同步一次状态
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    // ⚡ Bolt: Add passive: true for smoother scrolling performance
+    container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []); // Empty dependency array ensures we bind once
+
+  // ⚡ Bolt: Separate effect to check scroll position specifically when messages change,
+  // preventing the entire scroll listener from re-binding.
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
