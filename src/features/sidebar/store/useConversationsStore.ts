@@ -21,8 +21,7 @@ type ConversationsActions = {
 };
 
 const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
-  const sorted = [...conversations];
-  sorted.sort((a, b) => {
+  return conversations.sort((a, b) => {
     const aPinnedAt = a.pinned_at ?? a.updated_at ?? "";
     const bPinnedAt = b.pinned_at ?? b.updated_at ?? "";
     if (!aPinnedAt && !bPinnedAt) return 0;
@@ -30,36 +29,15 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!bPinnedAt) return -1;
     return bPinnedAt.localeCompare(aPinnedAt);
   });
-  return sorted;
 };
 
 const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
-  const sorted = [...conversations];
-  sorted.sort((a, b) => {
+  return conversations.sort((a, b) => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
     return b.updated_at.localeCompare(a.updated_at);
   });
-  return sorted;
-};
-
-const splitAndSortConversations = (conversations: Conversation[]) => {
-  const pinned: Conversation[] = [];
-  const normal: Conversation[] = [];
-
-  for (const conversation of conversations) {
-    if (conversation.pinned) {
-      pinned.push(conversation);
-    } else {
-      normal.push(conversation);
-    }
-  }
-
-  return {
-    pinnedConversations: sortByPinnedAt(pinned),
-    normalConversations: sortByUpdatedAt(normal),
-  };
 };
 
 const mergeConversations = (
@@ -81,7 +59,21 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  const pinned: Conversation[] = [];
+  const normal: Conversation[] = [];
+
+  for (const conversation of map.values()) {
+    if (conversation.pinned) {
+      pinned.push(conversation);
+    } else {
+      normal.push(conversation);
+    }
+  }
+
+  return {
+    pinnedConversations: sortByPinnedAt(pinned),
+    normalConversations: sortByUpdatedAt(normal),
+  };
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
