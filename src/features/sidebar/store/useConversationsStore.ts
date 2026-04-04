@@ -44,24 +44,6 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
-  const pinned: Conversation[] = [];
-  const normal: Conversation[] = [];
-
-  for (const conversation of conversations) {
-    if (conversation.pinned) {
-      pinned.push(conversation);
-    } else {
-      normal.push(conversation);
-    }
-  }
-
-  return {
-    pinnedConversations: sortByPinnedAt(pinned),
-    normalConversations: sortByUpdatedAt(normal),
-  };
-};
-
 const mergeConversations = (
   pinnedConversations: Conversation[],
   normalConversations: Conversation[],
@@ -81,7 +63,22 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  // Iterate over map.values() directly to avoid intermediate Array allocation.
+  const pinned: Conversation[] = [];
+  const normal: Conversation[] = [];
+
+  for (const conversation of map.values()) {
+    if (conversation.pinned) {
+      pinned.push(conversation);
+    } else {
+      normal.push(conversation);
+    }
+  }
+
+  return {
+    pinnedConversations: sortByPinnedAt(pinned),
+    normalConversations: sortByUpdatedAt(normal),
+  };
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
