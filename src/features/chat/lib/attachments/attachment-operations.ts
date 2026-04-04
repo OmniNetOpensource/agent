@@ -7,16 +7,15 @@ import {
 import { toast } from "@/src/shared/toast";
 
 export const buildAttachmentsFromFiles = async (
-  files: File[]
+  files: File[] | FileList | null
 ): Promise<Attachment[]> => {
-  const items = Array.from(files || []);
-  if (items.length === 0) {
+  if (!files || files.length === 0) {
     return [];
   }
 
   const attachments: Attachment[] = [];
 
-  for (const file of items) {
+  for (const file of Array.from(files)) {
     if (file.size > MAX_ATTACHMENT_SIZE) {
       toast.warning(
         `文件「${file.name}」超过限制（最大 ${(
