@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,14 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+
+  // Memoize messages array to prevent returning new reference on every render
+  // This avoids unnecessary effect thrashing and downstream re-renders
+  const messages = useMemo(() =>
+    computeMessagesFromPath(allMessages, currentPath),
+    [allMessages, currentPath]
+  );
+
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -43,31 +50,39 @@ export function MessageList() {
     clearSelectionRef.current();
   }, [messages.length]);
 
+  // Bind native scroll event listener once, avoiding thrashing when state updates
   useEffect(() => {
     const container = scrollRef.current;
-
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
-    // 初始化时同步一次状态
+    // Use passive listener for smooth native scrolling
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Initial sync
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []); // Empty deps so it only binds once
 
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-    };
-  }, [messages, isAtBottom]);
+  // Check scroll position when messages change (e.g. streaming new tokens)
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
