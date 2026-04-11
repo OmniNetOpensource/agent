@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-04-11 - React Compiler Bypassed by Render Loop Arrays
+**Learning:** Functions like `computeMessagesFromPath` that return new array references on every invocation bypass the React Compiler's automatic memoization when used directly in render loops. This causes cascading effect thrashing, particularly for scroll listeners that depend on the array, leading to significant UI jank during high-frequency updates like streaming.
+**Action:** Always manually wrap derived arrays generated from stable state (even with React Compiler enabled) using `useMemo` when they are used as effect dependencies. Additionally, separate scroll listener bindings (empty dependency array) from scroll position syncing (dependent on the array).
