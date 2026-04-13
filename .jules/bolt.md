@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-03-04 - In-place Array Mutation on Fresh References
+**Learning:** When generating new array lists (e.g. from filtering logic or extracting from an iterator), functions that receive these fresh references should mutate the array in-place rather than cloning it first (e.g. `[...arr].sort()`). The existing code performed redundant O(N) shallow copies before sorting newly allocated arrays.
+**Action:** When sorting or transforming arrays that are guaranteed to be newly instantiated in local scope, use in-place methods (`Array.prototype.sort()`) instead of making defensive copies, reducing memory pressure.
