@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-03-05 - Preventing Scroll Listener Thrashing
+**Learning:** Binding scroll listeners repeatedly (e.g., passing dynamic dependencies to `useEffect`) causes UI jank, especially during high-frequency updates like message streaming. Additionally, relying on `messages.length` for scroll position tracking is flawed during streaming because the content height changes while the array length remains constant.
+**Action:** Bind scroll listeners exactly once using an empty dependency array `[]` and `{ passive: true }`. Use functional state updates (`setIsAtBottom((prev) => ...)`) to avoid needing state dependencies. Extract dynamic position checks (e.g., for streaming) into a separate `useEffect` dependent on the `messages` array itself, not its length.
