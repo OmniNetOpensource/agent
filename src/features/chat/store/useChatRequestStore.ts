@@ -64,10 +64,9 @@ const persistConversation = async (
   const pathMessages = computeMessagesFromPath(messages, resolvedCurrentPath);
   const { pinnedConversations, normalConversations } =
     useConversationsStore.getState();
-  const storedConversation = [
-    ...pinnedConversations,
-    ...normalConversations,
-  ].find((item) => item.id === id);
+  const storedConversation =
+    pinnedConversations.find((item) => item.id === id) ??
+    normalConversations.find((item) => item.id === id);
   const pinned = storedConversation?.pinned ?? existing?.pinned;
   const pinned_at = storedConversation?.pinned_at ?? existing?.pinned_at;
   const titleSource =
