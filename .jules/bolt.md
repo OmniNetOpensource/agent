@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2024-05-18 - Spread Operator Overhead in State Stores
+**Learning:** Using the array spread operator (`[...arr1, ...arr2]`) purely to execute search operations (e.g., `.find()`) across multiple arrays creates an intermediate array in memory, causing O(N) allocation overhead that is completely unnecessary.
+**Action:** Replace spread concatenations used for searching with sequential fallback searches: `arr1.find(...) ?? arr2.find(...)` to eliminate the allocation and optimize execution time.
