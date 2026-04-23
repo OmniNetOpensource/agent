@@ -10,20 +10,16 @@ import type {
 const serializeAttachments = async (
   attachments: Attachment[]
 ): Promise<SerializedAttachment[]> => {
-  const serialized: SerializedAttachment[] = [];
-
-  for (const attachment of attachments) {
-    serialized.push({
-      id: attachment.id,
-      kind: attachment.kind,
-      name: attachment.name,
-      size: attachment.size,
-      mimeType: attachment.mimeType,
-      url: attachment.displayUrl,
-    });
-  }
-
-  return serialized;
+  // Optimization: Use .map() instead of for-loop with .push() to leverage JS engine pre-allocation.
+  // Expected impact: Minor reduction in execution time and avoidance of dynamic array resizing overhead.
+  return attachments.map((attachment) => ({
+    id: attachment.id,
+    kind: attachment.kind,
+    name: attachment.name,
+    size: attachment.size,
+    mimeType: attachment.mimeType,
+    url: attachment.displayUrl,
+  }));
 };
 
 const serializeBlocks = async (
