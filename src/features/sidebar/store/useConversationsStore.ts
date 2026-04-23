@@ -44,7 +44,9 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+// Optimization: Accept an Iterable instead of an Array to avoid intermediate array allocation
+// Expected impact: Eliminates O(N) memory allocation and redundant O(N) iteration when merging large lists.
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +83,7 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
