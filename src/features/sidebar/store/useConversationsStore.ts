@@ -44,10 +44,11 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
+  // Iterate directly over Iterable (e.g. Map.values()) to avoid O(N) array allocation
   for (const conversation of conversations) {
     if (conversation.pinned) {
       pinned.push(conversation);
@@ -81,7 +82,8 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  // Pass Map.values() iterator instead of Array.from to avoid unnecessary array allocation
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
@@ -267,8 +269,11 @@ export const useConversationsStore = create<
   },
   updateConversationTitle: async (id, title) => {
     const { pinnedConversations, normalConversations } = get();
-    const allConversations = [...pinnedConversations, ...normalConversations];
-    const target = allConversations.find((item) => item.id === id);
+
+    // Avoid O(N) array concatenation allocation by searching sequentially
+    const target =
+      pinnedConversations.find((item) => item.id === id) ??
+      normalConversations.find((item) => item.id === id);
 
     if (!target) {
       return;
