@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,10 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+  const messages = useMemo(
+    () => computeMessagesFromPath(allMessages, currentPath),
+    [allMessages, currentPath]
+  );
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -43,31 +46,32 @@ export function MessageList() {
     clearSelectionRef.current();
   }, [messages.length]);
 
+  const checkScrollPosition = () => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  };
+
   useEffect(() => {
     const container = scrollRef.current;
-
-    if (!container) {
-      return;
-    }
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
-      const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
-    };
+    if (!container) return;
 
     // 初始化时同步一次状态
-    handleScroll();
+    checkScrollPosition();
 
-    container.addEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", checkScrollPosition, { passive: true });
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener("scroll", checkScrollPosition);
     };
-  }, [messages, isAtBottom]);
+  }, []);
+
+  useEffect(() => {
+    checkScrollPosition();
+  }, [messages]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
