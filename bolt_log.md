@@ -1,0 +1,3 @@
+## 2025-04-29 - Array Allocation Overhead in Stores
+**Learning:** In heavily used Zustand stores managing collections (like conversations or messages), intermediate array allocations (e.g., `[...arr1, ...arr2].find(...)` or `Array.from(map.values())`) introduce measurable O(N) memory allocation and garbage collection overhead. This is particularly wasteful when performing early-exit search operations.
+**Action:** Always prefer sequential execution (e.g., `arr1.find(...) ?? arr2.find(...)`) and accepting iterables over arrays when extracting values from Maps to avoid unnecessary object cloning and initialization overhead.
