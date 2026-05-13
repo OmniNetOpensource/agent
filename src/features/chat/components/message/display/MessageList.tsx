@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,11 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+
+  // Memoize the derived messages array to prevent downstream re-renders and effect thrashing
+  // since computeMessagesFromPath returns a new array reference on every call
+  const messages = useMemo(() => computeMessagesFromPath(allMessages, currentPath), [allMessages, currentPath]);
+
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -54,20 +58,31 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+      setIsAtBottom((prev) => (atBottom !== prev ? atBottom : prev));
     };
 
     // 初始化时同步一次状态
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    // Bind the scroll event listener exactly once to avoid thrashing during frequent updates.
+    // Passive mode is used to prevent UI jank.
+    container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []);
+
+  // Separate effect to handle container position checks triggered by new or streaming messages.
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+    setIsAtBottom((prev) => (atBottom !== prev ? atBottom : prev));
+  }, [messages]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
