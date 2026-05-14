@@ -44,7 +44,7 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +81,7 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
@@ -267,8 +267,10 @@ export const useConversationsStore = create<
   },
   updateConversationTitle: async (id, title) => {
     const { pinnedConversations, normalConversations } = get();
-    const allConversations = [...pinnedConversations, ...normalConversations];
-    const target = allConversations.find((item) => item.id === id);
+    // Use sequential find to avoid O(N) allocation of array concatenation
+    const target =
+      pinnedConversations.find((item) => item.id === id) ??
+      normalConversations.find((item) => item.id === id);
 
     if (!target) {
       return;
