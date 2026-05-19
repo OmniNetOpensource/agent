@@ -4,14 +4,15 @@ import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useMessageTreeStore } from "@/src/features/chat/store";
 import { useConversationsStore } from "@/src/features/sidebar/store/useConversationsStore";
+import { useShallow } from "zustand/react/shallow";
 import { ConversationItem } from "./ConversationItem";
 
 export function ConversationList() {
   const pinnedConversations = useConversationsStore(
-    (state) => state.pinnedConversations
+    useShallow((state) => state.pinnedConversations)
   );
   const normalConversations = useConversationsStore(
-    (state) => state.normalConversations
+    useShallow((state) => state.normalConversations)
   );
   const conversationsLoading = useConversationsStore(
     (state) => state.conversationsLoading
