@@ -1,9 +1,7 @@
-# BOLT'S JOURNAL - CRITICAL LEARNINGS ONLY
+## 2024-05-18 - Avoid unnecessary array allocations from Map iterators in data processing
+**Learning:** In hot loops like store update functions (e.g., `mergeConversations`), allocating an intermediate array with `Array.from(map.values())` before processing it introduces measurable O(N) allocation and garbage collection overhead.
+**Action:** When filtering or transforming map contents, iterate over `map.values()` directly using a `for...of` loop or accept an `IterableIterator` in helper functions to avoid unnecessary array allocations.
 
-## 2026-01-29 - Zustand Selector Optimization in Message Lists
-**Learning:** Selecting the entire state object (or large sub-objects) in list items causes all items to re-render when that state changes, even if the item doesn't care about the new value.
-**Action:** Always use granular selectors (returning primitives like booleans) in list items to leverage Zustand's strict equality checks and prevent unnecessary re-renders.
-
-## 2026-02-24 - Derived Object Props Breaking Memoization
-**Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
-**Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+## 2024-05-18 - In-place sorting of freshly created arrays
+**Learning:** Spreading arrays (`[...arr].sort()`) before sorting is unnecessary and costly if the array was just created (e.g., as part of a filtering or extraction loop).
+**Action:** Use in-place sorting (`arr.sort()`) without spreading when the array reference is guaranteed to be a fresh local copy, saving intermediate array allocation costs.
