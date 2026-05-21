@@ -44,7 +44,7 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -67,6 +67,9 @@ const mergeConversations = (
   normalConversations: Conversation[],
   incoming: Conversation[]
 ) => {
+  // Optimization: Pass map.values() directly to splitAndSortConversations
+  // instead of allocating an intermediate array with Array.from().
+  // This avoids an unnecessary O(N) array allocation and reduces memory overhead.
   const map = new Map<string, Conversation>();
 
   for (const conv of pinnedConversations) {
@@ -81,7 +84,7 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
