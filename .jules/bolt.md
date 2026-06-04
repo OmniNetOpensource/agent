@@ -7,3 +7,6 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+## 2026-02-24 - React Compiler and Derived Array References
+**Learning:** Even though React Compiler (React 19) is enabled, it cannot magically stabilize references for arrays generated outside the component tree (e.g., `computeMessagesFromPath` which returns a new array every time). Failing to manually memoize these with `useMemo` inside components like `MessageList` will cause aggressive tearing down and rebuilding of downstream effects (like event listeners) on every re-render.
+**Action:** When calling pure functions that return new object/array references inside a component body, still use `useMemo` to stabilize them, especially if they are passed as effect dependencies.
