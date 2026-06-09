@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-06-09 - Avoiding Array Concatenation and Map.values() Allocations
+**Learning:** Using `Array.from(map.values())` or array spread syntax (`[...arr1, ...arr2]`) inside frequently called store actions causes unnecessary (N)$ memory allocations. JavaScript Maps implement the Iterable protocol natively, allowing their `.values()` iterator to be consumed directly by loops without intermediate array creation.
+**Action:** When transforming or passing Map contents, type function parameters as `Iterable<T>` and pass `map.values()` directly. When searching across multiple arrays, chain `.find()` calls with nullish coalescing (`??`) instead of concatenating the arrays.
