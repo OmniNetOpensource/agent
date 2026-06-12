@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, type ReactNode } from "react";
+import { memo, useState, useMemo, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
@@ -227,15 +227,16 @@ export const MessageItem = memo(function MessageItem({
   const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
   const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
   const isUser = message.role === "user";
-  const attachmentBlocks = message.blocks.filter(
+  const attachmentBlocks = useMemo(() => message.blocks.filter(
     (
       block,
     ): block is Extract<Message["blocks"][number], { type: "attachments" }> =>
       block.type === "attachments",
-  );
-  const contentBlocks = message.blocks.filter(
+  ), [message.blocks]);
+
+  const contentBlocks = useMemo(() => message.blocks.filter(
     (block) => block.type !== "attachments",
-  );
+  ), [message.blocks]);
 
   const shouldShowToolbar = !isEditing && (isUser || !isStreaming);
 
