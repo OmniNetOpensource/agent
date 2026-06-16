@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ArrowDown } from "lucide-react";
 import { MessageItem } from "./MessageItem";
 import { PendingIndicator } from "./PendingIndicator";
@@ -17,7 +17,13 @@ import { SelectionQuoteButton } from "./SelectionQuoteButton";
 export function MessageList() {
   const allMessages = useMessageTreeStore((state) => state.messages);
   const currentPath = useMessageTreeStore((state) => state.currentPath);
-  const messages = computeMessagesFromPath(allMessages, currentPath);
+  // ⚡ Bolt Optimization: Memoize computeMessagesFromPath
+  // What: Wraps the tree traversal/computation function in useMemo.
+  // Why: computeMessagesFromPath returns a new array reference on every call. Without memoization,
+  //      any re-render of MessageList (e.g. from local scroll state) creates a new messages array,
+  //      which breaks React.memo down the tree and triggers unnecessary useEffect runs.
+  // Impact: Prevents O(N) array allocation and redundant rendering of child components.
+  const messages = useMemo(() => computeMessagesFromPath(allMessages, currentPath), [allMessages, currentPath]);
   const pending = useChatRequestStore((state) => state.pending);
   const getBranchInfo = useMessageTreeStore((state) => state.getBranchInfo);
   const [isAtBottom, setIsAtBottom] = useState(true);
