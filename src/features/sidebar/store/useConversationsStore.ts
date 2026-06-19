@@ -21,8 +21,8 @@ type ConversationsActions = {
 };
 
 const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
-  const sorted = [...conversations];
-  sorted.sort((a, b) => {
+  // ⚡ Bolt: Sort in-place to avoid redundant array allocations since callers always provide fresh arrays
+  conversations.sort((a, b) => {
     const aPinnedAt = a.pinned_at ?? a.updated_at ?? "";
     const bPinnedAt = b.pinned_at ?? b.updated_at ?? "";
     if (!aPinnedAt && !bPinnedAt) return 0;
@@ -30,21 +30,21 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!bPinnedAt) return -1;
     return bPinnedAt.localeCompare(aPinnedAt);
   });
-  return sorted;
+  return conversations;
 };
 
 const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
-  const sorted = [...conversations];
-  sorted.sort((a, b) => {
+  // ⚡ Bolt: Sort in-place to avoid redundant array allocations since callers always provide fresh arrays
+  conversations.sort((a, b) => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
     return b.updated_at.localeCompare(a.updated_at);
   });
-  return sorted;
+  return conversations;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +81,8 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  // ⚡ Bolt: Iterate over map.values() directly to avoid O(N) array allocation
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
@@ -267,8 +268,8 @@ export const useConversationsStore = create<
   },
   updateConversationTitle: async (id, title) => {
     const { pinnedConversations, normalConversations } = get();
-    const allConversations = [...pinnedConversations, ...normalConversations];
-    const target = allConversations.find((item) => item.id === id);
+    // ⚡ Bolt: Avoid O(N) array concatenation for search operations
+    const target = pinnedConversations.find((item) => item.id === id) ?? normalConversations.find((item) => item.id === id);
 
     if (!target) {
       return;
