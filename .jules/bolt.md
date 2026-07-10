@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-03-02 - Map Values Iteration Optimization
+**Learning:** Using `Array.from(map.values())` when transforming or splitting Map contents into multiple categories creates an unnecessary intermediate array, which causes O(N) allocation overhead. Passing `map.values()` directly as an `Iterable` to functions that use a `for...of` loop is significantly faster.
+**Action:** When extracting values from a `Map` just to iterate over them, type the receiving function's parameter as `Iterable<T>` instead of `T[]` and pass `map.values()` directly.
