@@ -44,7 +44,7 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
+const splitAndSortConversations = (conversations: Conversation[]) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +81,7 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(map.values());
+  return splitAndSortConversations(Array.from(map.values()));
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
