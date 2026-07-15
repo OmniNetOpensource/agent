@@ -28,7 +28,10 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    // Lexical comparison (<, >) is significantly faster than localeCompare for ISO-8601 date strings
+    if (bPinnedAt < aPinnedAt) return -1;
+    if (bPinnedAt > aPinnedAt) return 1;
+    return 0;
   });
   return sorted;
 };
@@ -39,12 +42,16 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    // Lexical comparison (<, >) is significantly faster than localeCompare for ISO-8601 date strings
+    if (b.updated_at < a.updated_at) return -1;
+    if (b.updated_at > a.updated_at) return 1;
+    return 0;
   });
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+// Pass Iterable instead of Array to avoid O(N) allocation when processing map values
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +88,8 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  // Pass iterator directly instead of using Array.from to avoid O(N) intermediate array allocation
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
