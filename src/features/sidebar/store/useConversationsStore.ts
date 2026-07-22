@@ -28,7 +28,10 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    // Lexical comparison is much faster than localeCompare for ISO date strings
+    if (bPinnedAt < aPinnedAt) return -1;
+    if (bPinnedAt > aPinnedAt) return 1;
+    return 0;
   });
   return sorted;
 };
@@ -39,7 +42,10 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    // Lexical comparison is much faster than localeCompare for ISO date strings
+    if (b.updated_at < a.updated_at) return -1;
+    if (b.updated_at > a.updated_at) return 1;
+    return 0;
   });
   return sorted;
 };
@@ -267,8 +273,10 @@ export const useConversationsStore = create<
   },
   updateConversationTitle: async (id, title) => {
     const { pinnedConversations, normalConversations } = get();
-    const allConversations = [...pinnedConversations, ...normalConversations];
-    const target = allConversations.find((item) => item.id === id);
+    // Use sequential find to avoid O(N) array concatenation overhead
+    const target =
+      pinnedConversations.find((item) => item.id === id) ??
+      normalConversations.find((item) => item.id === id);
 
     if (!target) {
       return;
