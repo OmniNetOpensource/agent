@@ -50,24 +50,37 @@ export function MessageList() {
       return;
     }
 
+    // Optimization: Use conditional functional state update to prevent cascading re-renders
+    // and isolate the native scroll listener to run exactly once on mount.
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
     // 初始化时同步一次状态
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    // Optimization: Add passive flag for smoother scrolling
+    container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []); // Optimization: Empty dependency array prevents listener thrashing during streaming updates
+
+  // Optimization: Handle scroll position checks triggered by new or streaming messages separately
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages]); // Track the messages array as streaming updates increase content height without changing length
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
