@@ -220,7 +220,8 @@ export const localDB = {
     const resolved = migrated.filter(
       (conversation): conversation is LocalConversation => !!conversation
     );
-    return resolved.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    // Optimization: basic lexical string comparison is significantly faster than localeCompare for ISO timestamps
+    return resolved.sort((a, b) => (b.updated_at > a.updated_at ? 1 : b.updated_at < a.updated_at ? -1 : 0));
   },
 
   async get(id: string): Promise<LocalConversation | undefined> {
