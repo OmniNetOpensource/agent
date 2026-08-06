@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, type ReactNode } from "react";
+import { memo, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "@/src/shared/components/Markdown";
 import { ImagePreview } from "@/src/shared/components/ImagePreview";
@@ -227,15 +227,37 @@ export const MessageItem = memo(function MessageItem({
   const retryFromMessage = useEditingStore((state) => state.retryFromMessage);
   const navigateBranch = useMessageTreeStore((state) => state.navigateBranch);
   const isUser = message.role === "user";
-  const attachmentBlocks = message.blocks.filter(
-    (
-      block,
-    ): block is Extract<Message["blocks"][number], { type: "attachments" }> =>
-      block.type === "attachments",
-  );
-  const contentBlocks = message.blocks.filter(
-    (block) => block.type !== "attachments",
-  );
+
+  // ⚡ Bolt Optimization: Use a single-pass reduce with useMemo instead of multiple filter calls.
+  // This reduces array allocations from O(2N) to O(N) and caches the result between renders,
+  // preventing expensive re-evaluations during heavy render cycles (like streaming).
+  const { attachmentBlocks, contentBlocks } = useMemo(() => {
+    return message.blocks.reduce(
+      (acc, block) => {
+        if (block.type === "attachments") {
+          acc.attachmentBlocks.push(
+            block as Extract<
+              Message["blocks"][number],
+              { type: "attachments" }
+            >,
+          );
+        } else {
+          acc.contentBlocks.push(block);
+        }
+        return acc;
+      },
+      {
+        attachmentBlocks: [] as Extract<
+          Message["blocks"][number],
+          { type: "attachments" }
+        >[],
+        contentBlocks: [] as Exclude<
+          Message["blocks"][number],
+          { type: "attachments" }
+        >[],
+      },
+    );
+  }, [message.blocks]);
 
   const shouldShowToolbar = !isEditing && (isUser || !isStreaming);
 
