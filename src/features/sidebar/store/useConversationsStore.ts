@@ -28,7 +28,8 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    // Lexical comparison is faster for ISO-8601 strings
+    return bPinnedAt > aPinnedAt ? 1 : bPinnedAt < aPinnedAt ? -1 : 0;
   });
   return sorted;
 };
@@ -39,12 +40,14 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    // Lexical comparison is faster for ISO-8601 strings
+    return b.updated_at > a.updated_at ? 1 : b.updated_at < a.updated_at ? -1 : 0;
   });
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+// Use Iterable to avoid intermediate Array allocation when passed Map values
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +84,7 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
