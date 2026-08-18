@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pin, PinOff, Trash2 } from "lucide-react";
@@ -18,15 +20,14 @@ type ConversationItemProps = {
   isActive: boolean;
 };
 
-export function ConversationItem({
+export const ConversationItem = memo(function ConversationItem({
   conversation,
   isActive,
 }: ConversationItemProps) {
   const title = conversation.title || "未命名会话";
   const isPinned = Boolean(conversation.pinned);
 
-  const pending = useChatRequestStore((state) => state.pending);
-  const stop = useChatRequestStore((state) => state.stop);
+
   const router = useRouter();
   const pinConversation = useConversationsStore(
     (state) => state.pinConversation
@@ -46,6 +47,10 @@ export function ConversationItem({
     }
 
     // 如果正在生成，需要确认
+    // Use getState() instead of reactive hooks to prevent all conversation items
+    // from re-rendering whenever the global pending state changes during generation.
+    const { pending, stop } = useChatRequestStore.getState();
+
     if (pending) {
       const confirmed = window.confirm(
         "AI正在生成内容，离开当前对话可能会丢失正在生成的内容，确定要离开吗？"
@@ -151,4 +156,4 @@ export function ConversationItem({
       </div>
     </div>
   );
-}
+});
