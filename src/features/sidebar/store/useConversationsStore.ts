@@ -44,7 +44,8 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+// ⚡ Bolt Optimization: Accept Iterable to avoid intermediate array allocation
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +82,8 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  // ⚡ Bolt Optimization: Iterate directly over map.values() to prevent O(N) array allocation
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
