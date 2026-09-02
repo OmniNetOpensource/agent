@@ -28,7 +28,9 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    // ⚡ Bolt Optimization: Use basic lexical comparison instead of localeCompare for ISO-8601 strings
+    // to avoid the overhead of the Intl API and achieve significantly faster sorting.
+    return bPinnedAt > aPinnedAt ? 1 : bPinnedAt < aPinnedAt ? -1 : 0;
   });
   return sorted;
 };
@@ -39,7 +41,9 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    // ⚡ Bolt Optimization: Use basic lexical comparison instead of localeCompare for ISO-8601 strings
+    // to avoid the overhead of the Intl API and achieve significantly faster sorting.
+    return b.updated_at > a.updated_at ? 1 : b.updated_at < a.updated_at ? -1 : 0;
   });
   return sorted;
 };
