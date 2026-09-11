@@ -20,6 +20,7 @@ type ConversationsActions = {
   updateConversationTitle: (id: string, title: string) => Promise<void>;
 };
 
+// ⚡ Bolt: Fast ISO-8601 date sorting using lexical comparison instead of slow localeCompare
 const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
   const sorted = [...conversations];
   sorted.sort((a, b) => {
@@ -28,23 +29,25 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    return aPinnedAt === bPinnedAt ? 0 : aPinnedAt < bPinnedAt ? 1 : -1;
   });
   return sorted;
 };
 
+// ⚡ Bolt: Fast ISO-8601 date sorting using lexical comparison instead of slow localeCompare
 const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   const sorted = [...conversations];
   sorted.sort((a, b) => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    return a.updated_at === b.updated_at ? 0 : a.updated_at < b.updated_at ? 1 : -1;
   });
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+// ⚡ Bolt: Accept Iterable to allow passing map.values() directly, avoiding Array.from() O(N) allocation
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +84,8 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  // ⚡ Bolt: Pass iterator directly to avoid intermediate array allocation
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
@@ -267,8 +271,10 @@ export const useConversationsStore = create<
   },
   updateConversationTitle: async (id, title) => {
     const { pinnedConversations, normalConversations } = get();
-    const allConversations = [...pinnedConversations, ...normalConversations];
-    const target = allConversations.find((item) => item.id === id);
+    // ⚡ Bolt: Sequential find avoids O(N) array allocation from spread operator
+    const target =
+      pinnedConversations.find((item) => item.id === id) ??
+      normalConversations.find((item) => item.id === id);
 
     if (!target) {
       return;
