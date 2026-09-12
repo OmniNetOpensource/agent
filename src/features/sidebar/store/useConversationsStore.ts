@@ -28,7 +28,10 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    // Lexical comparison is completely safe for ISO-8601 dates and
+    // avoids the costly Intl API overhead of localeCompare
+    if (bPinnedAt === aPinnedAt) return 0;
+    return bPinnedAt > aPinnedAt ? 1 : -1;
   });
   return sorted;
 };
@@ -39,7 +42,10 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    // Lexical comparison is completely safe for ISO-8601 dates and
+    // avoids the costly Intl API overhead of localeCompare
+    if (b.updated_at === a.updated_at) return 0;
+    return b.updated_at > a.updated_at ? 1 : -1;
   });
   return sorted;
 };
