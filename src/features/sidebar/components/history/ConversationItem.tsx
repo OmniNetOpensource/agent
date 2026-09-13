@@ -25,8 +25,6 @@ export function ConversationItem({
   const title = conversation.title || "未命名会话";
   const isPinned = Boolean(conversation.pinned);
 
-  const pending = useChatRequestStore((state) => state.pending);
-  const stop = useChatRequestStore((state) => state.stop);
   const router = useRouter();
   const pinConversation = useConversationsStore(
     (state) => state.pinConversation
@@ -44,6 +42,10 @@ export function ConversationItem({
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0) {
       return;
     }
+
+    // ⚡ Bolt: Fetch state imperatively inside the event handler to prevent
+    // all ConversationItems from re-rendering whenever the global pending state changes
+    const { pending, stop } = useChatRequestStore.getState();
 
     // 如果正在生成，需要确认
     if (pending) {
