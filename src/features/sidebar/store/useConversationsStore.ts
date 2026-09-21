@@ -22,29 +22,34 @@ type ConversationsActions = {
 
 const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
   const sorted = [...conversations];
+  // Using lexical comparison instead of localeCompare for ISO-8601 strings is significantly faster
   sorted.sort((a, b) => {
     const aPinnedAt = a.pinned_at ?? a.updated_at ?? "";
     const bPinnedAt = b.pinned_at ?? b.updated_at ?? "";
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    if (bPinnedAt === aPinnedAt) return 0;
+    return bPinnedAt < aPinnedAt ? -1 : 1;
   });
   return sorted;
 };
 
 const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
   const sorted = [...conversations];
+  // Using lexical comparison instead of localeCompare for ISO-8601 strings is significantly faster
   sorted.sort((a, b) => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    if (b.updated_at === a.updated_at) return 0;
+    return b.updated_at < a.updated_at ? -1 : 1;
   });
   return sorted;
 };
 
-const splitAndSortConversations = (conversations: Conversation[]) => {
+// Taking an Iterable prevents unnecessary O(N) array allocation when processing Map values
+const splitAndSortConversations = (conversations: Iterable<Conversation>) => {
   const pinned: Conversation[] = [];
   const normal: Conversation[] = [];
 
@@ -81,7 +86,7 @@ const mergeConversations = (
     map.set(conv.id, conv);
   }
 
-  return splitAndSortConversations(Array.from(map.values()));
+  return splitAndSortConversations(map.values());
 };
 
 const mapLocalToConversation = (local: LocalConversation): Conversation => ({
