@@ -28,7 +28,8 @@ const sortByPinnedAt = (conversations: Conversation[]): Conversation[] => {
     if (!aPinnedAt && !bPinnedAt) return 0;
     if (!aPinnedAt) return 1;
     if (!bPinnedAt) return -1;
-    return bPinnedAt.localeCompare(aPinnedAt);
+    // Optimized: using lexical comparison for faster date sorting avoiding Intl overhead
+    return aPinnedAt === bPinnedAt ? 0 : (bPinnedAt > aPinnedAt ? 1 : -1);
   });
   return sorted;
 };
@@ -39,7 +40,8 @@ const sortByUpdatedAt = (conversations: Conversation[]): Conversation[] => {
     if (!a.updated_at && !b.updated_at) return 0;
     if (!a.updated_at) return 1;
     if (!b.updated_at) return -1;
-    return b.updated_at.localeCompare(a.updated_at);
+    // Optimized: using lexical comparison for faster date sorting avoiding Intl overhead
+    return a.updated_at === b.updated_at ? 0 : (b.updated_at > a.updated_at ? 1 : -1);
   });
   return sorted;
 };
