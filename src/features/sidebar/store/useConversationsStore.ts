@@ -267,8 +267,8 @@ export const useConversationsStore = create<
   },
   updateConversationTitle: async (id, title) => {
     const { pinnedConversations, normalConversations } = get();
-    const allConversations = [...pinnedConversations, ...normalConversations];
-    const target = allConversations.find((item) => item.id === id);
+    // Performance optimization: Avoid O(N) array allocation via spread operator by sequentially finding
+    const target = pinnedConversations.find((item) => item.id === id) ?? normalConversations.find((item) => item.id === id);
 
     if (!target) {
       return;
