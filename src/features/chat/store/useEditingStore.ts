@@ -206,9 +206,15 @@ export const useEditingStore = create<EditingStoreState & EditingStoreActions>(
       set({ editingState: null });
 
       const pathMessages = computeMessagesFromPath(treeState.messages, nextPath);
-      const titleSource =
-        [...pathMessages].reverse().find((message) => message.role === "user") ??
-        pathMessages[0];
+      // Performance optimization: Avoid O(N) array allocation and reversal by searching backwards
+      let userMessageSource;
+      for (let i = pathMessages.length - 1; i >= 0; i--) {
+        if (pathMessages[i].role === "user") {
+          userMessageSource = pathMessages[i];
+          break;
+        }
+      }
+      const titleSource = userMessageSource ?? pathMessages[0];
 
       const { get: getRequestState, set: setRequestState } =
         getChatRequestHandlers();

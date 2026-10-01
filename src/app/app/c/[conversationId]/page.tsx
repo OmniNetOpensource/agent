@@ -19,8 +19,9 @@ export default function ConversationPage({ params }: Props) {
   const pinnedConversations = useConversationsStore((s) => s.pinnedConversations);
   const normalConversations = useConversationsStore((s) => s.normalConversations);
   
-  const currentConversation = [...pinnedConversations, ...normalConversations]
-    .find((c) => c.id === conversationId);
+  // Performance optimization: Avoid O(N) array allocation via spread operator by sequentially finding
+  const currentConversation = pinnedConversations.find((c) => c.id === conversationId) ??
+    normalConversations.find((c) => c.id === conversationId);
   const storeTitle = currentConversation?.title;
   
   // 如果 store 中没有标题，尝试从 IndexedDB 读取（后备方案）
