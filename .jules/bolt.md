@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-03-05 - Array Operations Optimization in Conversations
+**Learning:** Using `Array.from(map.values())` and spread operators `[...a, ...b]` for iteration/searching creates unnecessary O(N) array allocations that degrade performance for large data sets (like conversations).
+**Action:** Pass `Iterable<T>` directly to iteration functions (e.g., `map.values()`) and use sequential `.find()` calls (`a.find() ?? b.find()`) instead of concatenating arrays.
