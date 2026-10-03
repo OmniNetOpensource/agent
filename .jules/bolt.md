@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-03-05 - Lexical Comparison for ISO-8601 Strings
+**Learning:** Using basic lexical string comparison operators (<, >) for sorting ISO-8601 timestamp strings is significantly faster (~1.6x in Node/V8) than using String.prototype.localeCompare, which incurs the overhead of the Intl API.
+**Action:** When sorting dates represented as ISO strings, use a ternary lexical comparison (e.g., a === b ? 0 : (a < b ? 1 : -1)) instead of localeCompare, but ensure you explicitly handle the equality case (0) to satisfy strict weak ordering.
