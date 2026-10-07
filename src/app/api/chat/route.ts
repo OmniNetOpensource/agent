@@ -67,9 +67,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const latestUserMessage = [...conversationHistory]
-      .reverse()
-      .find((msg) => msg.role === "user");
+    // ⚡ Bolt: Use a backward for-loop instead of [...conversationHistory].reverse().find(...)
+    // to avoid O(N) array allocation overhead for large conversation histories.
+    let latestUserMessage;
+    for (let i = conversationHistory.length - 1; i >= 0; i--) {
+      if (conversationHistory[i].role === "user") {
+        latestUserMessage = conversationHistory[i];
+        break;
+      }
+    }
 
     if (!latestUserMessage || !Array.isArray(latestUserMessage.blocks) || latestUserMessage.blocks.length === 0) {
       const reply = `Missing user message: latest user message missing or has empty blocks.`;
