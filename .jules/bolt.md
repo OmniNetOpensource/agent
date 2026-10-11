@@ -7,3 +7,7 @@
 ## 2026-02-24 - Derived Object Props Breaking Memoization
 **Learning:** Calculating derived objects (like `branchInfo`) inside a parent's render loop (e.g., `MessageList`) creates new references on every render. This defeats `React.memo`'s default shallow comparison in child components, causing unnecessary re-renders of the entire list during frequent updates (like streaming).
 **Action:** Implement a custom equality function for `React.memo` in list item components to deeply compare derived objects, or memoize the derived object calculation itself.
+
+## 2026-03-10 - Optimizing Zustand Stores with Iterable Parameters and Lexical Date Sorting
+**Learning:** In standard JavaScript execution, O(N) allocations for temporary arrays during collection merging (e.g., `Array.from(map.values())`) and spread operations for lookups (`[...a, ...b].find()`) introduce measurable memory and garbage collection overhead in Zustand stores. Additionally, `String.prototype.localeCompare` carries significant Intl API overhead when sorting basic ASCII-formatted ISO 8601 strings.
+**Action:** Use native lexical comparison (`<`, `>`) combined with a strict equality check (`===`) for ISO dates. Replace intermediate array allocations by typing functional parameters as `Iterable<T>` to directly iterate over Map/Set structures. Replace array concatenation lookups with short-circuiting sequential `find()` operations (`a.find() ?? b.find()`).
