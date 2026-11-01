@@ -54,20 +54,32 @@ export function MessageList() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
       const atBottom = distanceToBottom <= 32;
-      if(atBottom !== isAtBottom) {
-        setIsAtBottom(atBottom);
-      }
+      setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
     };
 
     // 初始化时同步一次状态
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll);
+    // Optimize: isolate native event listener binding to prevent thrashing
+    // from streaming props.
+    container.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, [messages, isAtBottom]);
+  }, []);
+
+  // Optimize: explicitly check and update scroll-dependent state when
+  // the container expands from new items, without requiring manual scroll events.
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const atBottom = distanceToBottom <= 32;
+    setIsAtBottom((prev) => (prev !== atBottom ? atBottom : prev));
+  }, [messages.length]);
 
   const handleScrollToBottom = () => {
     const container = scrollRef.current;
